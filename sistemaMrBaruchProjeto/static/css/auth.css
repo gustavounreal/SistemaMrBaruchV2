@@ -1,0 +1,260 @@
+/* === Autenticação: Estilo integrado ao tema azul-laranja do dashboard === */
+
+/* Página base */
+.auth-page {
+    background: linear-gradient(135deg, var(--azul-principal), var(--laranja-principal));
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Fundo orgânico animado */
+.login-page {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-page::after,
+.login-page::before {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    z-index: 0;
+    filter: blur(90px);
+    opacity: 0.08;
+    animation: blob-move 18s infinite alternate ease-in-out;
+}
+
+.login-page::after {
+    width: 65%;
+    height: 65%;
+    top: -10%;
+    right: -10%;
+    background: var(--azul-secundario);
+}
+
+.login-page::before {
+    width: 60%;
+    height: 60%;
+    bottom: -10%;
+    left: -10%;
+    background: var(--laranja-principal);
+}
+
+@keyframes blob-move {
+    0% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(-3%,3%) scale(1.05); }
+    100% { transform: translate(3%,-3%) scale(0.95); }
+}
+
+/* Card principal */
+.auth-card {
+    position: relative;
+    z-index: 5;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(16px);
+    border-radius: 1.5rem;
+    padding: 3rem 2.5rem;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+    transition: transform .3s ease, box-shadow .3s ease;
+    animation: fadeUp 0.8s ease-out forwards;
+}
+
+.auth-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+}
+
+/* Logo circular */
+.login-logo {
+    width: 85px;
+    height: 85px;
+    background: linear-gradient(135deg, var(--azul-principal), var(--laranja-principal));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: -42px;
+    left: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 8px 25px rgba(30, 58, 138, 0.3);
+    border: 4px solid white;
+    animation: logoPulse 3s infinite ease-in-out;
+}
+
+.logo-icon {
+    color: white;
+    font-size: 2rem;
+    font-weight: 700;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+@keyframes logoPulse {
+    0%,100% { transform: translateX(-50%) scale(1); box-shadow: 0 6px 20px rgba(30,58,138,0.3); }
+    50% { transform: translateX(-50%) scale(1.07); box-shadow: 0 8px 30px rgba(249,115,22,0.4); }
+}
+
+/* Cabeçalho */
+.login-header {
+    margin-top: 2rem;
+    margin-bottom: 2.5rem;
+    text-align: center;
+}
+
+.login-header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--azul-principal), var(--laranja-principal));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.login-header p {
+    color: var(--texto-claro);
+    font-size: 0.95rem;
+}
+
+/* Tabs */
+.auth-tabs {
+    display: flex;
+    justify-content: center;
+}
+
+.auth-tab {
+    border: none;
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--azul-principal);
+    transition: all .3s ease;
+    border-radius: 50px;
+    font-weight: 600;
+}
+
+.auth-tab.active {
+    background: linear-gradient(135deg, var(--azul-secundario), var(--laranja-principal));
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+}
+
+.auth-tab:hover {
+    transform: translateY(-2px);
+}
+
+/* Inputs */
+.input-group-text {
+    background: #f5f7fc;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-right: none;
+    border-radius: 10px 0 0 10px;
+}
+
+.form-control {
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 0 10px 10px 0;
+    transition: all 0.25s ease;
+    background: #fff;
+}
+
+.form-control:focus {
+    border-color: var(--azul-secundario);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+}
+
+/* Botões */
+.btn-auth-primary {
+    background: linear-gradient(135deg, var(--azul-secundario), var(--azul-principal));
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    border: none;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-auth-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(59,130,246,0.35);
+}
+
+.btn-auth-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 10px rgba(59,130,246,0.2);
+}
+
+/* Placeholder animation */
+.btn-auth-primary::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left .7s;
+}
+
+.btn-auth-primary:hover::before {
+    left: 100%;
+}
+
+/* Animações */
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Alertas */
+.alert {
+    border-radius: 10px;
+    border: none;
+    padding: 0.8rem 1rem;
+    font-weight: 500;
+    background: rgba(255,255,255,0.85);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 1rem;
+}
+
+/* Erros de campo */
+.input-error {
+    color: var(--laranja-principal);
+    font-size: 0.85rem;
+    margin-top: 4px;
+}
+
+/* Responsividade */
+@media (max-width: 480px) {
+    .auth-card {
+        padding: 2rem 1.4rem;
+        border-radius: 1.2rem;
+    }
+
+    .login-logo {
+        width: 70px;
+        height: 70px;
+        top: -35px;
+    }
+
+    .login-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .auth-tab {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+
+    .btn-auth-primary {
+        font-size: 1rem;
+    }
+}
