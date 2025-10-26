@@ -24,21 +24,30 @@ class Command(BaseCommand):
             ('relacionamento', 'Equipe de relacionamento'),
         ]
         
-        # Renomear grupo "consultor" para "comercial1" se existir
+         # Renomear grupo "consultor" para "comercial1" se existir
         try:
             consultor_group = Group.objects.get(name='consultor')
-            consultor_group.name = 'comercial1'
-            consultor_group.save()
-            self.stdout.write(
-                self.style.SUCCESS('✓ Grupo "consultor" renomeado para "comercial1"')
-            )
+            comercial1_group, created = Group.objects.get_or_create(name='comercial1')
+            # Se já existe "comercial1", mova os usuários e delete "consultor"
+            if not created:
+                for user in consultor_group.user_set.all():
+                    comercial1_group.user_set.add(user)
+                consultor_group.delete()
+                self.stdout.write(
+                    self.style.SUCCESS('✓ Grupo "consultor" mesclado em "comercial1" e removido')
+                )
+            else:
+                consultor_group.name = 'comercial1'
+                consultor_group.save()
+                self.stdout.write(
+                    self.style.SUCCESS('✓ Grupo "consultor" renomeado para "comercial1"')
+                )
         except Group.DoesNotExist:
             pass
-        
+
         # Remover grupo "gestor" se existir (substituído por admin)
         try:
             gestor_group = Group.objects.get(name='gestor')
-            # Mover usuários do gestor para admin
             admin_group, _ = Group.objects.get_or_create(name='admin')
             for user in gestor_group.user_set.all():
                 admin_group.user_set.add(user)
@@ -48,15 +57,24 @@ class Command(BaseCommand):
             )
         except Group.DoesNotExist:
             pass
-        
+
         # Renomear "clientes" para "cliente"
         try:
             clientes_group = Group.objects.get(name='clientes')
-            clientes_group.name = 'cliente'
-            clientes_group.save()
-            self.stdout.write(
-                self.style.SUCCESS('✓ Grupo "clientes" renomeado para "cliente"')
-            )
+            cliente_group, created = Group.objects.get_or_create(name='cliente')
+            if not created:
+                for user in clientes_group.user_set.all():
+                    cliente_group.user_set.add(user)
+                clientes_group.delete()
+                self.stdout.write(
+                    self.style.SUCCESS('✓ Grupo "clientes" mesclado em "cliente" e removido')
+                )
+            else:
+                clientes_group.name = 'cliente'
+                clientes_group.save()
+                self.stdout.write(
+                    self.style.SUCCESS('✓ Grupo "clientes" renomeado para "cliente"')
+                )
         except Group.DoesNotExist:
             pass
         
