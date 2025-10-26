@@ -63,8 +63,6 @@ yarn-error.log
 # Documentação Markdown
 *.md
 
-# Arquivos estáticos temporários
-static/
 
 # Ignorar arquivos fora do projeto
 ../../*
