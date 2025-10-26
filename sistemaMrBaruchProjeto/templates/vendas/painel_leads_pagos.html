@@ -1,0 +1,525 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Painel de Vendas - Leads Pagos{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<style>
+  .lead-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid #007bff;
+  }
+  
+  .lead-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  }
+  
+  .lead-card.status-pronto {
+    border-left-color: #007bff;
+  }
+  
+  .lead-card.status-em_pre_venda {
+    border-left-color: #ffc107;
+  }
+  
+  .lead-card.status-aceito {
+    border-left-color: #17a2b8;
+  }
+  
+  .lead-card.status-vendido {
+    border-left-color: #28a745;
+  }
+  
+  .filter-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+  
+  /* Regras de .stats-card movidas para static/css/dashboard.css */
+  
+  .stats-card {
+    margin-bottom: 1rem;
+  }
+  
+  .stats-card small {
+    font-size: 0.875rem;
+    opacity: 0.9;
+    display: block;
+    margin-top: 0.25rem;
+  }
+  
+  /* Melhorias para mobile */
+  @media (max-width: 768px) {
+    .header-content {
+      text-align: center !important;
+      width: 100% !important;
+    }
+    
+    .header-content h2,
+    .header-content p {
+      text-align: center !important;
+    }
+    
+    .btn-nova-venda {
+      width: 100% !important;
+      margin-top: 1rem !important;
+      justify-content: center !important;
+      display: flex !important;
+      align-items: center !important;
+    }
+    
+    .stats-card {
+      margin-bottom: 1.5rem !important;
+      margin-top: 1rem !important;
+    }
+    
+    /* Espaçamento entre cards de estatísticas */
+    .stats-row > div {
+      padding: 0.5rem !important;
+      margin-bottom: 1rem !important;
+      margin-top: 0.5rem !important;
+    }
+    
+    /* Espaçamento superior no primeiro card da linha */
+    .stats-row > div:nth-child(1),
+    .stats-row > div:nth-child(2) {
+      margin-top: 1rem !important;
+    }
+  }
+  
+  /* Garantir que o botão ocupe toda a largura em mobile */
+  @media (max-width: 768px) {
+    .d-flex.w-100 {
+      width: 100% !important;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  
+  <!-- Cabeçalho -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+        <div class="header-content flex-grow-1 w-100 text-center text-md-start">
+          <h2 class="fw-bold mb-1 text-center text-md-start">
+            <i class="bi bi-currency-dollar text-success"></i> 
+            {% if is_admin %}
+            Painel de Vendas - Visão Geral
+            {% else %}
+            Meu Painel de Vendas
+            {% endif %}
+          </h2>
+          <p class="text-muted mb-0 text-center text-md-start">
+            {% if is_admin %}
+            Todos os leads com levantamento pago - Prontos para pré-venda
+            {% else %}
+            Seus leads atribuídos pelo Compliance - Prontos para pré-venda
+            {% endif %}
+          </p>
+        </div>
+        <div class="d-flex w-100 w-md-auto mt-3 mt-md-0">
+          <a href="{% url 'vendas:cadastro_venda_direta' %}" class="btn btn-success btn-nova-venda w-100">
+            <i class="bi bi-plus-circle me-2"></i> Nova Venda Direta
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estatísticas -->
+  <div class="row mb-4 stats-row">
+    <div class="col-md-3 col-6">
+      <div class="card stats-card bg-primary text-white">
+        <h3 class="mb-0">{{ leads_prontos }}</h3>
+        <small>
+          {% if is_admin %}
+          Leads Prontos (Sem Pré-Venda)
+          {% else %}
+          Prontos para Abordar
+          {% endif %}
+        </small>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card stats-card bg-warning text-dark">
+        <h3 class="mb-0">{{ total_pre_vendas_pendentes }}</h3>
+        <small>
+          {% if is_admin %}
+          Pré-Vendas Pendentes
+          {% else %}
+          Aguardando Aceite
+          {% endif %}
+        </small>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card stats-card bg-success text-white">
+        <h3 class="mb-0">{{ total_pre_vendas_aceitas }}</h3>
+        <small>
+          {% if is_admin %}
+          Aceites (Finalizar Venda)
+          {% else %}
+          Aceites - Finalizar Venda
+          {% endif %}
+        </small>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card stats-card bg-info text-white">
+        <h3 class="mb-0">{{ total_vendas_mes }}</h3>
+        <small>
+          {% if is_admin %}
+          Vendas Fechadas (Mês)
+          {% else %}
+          Minhas Vendas do Mês
+          {% endif %}
+        </small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card filter-card mb-4">
+    <div class="card-body">
+      <form method="get" class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Status da Venda</label>
+          <select name="status_venda" class="form-select">
+            <option value="todos" {% if filtro_status_venda == 'todos' %}selected{% endif %}>Todos</option>
+            <option value="sem_pre_venda" {% if filtro_status_venda == 'sem_pre_venda' %}selected{% endif %}>Pronto para Pré-Venda</option>
+            <option value="em_pre_venda" {% if filtro_status_venda == 'em_pre_venda' %}selected{% endif %}>Em Pré-Venda</option>
+            <option value="aceito" {% if filtro_status_venda == 'aceito' %}selected{% endif %}>Aceito (Aguardando Finalização)</option>
+            <option value="vendido" {% if filtro_status_venda == 'vendido' %}selected{% endif %}>Vendido</option>
+          </select>
+        </div>
+        
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Captador</label>
+          <select name="captador" class="form-select">
+            <option value="">Todos</option>
+            {% for captador in captadores %}
+            <option value="{{ captador.id }}" {% if filtro_captador == captador.id|stringformat:"s" %}selected{% endif %}>
+              {{ captador.get_full_name|default:captador.username }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Atendente</label>
+          <select name="atendente" class="form-select">
+            <option value="">Todos</option>
+            {% for atendente in atendentes %}
+            <option value="{{ atendente.id }}" {% if filtro_atendente == atendente.id|stringformat:"s" %}selected{% endif %}>
+              {{ atendente.get_full_name|default:atendente.username }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="col-md-3 d-flex align-items-end">
+          <button type="submit" class="btn btn-light w-100">
+            <i class="bi bi-funnel"></i> Filtrar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Seção de Pré-Vendas Aceitas (Prioridade) -->
+  {% if pre_vendas_aceitas %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-success">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-check-circle-fill"></i> Pré-Vendas Aceitas - Aguardando Finalização
+            <span class="badge bg-light text-success">{{ total_pre_vendas_aceitas }}</span>
+          </h5>
+          <small>Clientes que aceitaram a proposta e estão prontos para finalizar a venda</small>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            {% for pre_venda in pre_vendas_aceitas %}
+            <div class="col-md-6 col-lg-4 mb-3">
+              <div class="card border-success h-100 shadow-sm">
+                <div class="card-body">
+                  <!-- Cabeçalho do Card -->
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                      <h6 class="card-title mb-1">
+                        <i class="bi bi-person-check text-success"></i>
+                        {{ pre_venda.lead.nome_completo }}
+                      </h6>
+                      <small class="text-muted">
+                        <i class="bi bi-telephone"></i> {{ pre_venda.lead.telefone }}
+                      </small>
+                    </div>
+                    <span class="badge bg-success">ACEITO</span>
+                  </div>
+
+                  <!-- Dados da Proposta -->
+                  <div class="mb-2 p-2 bg-light rounded">
+                    <div class="d-flex justify-content-between mb-1">
+                      <small class="text-muted">Serviço:</small>
+                      <strong class="text-end" style="font-size: 0.85rem;">{{ pre_venda.get_servico_interesse_display }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                      <small class="text-muted">Valor Proposto:</small>
+                      <strong class="text-success">R$ <span class="format-brl">{{ pre_venda.valor_proposto|floatformat:2 }}</span></strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                      <small class="text-muted">Data Aceite:</small>
+                      <small>{{ pre_venda.data_aceite|date:"d/m/Y" }}</small>
+                    </div>
+                  </div>
+
+                  <!-- Informações Adicionais -->
+                  <div class="mb-2">
+                    <div class="d-flex justify-content-between mb-1">
+                      <small class="text-muted">Captador:</small>
+                      <small>{{ pre_venda.lead.captador.get_full_name|default:pre_venda.lead.captador.username }}</small>
+                    </div>
+                    {% if pre_venda.lead.atendente %}
+                    <div class="d-flex justify-content-between">
+                      <small class="text-muted">Atendente:</small>
+                      <small>{{ pre_venda.lead.atendente.get_full_name|default:pre_venda.lead.atendente.username }}</small>
+                    </div>
+                    {% endif %}
+                  </div>
+
+                  <!-- Ação Principal -->
+                  <div class="d-grid">
+                    <a href="{% url 'vendas:cadastro_venda' pre_venda.id %}" class="btn btn-success btn-sm">
+                      <i class="bi bi-clipboard-check"></i> Finalizar Venda
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Lista de Leads -->
+  <div class="row">
+    {% if leads %}
+      {% for lead in leads %}
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card lead-card status-{{ lead.status_venda }} h-100 shadow-sm">
+          <div class="card-body">
+            <!-- Cabeçalho do Card -->
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div>
+                <h5 class="card-title mb-1">
+                  <i class="bi bi-person-circle text-primary"></i>
+                  {{ lead.nome_completo }}
+                </h5>
+                <small class="text-muted">
+                  <i class="bi bi-telephone"></i> {{ lead.telefone }}
+                </small>
+              </div>
+              <span class="badge bg-{{ lead.status_venda_class }}">
+                {{ lead.status_venda_label }}
+              </span>
+            </div>
+
+            <!-- Informações do PIX -->
+            <div class="mb-3 p-2 bg-light rounded">
+              <div class="d-flex justify-content-between mb-1">
+                <small class="text-muted">PIX Levantamento:</small>
+                <strong class="text-success">
+                  <i class="bi bi-check-circle-fill"></i> PAGO
+                </strong>
+              </div>
+              {% if lead.pix_levantamento %}
+              <div class="d-flex justify-content-between">
+                <small class="text-muted">Valor:</small>
+                <strong>R$ {{ lead.pix_levantamento.valor|floatformat:2 }}</strong>
+              </div>
+              <div class="d-flex justify-content-between">
+                <small class="text-muted">Data:</small>
+                <small>{{ lead.pix_levantamento.data_criacao|date:"d/m/Y H:i" }}</small>
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Informações do Lead -->
+            <div class="mb-3">
+              <div class="d-flex justify-content-between mb-1">
+                <small class="text-muted">Captador:</small>
+                <small>{{ lead.captador.get_full_name|default:lead.captador.username }}</small>
+              </div>
+              {% if lead.atendente %}
+              <div class="d-flex justify-content-between">
+                <small class="text-muted">Atendente:</small>
+                <small>{{ lead.atendente.get_full_name|default:lead.atendente.username }}</small>
+              </div>
+              {% endif %}
+              <div class="d-flex justify-content-between">
+                <small class="text-muted">Cadastrado:</small>
+                <small>{{ lead.data_cadastro|date:"d/m/Y" }}</small>
+              </div>
+            </div>
+
+            <!-- Informação de Pagamento da Entrada -->
+            {% if lead.venda and lead.venda.forma_entrada == 'PIX' %}
+              {% with pix_entrada=lead.venda.pix_entradas.first %}
+                {% if pix_entrada and pix_entrada.pix_code %}
+                  <div class="alert alert-info mb-3 p-2">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                      <small class="fw-bold">
+                        <i class="bi bi-qr-code"></i> PIX Entrada
+                      </small>
+                      <span class="badge bg-{% if pix_entrada.status_pagamento == 'pago' %}success{% else %}warning{% endif %}">
+                        {{ pix_entrada.get_status_pagamento_display }}
+                      </span>
+                    </div>
+                    <div class="input-group input-group-sm">
+                      <input type="text" class="form-control form-control-sm" 
+                             id="pix-{{ lead.id }}" 
+                             value="{{ pix_entrada.pix_code }}" 
+                             readonly 
+                             style="font-size: 0.7rem;">
+                      <button class="btn btn-outline-primary btn-sm" 
+                              type="button" 
+                              onclick="copiarPix('pix-{{ lead.id }}')">
+                        <i class="bi bi-clipboard"></i>
+                      </button>
+                    </div>
+                  </div>
+                {% endif %}
+              {% endwith %}
+            {% endif %}
+
+            <!-- Ações -->
+            <div class="d-grid gap-2">
+              {% if lead.venda %}
+                <a href="{% url 'vendas:detalhes_venda' lead.venda.id %}" class="btn btn-success btn-sm">
+                  <i class="bi bi-eye"></i> Ver Venda
+                </a>
+              {% elif lead.pre_venda %}
+                {% if lead.pre_venda.status == 'ACEITO' %}
+                  <a href="{% url 'vendas:cadastro_venda' lead.pre_venda.id %}" class="btn btn-info btn-sm">
+                    <i class="bi bi-clipboard-check"></i> Finalizar Venda
+                  </a>
+                {% elif lead.pre_venda.status == 'AGUARDANDO_ACEITE' %}
+                  <a href="{% url 'vendas:registrar_aceite' lead.pre_venda.id %}" class="btn btn-warning btn-sm">
+                    <i class="bi bi-pencil-square"></i> Registrar Aceite
+                  </a>
+                {% elif lead.pre_venda.status == 'CONVERTIDO' %}
+                  <span class="badge bg-success">Venda Cadastrada</span>
+                {% elif lead.pre_venda.status == 'RECUSADO' %}
+                  <span class="badge bg-danger">Cliente Recusou</span>
+                {% endif %}
+                <a href="{% url 'vendas:detalhes_pre_venda' lead.pre_venda.id %}" class="btn btn-outline-secondary btn-sm">
+                  <i class="bi bi-eye"></i> Ver Pré-Venda
+                </a>
+              {% else %}
+                <a href="{% url 'vendas:iniciar_pre_venda' lead.id %}" class="btn btn-primary btn-sm">
+                  <i class="bi bi-play-circle"></i> Iniciar Pré-Venda
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="col-12">
+        <div class="alert alert-info text-center">
+          <i class="bi bi-info-circle me-2"></i>
+          Nenhum lead com levantamento pago encontrado.
+          {% if filtro_status_venda != 'todos' or filtro_captador or filtro_consultor %}
+          <br><small>Tente ajustar os filtros.</small>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Paginação -->
+  {% if leads.has_other_pages %}
+  <nav aria-label="Navegação de páginas">
+    <ul class="pagination justify-content-center">
+      {% if leads.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ leads.previous_page_number }}{% if filtro_status_venda != 'todos' %}&status_venda={{ filtro_status_venda }}{% endif %}{% if filtro_captador %}&captador={{ filtro_captador }}{% endif %}{% if filtro_atendente %}&atendente={{ filtro_atendente }}{% endif %}">
+          <span aria-hidden="true">&laquo;</span>
+        </a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">&laquo;</span>
+      </li>
+      {% endif %}
+
+      {% for num in leads.paginator.page_range %}
+        {% if leads.number == num %}
+        <li class="page-item active">
+          <span class="page-link">{{ num }}</span>
+        </li>
+        {% elif num > leads.number|add:'-3' and num < leads.number|add:'3' %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ num }}{% if filtro_status_venda != 'todos' %}&status_venda={{ filtro_status_venda }}{% endif %}{% if filtro_captador %}&captador={{ filtro_captador }}{% endif %}{% if filtro_atendente %}&atendente={{ filtro_atendente }}{% endif %}">{{ num }}</a>
+        </li>
+        {% endif %}
+      {% endfor %}
+
+      {% if leads.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ leads.next_page_number }}{% if filtro_status_venda != 'todos' %}&status_venda={{ filtro_status_venda }}{% endif %}{% if filtro_captador %}&captador={{ filtro_captador }}{% endif %}{% if filtro_atendente %}&atendente={{ filtro_atendente }}{% endif %}">
+          <span aria-hidden="true">&raquo;</span>
+        </a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">&raquo;</span>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+
+</div>
+
+<script>
+// Função para copiar PIX ou Código de Barras
+function copiarPix(elementId) {
+  const input = document.getElementById(elementId);
+  input.select();
+  input.setSelectionRange(0, 99999); // Para mobile
+  
+  navigator.clipboard.writeText(input.value).then(function() {
+    // Mostrar feedback visual
+    const button = input.nextElementSibling;
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i>';
+    button.classList.add('btn-success');
+    button.classList.remove('btn-outline-primary', 'btn-outline-warning');
+    
+    setTimeout(function() {
+      button.innerHTML = originalHTML;
+      button.classList.remove('btn-success');
+      if (elementId.includes('pix')) {
+        button.classList.add('btn-outline-primary');
+      } else {
+        button.classList.add('btn-outline-warning');
+      }
+    }, 2000);
+  }).catch(function(err) {
+    console.error('Erro ao copiar:', err);
+    alert('Erro ao copiar. Tente selecionar e copiar manualmente.');
+  });
+}
+</script>
+{% endblock %}

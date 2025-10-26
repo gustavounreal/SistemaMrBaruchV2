@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Documentação - Sistema Mr. Baruch</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    :root { --primary:#2c3e50; --secondary:#3498db; --success:#27ae60; --warning:#f39c12; --danger:#e74c3c; --light:#ecf0f1; --dark:#34495e; --info:#17a2b8; --purple:#6f42c1; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; background: #f5f7fa; }
+    header { background: linear-gradient(135deg, var(--primary), var(--dark)); color: #fff; padding: 2rem 0; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .header-content { max-width: 1400px; margin: 0 auto; padding: 0 1rem; }
+    h1 { font-size: 2.4rem; margin: 0 0 .5rem; }
+    .subtitle { opacity: .9; }
+    .layout-doc { display: flex; gap: 2rem; align-items: flex-start; max-width: 1400px; margin: 0 auto; padding: 0 1rem; }
+    .menu-lateral { min-width: 260px; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 1.25rem; position: sticky; top: 1.25rem; height: fit-content; max-height: calc(100vh - 3rem); overflow-y: auto; }
+    .sumario-titulo { font-size: 1.1rem; color: var(--primary); margin: 0 0 .75rem; font-weight: 700; }
+    .sumario-lista { list-style: none; margin: 0; padding: 0; }
+    .sumario-link { display: block; padding: .55rem .7rem; border-radius: 6px; color: var(--primary); text-decoration: none; font-weight: 500; margin-bottom: .4rem; transition: background .2s, color .2s; }
+    .sumario-link:hover, .sumario-link.active { background: var(--secondary); color: #fff; }
+    .container-doc { flex: 1; min-width: 0; }
+    .card { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 1.5rem; margin-bottom: 1.5rem; }
+    h2 { color: var(--primary); margin: 0 0 1rem; padding-bottom: .5rem; border-bottom: 2px solid #eef2f6; }
+    h3 { color: var(--dark); margin: 1.2rem 0 .6rem; }
+    h4 { color: #555; margin: 1rem 0 .5rem; font-size: 1.1rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
+    .flow-diagram { overflow-x: auto; }
+    .mermaid { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: .75rem; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e6ebf1; }
+    th { background: var(--primary); color: #fff; font-weight: 600; }
+    tr:nth-child(even) { background: #fafbfc; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: .8rem; font-weight: 600; }
+    .badge-primary { background: var(--primary); color: #fff; }
+    .badge-secondary { background: var(--secondary); color: #fff; }
+    .badge-success { background: var(--success); color: #fff; }
+    .badge-warning { background: var(--warning); color: #fff; }
+    .badge-danger { background: var(--danger); color: #fff; }
+    .badge-info { background: var(--info); color: #fff; }
+    .badge-purple { background: var(--purple); color: #fff; }
+    .badge-muted { background: #95a5a6; color: #fff; }
+    .code { font-family: 'Courier New', monospace; background: #f0f2f5; padding: 2px 6px; border-radius: 3px; font-size: .9em; }
+    footer { background: var(--dark); color: #fff; margin-top: 2rem; }
+    .footer-inner { max-width: 1400px; margin: 0 auto; padding: 1.5rem 1rem; text-align: center; }
+    .header-actions { text-align: right; margin-top: 1rem; }
+    .btn-dashboard {
+      background: linear-gradient(90deg, var(--secondary), var(--primary));
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      padding: 0.6rem 1.6rem;
+      box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+      transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+    }
+    .btn-dashboard:hover, .btn-dashboard:focus {
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(44,62,80,0.16);
+      transform: translateY(-2px) scale(1.03);
+      text-decoration: none;
+    }
+    .btn-dashboard i { font-size: 1.2em; }
+    .icon-large { font-size: 3rem; margin-bottom: 1rem; }
+    .text-center { text-align: center; }
+    .module-card { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid var(--secondary); }
+    .module-card h4 { color: var(--secondary); }
+    ul { line-height: 1.8; }
+    @media (max-width: 900px) { .layout-doc { flex-direction: column; } .menu-lateral { display: none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <h1><i class="bi bi-book"></i> Sistema Mr. Baruch - Documentação Completa</h1>
+      <p class="subtitle">Arquitetura, Módulos, Funcionalidades e Guias Técnicos</p>
+      <div class="header-actions">
+        <a href="{% url 'accounts:dashboard' %}" class="btn-dashboard">
+          <i class="bi bi-arrow-left"></i> Voltar ao Dashboard
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout-doc">
+    <nav class="menu-lateral">
+      <h3 class="sumario-titulo">Sumário</h3>
+      <ul class="sumario-lista">
+        <li><a class="sumario-link" href="#visao-geral">Visão Geral</a></li>
+        <li><a class="sumario-link" href="#arquitetura">Arquitetura</a></li>
+        <li><a class="sumario-link" href="#modulos">Módulos do Sistema</a></li>
+        <li><a class="sumario-link" href="#autenticacao">Autenticação & Grupos</a></li>
+        <li><a class="sumario-link" href="#integ racoes">Integrações</a></li>
+        <li><a class="sumario-link" href="#configuracoes">Sistema de Configurações</a></li>
+        <li><a class="sumario-link" href="#auditoria">Auditoria & Logs</a></li>
+        <li><a class="sumario-link" href="#apis">APIs Disponíveis</a></li>
+        <li><a class="sumario-link" href="#deploy">Deploy & Infraestrutura</a></li>
+        <li><a class="sumario-link" href="#desenvolvimento">Guia para Desenvolvedores</a></li>
+      </ul>
+    </nav>
+
+    <main class="container-doc">
+      <!-- Visão Geral -->
+      <section id="visao-geral" class="card">
+        <h2><i class="bi bi-info-circle"></i> Visão Geral do Sistema</h2>
+        <p>O <strong>Sistema Mr. Baruch</strong> é uma plataforma completa de gestão empresarial desenvolvida em Django, integrando módulos de atendimento, vendas, financeiro, jurídico, pós-venda, marketing, comissões e relatórios em uma interface unificada e intuitiva.</p>
+        
+        <div class="grid">
+          <div class="card">
+            <div class="text-center">
+              <i class="bi bi-bullseye icon-large" style="color: var(--success);"></i>
+            </div>
+            <h4>Propósito</h4>
+            <p>Centralizar e automatizar processos empresariais, desde a captação de leads até o acompanhamento pós-venda, com foco em produtividade e rastreabilidade.</p>
+          </div>
+          
+          <div class="card">
+            <div class="text-center">
+              <i class="bi bi-stack icon-large" style="color: var(--secondary);"></i>
+            </div>
+            <h4>Tecnologias Core</h4>
+            <ul style="margin: .5rem 0;">
+              <li>Django 4.2.7 + Python 3.13</li>
+              <li>Django REST Framework + JWT</li>
+              <li>Bootstrap 5 + Bootstrap Icons</li>
+              <li>SQLite (dev) / PostgreSQL (prod)</li>
+            </ul>
+          </div>
+          
+          <div class="card">
+            <div class="text-center">
+              <i class="bi bi-lightning-charge icon-large" style="color: var(--warning);"></i>
+            </div>
+            <h4>Principais Recursos</h4>
+            <ul style="margin: .5rem 0;">
+              <li>Autenticação híbrida (Session + JWT)</li>
+              <li>Integrações (ASAAS, WhatsApp, Certisign)</li>
+              <li>Sistema dinâmico de configurações</li>
+              <li>Auditoria completa de ações</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Arquitetura -->
+      <section id="arquitetura" class="card">
+        <h2><i class="bi bi-diagram-3"></i> Arquitetura do Sistema</h2>
+        <h3>Estrutura de Apps Django</h3>
+        <p>O sistema é organizado em apps Django modulares e independentes, cada um responsável por um domínio específico:</p>
+        
+        <div class="flow-diagram">
+          <div class="mermaid">
+            graph TB
+              A[Sistema Mr. Baruch] --> B[accounts - Usuários & Auth]
+              A --> C[core - Núcleo & Configs]
+              A --> D[atendimento - Leads & Atendimento]
+              A --> E[vendas - Vendas & Contratos]
+              A --> F[financeiro - Gestão Financeira]
+              A --> G[juridico - Contratos & Docs]
+              A --> H[pos_venda - Pós-venda]
+              A --> I[marketing - Campanhas]
+              A --> J[comissoes - Comissionamento]
+              A --> K[relatorios - Relatórios]
+              A --> L[clientes - Cadastro Clientes]
+              A --> M[diagnosticos - Diagnósticos]
+          </div>
+        </div>
+
+        <h3>Camadas da Aplicação</h3>
+        <table>
+          <thead>
+            <tr><th>Camada</th><th>Responsabilidade</th><th>Componentes Principais</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="badge badge-primary">Apresentação</span></td><td>Interface do usuário</td><td>Templates Django, Bootstrap 5, JavaScript</td></tr>
+            <tr><td><span class="badge badge-secondary">Aplicação</span></td><td>Lógica de negócio</td><td>Views, Forms, Serializers</td></tr>
+            <tr><td><span class="badge badge-success">Domínio</span></td><td>Modelos e regras</td><td>Models, Managers, Validators</td></tr>
+            <tr><td><span class="badge badge-info">Infraestrutura</span></td><td>Serviços externos</td><td>ASAAS, WhatsApp, E-mail, Storage</td></tr>
+            <tr><td><span class="badge badge-warning">Dados</span></td><td>Persistência</td><td>Django ORM, Migrations</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Módulos -->
+      <section id="modulos" class="card">
+        <h2><i class="bi bi-grid-3x3-gap"></i> Módulos do Sistema</h2>
+        
+        <div class="card module-card">
+          <h4><i class="bi bi-person-circle"></i> Accounts - Autenticação e Usuários</h4>
+          <p><strong>Função:</strong> Gerenciamento de usuários, autenticação híbrida (Session + JWT), perfis e grupos de permissões.</p>
+          <ul>
+            <li>Modelo de usuário customizado (AUTH_USER_MODEL = 'accounts.User')</li>
+            <li>Login via email + senha ou Google OAuth</li>
+            <li>Grupos: admin, atendente, captador, financeiro, gestor, funcionarios, clientes</li>
+            <li>Perfis de atendente com dados financeiros (comissões, vendas)</li>
+          </ul>
+          <p><strong>URLs principais:</strong> /accounts/login/, /accounts/dashboard/, /accounts/perfil-atendente/</p>
+        </div>
+
+        <div class="card module-card">
+          <h4><i class="bi bi-headset"></i> Atendimento - Gestão de Leads e Atendimento</h4>
+          <p><strong>Função:</strong> Captação, cadastro e acompanhamento de leads, integração com pagamentos PIX via ASAAS.</p>
+          <ul>
+            <li>Formulário de novo atendimento com origens dinâmicas</li>
+            <li>Geração de cobrança PIX para levantamento de informações</li>
+            <li>Webhook para confirmação de pagamento automática</li>
+            <li>Comissionamento automático de atendentes</li>
+            <li>Painel e área de trabalho do atendente</li>
+          </ul>
+          <p><strong>URLs principais:</strong> /atendimento/novo/, /atendimento/area-de-trabalho/, /atendimento/leads-pix/</p>
+        </div>
+
+        <div class="card module-card">
+          <h4><i class="bi bi-cart-check"></i> Vendas - Gestão de Vendas e Contratos</h4>
+          <p><strong>Função:</strong> Controle de vendas, serviços, pagamentos parcelados e gestão de contratos.</p>
+          <ul>
+            <li>Cadastro de serviços oferecidos</li>
+            <li>Gestão de vendas com parcelas</li>
+            <li>Pagamentos via PIX integrados com ASAAS</li>
+            <li>Status de pagamento e histórico</li>
+          </ul>
+          <p><strong>Status planejado:</strong> Em desenvolvimento</p>
+        </div>
+
+        <div class="card module-card">
+          <h4><i class="bi bi-cash-coin"></i> Financeiro - Controle Financeiro</h4>
+          <p><strong>Função:</strong> Gestão de receitas, despesas, fluxo de caixa, contas a pagar/receber.</p>
+          <ul>
+            <li>Controle de parcelas e pagamentos</li>
+            <li>Integrações com bancos e gateways</li>
+            <li>Relatórios financeiros e conciliação</li>
+            <li>Gestão de clientes ASAAS</li>
+          </ul>
+          <p><strong>Status planejado:</strong> Em desenvolvimento</p>
+        </div>
+
+        <div class="card module-card">
+          <h4><i class="bi bi-file-earmark-text"></i> Jurídico - Gestão de Contratos e Documentos</h4>
+          <p><strong>Função:</strong> Controle de contratos, documentos legais, assinaturas digitais.</p>
+          <ul>
+            <li>Cadastro e armazenamento de contratos</li>
+            <li>Integração futura com Certisign para assinaturas</li>
+            <li>Histórico de documentos legais</li>
+          </ul>
+          <p><strong>Status planejado:</strong> Estrutura criada, aguardando implementação</p>
+        </div>
+
+        <div class="card module-card">
+          <h4><i class="bi bi-award"></i> Pós-Venda - Acompanhamento e Satisfação</h4>
+          <p><strong>Função:</strong> Gestão de relacionamento pós-venda, follow-ups, satisfação do cliente.</p>
+          <ul>
+            <li>Registro de interações pós-venda</li>
+            <li>Pesquisas de satisfação</li>
+            <li>Agendamento de follow-ups</li>
+          </ul>
+          <p><strong>Status planejado:</strong> Estrutura criada</p>
+        </div>
+
+        <div class="card module-card">
+          <h4><i class="bi bi-megaphone"></i> Marketing - Campanhas e Origens</h4>
+          <p><strong>Função:</strong> Gestão de campanhas de marketing, origens de leads, categorias de motivos.</p>
+          <ul>
+            <li>Cadastro de origens de leads dinâmicas</li>
+            <li>Categorização de motivos de contato</li>
+            <li>Gestão de campanhas (futuro)</li>
+          </ul>
+          <p><strong>Status planejado:</strong> Parcialmente implementado</p>
+        </div>
+
+        <div class="card module-card">
+          <h4><i class="bi bi-percent"></i> Comissões - Controle de Comissionamento</h4>
+          <p><strong>Função:</strong> Cálculo e gerenciamento de comissões de vendas e atendentes.</p>
+          <ul>
+            <li>Registro automático de comissões por lead pago</li>
+            <li>Relatórios de comissões por atendente</li>
+            <li>Configurações dinâmicas de valores</li>
+          </ul>
+          <p><strong>Status:</strong> Implementado e funcional</p>
+        </div>
+
+        <div class="card module-card">
+          <h4><i class="bi bi-graph-up-arrow"></i> Relatórios - Análises e Dashboards</h4>
+          <p><strong>Função:</strong> Geração de relatórios gerenciais, dashboards e análises de dados.</p>
+          <ul>
+            <li>Relatórios de vendas por período</li>
+            <li>Análises de performance de atendentes</li>
+            <li>Dashboards executivos</li>
+          </ul>
+          <p><strong>Status planejado:</strong> Estrutura criada</p>
+        </div>
+
+        <div class="card module-card">
+          <h4><i class="bi bi-gear-wide-connected"></i> Core - Núcleo do Sistema</h4>
+          <p><strong>Função:</strong> Funcionalidades centrais, configurações dinâmicas, logs, notificações.</p>
+          <ul>
+            <li>Painel de Configurações em tempo real</li>
+            <li>Sistema de logs e auditoria</li>
+            <li>Notificações internas</li>
+            <li>Context processors e middlewares</li>
+            <li>Integração com ASAAS (service layer)</li>
+          </ul>
+          <p><strong>URLs principais:</strong> /core/painel_configuracoes/, /core/documentacao/</p>
+        </div>
+      </section>
+
+      <!-- Autenticação & Grupos -->
+      <section id="autenticacao" class="card">
+        <h2><i class="bi bi-shield-lock"></i> Autenticação & Sistema de Grupos</h2>
+        
+        <h3>Autenticação Híbrida</h3>
+        <p>O sistema suporta dois métodos de autenticação simultâneos via middleware customizado:</p>
+        <div class="grid">
+          <div class="card">
+            <h4>Sessão Django (Templates)</h4>
+            <ul>
+              <li>Login tradicional via formulário</li>
+              <li>SessionAuthentication</li>
+              <li>Cookie de sessão HTTP-only</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>JWT (APIs)</h4>
+            <ul>
+              <li>Tokens de acesso (12h) e refresh (7d)</li>
+              <li>Blacklist automático após logout</li>
+              <li>Headers: Authorization: Bearer {token}</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>Grupos de Permissões</h3>
+        <table>
+          <thead>
+            <tr><th>Grupo</th><th>Descrição</th><th>Permissões</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-danger">admin</span></td>
+              <td>Administradores do sistema</td>
+              <td>Acesso total a todos os módulos e configurações</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-warning">atendente</span></td>
+              <td>Atendentes/consultores</td>
+              <td>Acesso restrito: atendimento, perfil, área de trabalho</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-info">captador</span></td>
+              <td>Captadores de leads</td>
+              <td>Cadastro de leads, comissionamento</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-success">financeiro</span></td>
+              <td>Equipe financeira</td>
+              <td>Módulo financeiro, relatórios, pagamentos</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-secondary">gestor</span></td>
+              <td>Gestores/supervisores</td>
+              <td>Relatórios, dashboards, visualização ampla</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-muted">funcionarios</span></td>
+              <td>Funcionários gerais</td>
+              <td>Acesso básico ao sistema</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-primary">clientes</span></td>
+              <td>Clientes (usuários externos)</td>
+              <td>Acesso limitado a área do cliente (futuro)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Middleware de Restrição</h3>
+        <p>O sistema possui middleware customizado (<span class="code">AtendenteRestrictionMiddleware</span>) que restringe automaticamente usuários do grupo <strong>atendente</strong> a acessar apenas suas rotas permitidas. Qualquer tentativa de acessar outras áreas resulta em redirecionamento automático.</p>
+      </section>
+
+      <!-- Integrações -->
+      <section id="integracoes" class="card">
+        <h2><i class="bi bi-plug"></i> Integrações Externas</h2>
+        
+        <div class="grid-3">
+          <div class="card">
+            <h4><i class="bi bi-cash-stack" style="color: var(--success);"></i> ASAAS</h4>
+            <p><strong>Status:</strong> <span class="badge badge-success">Implementado</span></p>
+            <ul>
+              <li>Geração de cobranças PIX</li>
+              <li>Webhooks para confirmação de pagamento</li>
+              <li>Gestão de clientes</li>
+              <li>Retry automático em caso de falha</li>
+            </ul>
+            <p><strong>Configuração:</strong> ASAAS_API_TOKEN, ASAAS_API_URL</p>
+          </div>
+
+          <div class="card">
+            <h4><i class="bi bi-whatsapp" style="color: var(--success);"></i> WhatsApp</h4>
+            <p><strong>Status:</strong> <span class="badge badge-warning">Planejado</span></p>
+            <ul>
+              <li>Envio de notificações automáticas</li>
+              <li>Alertas de pagamento</li>
+              <li>Follow-ups programados</li>
+            </ul>
+            <p><strong>Configuração:</strong> WHATSAPP_API_URL, WHATSAPP_API_TOKEN</p>
+          </div>
+
+          <div class="card">
+            <h4><i class="bi bi-pen" style="color: var(--primary);"></i> Certisign</h4>
+            <p><strong>Status:</strong> <span class="badge badge-warning">Planejado</span></p>
+            <ul>
+              <li>Assinaturas digitais de contratos</li>
+              <li>Certificação de documentos</li>
+              <li>Validação jurídica</li>
+            </ul>
+            <p><strong>Configuração:</strong> CERTISIGN_API_URL, CERTISIGN_API_TOKEN</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sistema de Configurações -->
+      <section id="configuracoes" class="card">
+        <h2><i class="bi bi-sliders"></i> Sistema de Configurações Dinâmicas</h2>
+        <p>O sistema possui um painel de configurações em tempo real que permite ajustar comportamentos sem necessidade de redeploy ou alteração de código.</p>
+        
+        <h3>Características</h3>
+        <ul>
+          <li><strong>Tipos suportados:</strong> Booleano, Texto, Número, JSON</li>
+          <li><strong>Validação:</strong> Tipos validados automaticamente ao salvar</li>
+          <li><strong>Auditoria:</strong> Histórico completo de alterações com usuário, data e valores anteriores</li>
+          <li><strong>Categorização:</strong> Configurações agrupadas por domínio (lead_captura, lead_pix, etc.)</li>
+          <li><strong>Interface:</strong> Painel web intuitivo em /core/painel_configuracoes/</li>
+        </ul>
+
+        <h3>Principais Configurações Disponíveis</h3>
+        <table>
+          <thead>
+            <tr><th>Chave</th><th>Tipo</th><th>Padrão</th><th>Descrição</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>LEAD_OBRIGAR_EMAIL</td><td>Boolean</td><td>false</td><td>Tornar e-mail obrigatório no cadastro</td></tr>
+            <tr><td>PIX_VALOR_LEVANTAMENTO</td><td>Número</td><td>0.50</td><td>Valor da cobrança PIX de levantamento</td></tr>
+            <tr><td>COMISSAO_ATIVA</td><td>Boolean</td><td>true</td><td>Ativar comissionamento automático</td></tr>
+            <tr><td>COMISSAO_ATENDENTE_VALOR_FIXO</td><td>Número</td><td>0.50</td><td>Valor fixo de comissão por lead</td></tr>
+            <tr><td>LOG_ATIVO</td><td>Boolean</td><td>true</td><td>Ativar sistema de logs</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Auditoria -->
+      <section id="auditoria" class="card">
+        <h2><i class="bi bi-clipboard-data"></i> Auditoria & Sistema de Logs</h2>
+        <p>Todo o sistema possui rastreabilidade completa de ações através do modelo <span class="code">LogSistema</span>.</p>
+        
+        <h3>Informações Registradas</h3>
+        <div class="grid">
+          <div class="card">
+            <h4>Dados do Log</h4>
+            <ul>
+              <li>Usuário que realizou a ação</li>
+              <li>IP de origem</li>
+              <li>Módulo afetado</li>
+              <li>Tipo de ação (CREATE, UPDATE, DELETE, etc.)</li>
+              <li>Mensagem descritiva</li>
+              <li>Data e hora do evento</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Eventos Auditados</h4>
+            <ul>
+              <li>Criação e edição de leads</li>
+              <li>Alterações de configurações</li>
+              <li>Geração de cobranças PIX</li>
+              <li>Confirmações de pagamento</li>
+              <li>Criação de comissões</li>
+              <li>Alterações de grupos de usuários</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- APIs -->
+      <section id="apis" class="card">
+        <h2><i class="bi bi-code-slash"></i> APIs Disponíveis</h2>
+        <p>O sistema expõe APIs REST para integração externa e uso em aplicações front-end modernas.</p>
+        
+        <h3>Endpoints de Autenticação</h3>
+        <table>
+          <thead>
+            <tr><th>Endpoint</th><th>Método</th><th>Descrição</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>/accounts/api/auth/login/</td><td>POST</td><td>Login tradicional (retorna JWT)</td></tr>
+            <tr><td>/accounts/api/auth/register/</td><td>POST</td><td>Registro de novo usuário</td></tr>
+            <tr><td>/accounts/api/auth/google/</td><td>POST</td><td>Autenticação via Google OAuth</td></tr>
+            <tr><td>/accounts/api/auth/logout/</td><td>POST</td><td>Logout (blacklist do refresh token)</td></tr>
+            <tr><td>/accounts/api/auth/refresh/</td><td>POST</td><td>Renovação de access token</td></tr>
+            <tr><td>/accounts/api/profile/</td><td>GET</td><td>Obter dados do usuário autenticado</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Endpoints de Atendimento</h3>
+        <table>
+          <thead>
+            <tr><th>Endpoint</th><th>Método</th><th>Descrição</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>/atendimento/api/salvar-lead/</td><td>POST</td><td>Cadastrar novo lead</td></tr>
+            <tr><td>/atendimento/api/gerar-pix/{lead_id}/</td><td>POST</td><td>Gerar cobrança PIX para lead</td></tr>
+            <tr><td>/atendimento/webhook/pix/</td><td>POST</td><td>Webhook ASAAS (confirmação pagamento)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Deploy -->
+      <section id="deploy" class="card">
+        <h2><i class="bi bi-cloud-upload"></i> Deploy & Infraestrutura</h2>
+        
+        <h3>Requisitos de Produção</h3>
+        <div class="grid">
+          <div class="card">
+            <h4>Servidor</h4>
+            <ul>
+              <li>Python 3.13+</li>
+              <li>Gunicorn ou uWSGI</li>
+              <li>Nginx (proxy reverso)</li>
+              <li>Supervisor (gerenciador de processos)</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Banco de Dados</h4>
+            <ul>
+              <li>PostgreSQL 14+ (recomendado)</li>
+              <li>Backups automáticos diários</li>
+              <li>Replicação opcional</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Variáveis de Ambiente</h4>
+            <ul>
+              <li>SECRET_KEY</li>
+              <li>DEBUG=False</li>
+              <li>ALLOWED_HOSTS</li>
+              <li>DATABASE_URL</li>
+              <li>ASAAS_API_TOKEN</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>Comandos de Deploy</h3>
+        <div class="code" style="padding: 1rem; background: #2d3748; color: #e2e8f0; border-radius: 6px; overflow-x: auto;">
+# Clonar repositório<br/>
+git clone &lt;repo&gt; && cd sistemaMrBaruch<br/><br/>
+# Criar e ativar ambiente virtual<br/>
+python -m venv venv<br/>
+source venv/bin/activate<br/><br/>
+# Instalar dependências<br/>
+pip install -r requirements.txt<br/><br/>
+# Executar migrações<br/>
+python manage.py migrate<br/><br/>
+# Criar grupos padrão<br/>
+python manage.py criar_grupos<br/><br/>
+# Coletar arquivos estáticos<br/>
+python manage.py collectstatic --noinput<br/><br/>
+# Iniciar com Gunicorn<br/>
+gunicorn sistemaMrBaruchProjeto.wsgi:application --bind 0.0.0.0:8000
+        </div>
+      </section>
+
+      <!-- Desenvolvimento -->
+      <section id="desenvolvimento" class="card">
+        <h2><i class="bi bi-code"></i> Guia para Desenvolvedores</h2>
+        
+        <h3>Estrutura de Diretórios</h3>
+        <div class="code" style="padding: 1rem; background: #f0f2f5; border-radius: 6px; overflow-x: auto; font-size: .9em;">
+sistemaMrBaruch/<br/>
+├── sistemaMrBaruchProjeto/<br/>
+│   ├── accounts/          # App de autenticação<br/>
+│   ├── atendimento/       # App de atendimento<br/>
+│   ├── core/              # App central<br/>
+│   ├── vendas/            # App de vendas<br/>
+│   ├── financeiro/        # App financeiro<br/>
+│   ├── juridico/          # App jurídico<br/>
+│   ├── pos_venda/         # App pós-venda<br/>
+│   ├── marketing/         # App de marketing<br/>
+│   ├── comissoes/         # App de comissões<br/>
+│   ├── relatorios/        # App de relatórios<br/>
+│   ├── clientes/          # App de clientes<br/>
+│   ├── diagnosticos/      # App de diagnósticos<br/>
+│   ├── templates/         # Templates globais<br/>
+│   ├── static/            # Arquivos estáticos<br/>
+│   ├── media/             # Uploads de usuários<br/>
+│   ├── logs/              # Logs do sistema<br/>
+│   ├── sistemaMrBaruchProjeto/  # Settings do projeto<br/>
+│   ├── manage.py<br/>
+│   └── db.sqlite3<br/>
+├── requirements.txt<br/>
+└── README.md
+        </div>
+
+        <h3>Padrões de Desenvolvimento</h3>
+        <div class="grid">
+          <div class="card">
+            <h4>Models</h4>
+            <ul>
+              <li>Usar <span class="code">auto_now_add</span> para data de criação</li>
+              <li>Sempre implementar <span class="code">__str__()</span></li>
+              <li>Adicionar <span class="code">related_name</span> em ForeignKeys</li>
+              <li>Usar <span class="code">verbose_name</span> e <span class="code">help_text</span></li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Views</h4>
+            <ul>
+              <li>Preferir Class-Based Views quando aplicável</li>
+              <li>Sempre usar <span class="code">@login_required</span></li>
+              <li>Validar permissões com <span class="code">@permission_required</span></li>
+              <li>Tratar exceções adequadamente</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Templates</h4>
+            <ul>
+              <li>Extender de <span class="code">base/base.html</span></li>
+              <li>Usar template tags customizadas</li>
+              <li>Seguir padrão Bootstrap 5</li>
+              <li>Manter JavaScript modular</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>Comandos Úteis</h3>
+        <table>
+          <thead>
+            <tr><th>Comando</th><th>Descrição</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="code">python manage.py check</span></td><td>Verificar problemas no projeto</td></tr>
+            <tr><td><span class="code">python manage.py makemigrations</span></td><td>Criar novas migrações</td></tr>
+            <tr><td><span class="code">python manage.py migrate</span></td><td>Aplicar migrações</td></tr>
+            <tr><td><span class="code">python manage.py createsuperuser</span></td><td>Criar usuário admin</td></tr>
+            <tr><td><span class="code">python manage.py criar_grupos</span></td><td>Criar grupos padrão do sistema</td></tr>
+            <tr><td><span class="code">python manage.py runserver</span></td><td>Iniciar servidor de desenvolvimento</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+    </main>
+  </div>
+
+  <footer>
+    <div class="footer-inner">
+      <p><strong>Sistema Mr. Baruch - Documentação Completa</strong> | Versão 1.0 | Última atualização: <span id="current-date"></span></p>
+      <p>Desenvolvido com Django 4.2.7 | Python 3.13 | Bootstrap 5</p>
+    </div>
+  </footer>
+
+  <script>
+    // Inicializa Mermaid
+    mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+
+    // Atualiza data
+    document.getElementById('current-date').textContent = new Date().toLocaleDateString('pt-BR');
+
+    // Navegação do sumário (scroll suave + realce)
+    (function(){
+      const links = Array.from(document.querySelectorAll('.sumario-link'));
+      const sections = Array.from(document.querySelectorAll('section.card'));
+
+      function setActive(id){ links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id)); }
+
+      links.forEach(a => a.addEventListener('click', (e)=>{
+        e.preventDefault();
+        const id = a.getAttribute('href').slice(1);
+        const el = document.getElementById(id);
+        if(!el) return;
+        const y = el.getBoundingClientRect().top + window.scrollY - 16;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+        setTimeout(()=> setActive(id), 250);
+        if (id === 'arquitetura') mermaid.init();
+      }));
+
+      window.addEventListener('scroll', () => {
+        let current = sections[0]?.id;
+        for (const s of sections) {
+          const r = s.getBoundingClientRect();
+          if (r.top <= 120 && r.bottom >= 120) { current = s.id; break; }
+        }
+        if (current) setActive(current);
+      });
+    })();
+
+    // Ctrl+P imprime
+    document.addEventListener('keydown', function(e){ if (e.ctrlKey && e.key === 'p'){ e.preventDefault(); window.print(); }});
+  </script>
+</body>
+</html>

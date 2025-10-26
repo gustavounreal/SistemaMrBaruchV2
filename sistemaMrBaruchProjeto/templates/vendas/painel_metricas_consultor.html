@@ -1,0 +1,633 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Painel de Métricas - Sistema Mr. Baruch</title>
+    
+    <!-- Bootstrap 5.3.0 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(120deg, #eef2ff, #fdf2e9);
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-size: 0.97rem;
+  }
+
+
+  .main-content {
+    margin-left: 280px;
+    padding: 2rem 0;
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #f6f7fb;
+  }
+
+  .central-container {
+    width: 100%;
+    max-width: 1100px;
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(102, 126, 234, 0.08);
+    border: 1.5px solid #e3e6f0;
+    padding: 2.5rem 2rem 2rem 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .hero-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+  }
+
+
+  .hero-header h2 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .hero-header p {
+    margin: 0.5rem 0 0 0;
+    opacity: 0.95;
+  }
+
+  .hero-header .btn-light {
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    font-weight: 600;
+    padding: 0.6rem 1.5rem;
+    transition: all 0.3s;
+  }
+
+  .hero-header .btn-light:hover {
+    background: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+
+  .section-title {
+    font-size: 1.08rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 1.2rem 0 0.7rem 0;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid #667eea;
+    display: flex;
+    align-items: center;
+  }
+
+  .section-title i {
+    margin-right: 0.5rem;
+    color: #667eea;
+  }
+
+
+  .metric-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.1rem 1.1rem 1.1rem 1.3rem;
+    margin-bottom: 1.1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border-left: 4px solid;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+
+  .metric-card.primary { border-left-color: #667eea; }
+  .metric-card.success { border-left-color: #28a745; }
+  .metric-card.warning { border-left-color: #ffc107; }
+  .metric-card.danger { border-left-color: #dc3545; }
+  .metric-card.info { border-left-color: #17a2b8; }
+
+
+  .metric-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.2;
+    color: #2d3748;
+  }
+
+
+  .metric-label {
+    font-size: 0.78rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.4rem;
+    font-weight: 600;
+  }
+
+
+  .metric-icon {
+    font-size: 1.7rem;
+    opacity: 0.13;
+    position: absolute;
+    right: 1.1rem;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .alert-next-payment {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  .alert-next-payment .icon {
+    font-size: 2rem;
+    margin-right: 1rem;
+  }
+
+  .table-vendas {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .table-vendas thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+
+  .table-vendas th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.5px;
+    padding: 0.7rem;
+    border: none;
+  }
+
+
+  .table-vendas td {
+    padding: 0.7rem;
+    vertical-align: middle;
+    border-color: #f0f0f0;
+    font-size: 0.97em;
+  }
+
+  .table-vendas tbody tr {
+    transition: background 0.2s;
+  }
+
+  .table-vendas tbody tr:hover {
+    background: #f8f9ff;
+  }
+
+  .badge-status {
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: inline-block;
+  }
+
+  .badge-pago { background: #d4edda; color: #155724; }
+  .badge-vencido { background: #f8d7da; color: #721c24; }
+  .badge-aberto { background: #fff3cd; color: #856404; }
+
+  .alert-info {
+    background: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 8px;
+    color: #004085;
+  }
+
+  @media (max-width: 768px) {
+    .main-content {
+      margin-left: 0;
+      padding: 1rem;
+    }
+
+    .hero-header h2 {
+      font-size: 1.5rem;
+    }
+
+    .metric-value {
+      font-size: 2rem;
+    }
+
+    .section-title {
+      font-size: 1.2rem;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Include Sidebar -->
+{% include 'vendas/sidebar_vendas.html' %}
+
+
+<!-- Main Content -->
+<div class="main-content">
+  <div class="central-container">
+    <!-- Hero Header -->
+    <div class="hero-header">
+      <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+          <h2><i class="bi bi-graph-up-arrow me-2"></i>Meu Painel de Métricas</h2>
+          <p class="mb-0">
+            <i class="bi bi-person-circle me-2"></i>{{ usuario.get_full_name|default:usuario.email }}
+            {% if is_admin %}<span class="badge bg-light text-dark ms-2">Admin</span>{% endif %}
+          </p>
+          <p class="mb-0 mt-1"><i class="bi bi-calendar3 me-2"></i>{{ mes_atual }}</p>
+        </div>
+        <div class="mt-3 mt-md-0">
+          <a href="{% url 'vendas:painel_leads_pagos' %}" class="btn btn-light">
+            <i class="bi bi-arrow-left me-2"></i>Voltar ao Painel
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Métricas Principais - Row 1: Vendas -->
+    <div class="section-title">
+      <i class="bi bi-cash-stack"></i>Vendas e Faturamento
+    </div>
+    <div class="row">
+      <div class="col-md-3 col-sm-6">
+        <div class="metric-card primary position-relative">
+          <i class="bi bi-cart-check metric-icon"></i>
+          <div class="metric-value">{{ total_vendas }}</div>
+          <div class="metric-label">Total de Vendas</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="metric-card success position-relative">
+          <i class="bi bi-calendar-check metric-icon"></i>
+          <div class="metric-value">{{ total_vendas_mes }}</div>
+          <div class="metric-label">Vendas do Mês</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="metric-card info position-relative">
+          <i class="bi bi-currency-dollar metric-icon"></i>
+          <div class="metric-value">R$ {{ valor_total_vendas|floatformat:2 }}</div>
+          <div class="metric-label">Valor Total de Vendas</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="metric-card success position-relative">
+          <i class="bi bi-cash-coin metric-icon"></i>
+          <div class="metric-value">R$ {{ valor_vendas_mes|floatformat:2 }}</div>
+          <div class="metric-label">Faturamento do Mês</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Métricas Principais - Row 2: Boletos/Parcelas -->
+    <div class="section-title">
+      <i class="bi bi-file-earmark-text"></i>Status de Parcelas (Clientes)
+    </div>
+    <div class="row">
+      <div class="col-md-3 col-sm-6">
+        <div class="metric-card success position-relative">
+          <i class="bi bi-check-circle metric-icon"></i>
+          <div class="metric-value">{{ boletos_pagos }}</div>
+          <div class="metric-label">Boletos Pagos</div>
+          <small class="text-muted d-block mt-2">R$ {{ valor_boletos_pagos|floatformat:2 }}</small>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="metric-card danger position-relative">
+          <i class="bi bi-exclamation-circle metric-icon"></i>
+          <div class="metric-value">{{ boletos_vencidos }}</div>
+          <div class="metric-label">Boletos Vencidos</div>
+          <small class="text-muted d-block mt-2">R$ {{ valor_boletos_vencidos|floatformat:2 }}</small>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="metric-card warning position-relative">
+          <i class="bi bi-clock-history metric-icon"></i>
+          <div class="metric-value">{{ boletos_a_vencer }}</div>
+          <div class="metric-label">Boletos à Vencer</div>
+          <small class="text-muted d-block mt-2">R$ {{ valor_boletos_a_vencer|floatformat:2 }}</small>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="metric-card info position-relative">
+          <i class="bi bi-calendar-event metric-icon"></i>
+          {% if proxima_parcela %}
+          <div class="metric-value" style="font-size: 1.3rem;">{{ proxima_parcela.data_vencimento|date:"d/m/Y" }}</div>
+          <div class="metric-label">Próximo Vencimento</div>
+          <small class="text-muted d-block mt-2">R$ {{ proxima_parcela.valor|floatformat:2 }}</small>
+          {% else %}
+          <div class="metric-value" style="font-size: 1.5rem;">-</div>
+          <div class="metric-label">Sem Vencimentos</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Métricas Principais - Row 3: Comissões -->
+    <div class="section-title">
+      <i class="bi bi-wallet2"></i>Minhas Comissões
+    </div>
+    
+    <!-- Faixa de Comissão Atual -->
+    <div class="row mb-3">
+      <div class="col-12">
+        <div class="alert-next-payment">
+          <div class="row align-items-center">
+            <div class="col-md-4">
+              <h4 class="mb-2"><i class="bi bi-graph-up-arrow me-2"></i>Faixa Atual de Comissão</h4>
+              <div style="font-size: 3rem; font-weight: 700; line-height: 1;">{{ percentual_comissao_atual }}%</div>
+              <small>Faturamento do mês: R$ {{ faturamento_mes_atual|floatformat:2 }}</small>
+            </div>
+            <div class="col-md-8">
+              {% if proxima_faixa_valor %}
+              <h5 class="mb-2"><i class="bi bi-trophy me-2"></i>Próxima Meta</h5>
+              <p class="mb-1">
+                Fature mais <strong>R$ {{ falta_para_proxima_faixa|floatformat:2 }}</strong> para atingir 
+                <strong>{{ proxima_faixa_valor }}</strong> e receber <strong>{{ proxima_faixa_percentual }}%</strong> de comissão!
+              </p>
+              <div class="progress" style="height: 25px; background: rgba(255,255,255,0.3);">
+                <div class="progress-bar bg-success" role="progressbar" 
+                     style="width: {{ faturamento_mes_atual|floatformat:0 }}%; font-weight: 600;"
+                     aria-valuenow="{{ faturamento_mes_atual }}" aria-valuemin="0" aria-valuemax="{{ proxima_faixa_valor }}">
+                  {{ faturamento_mes_atual|floatformat:0 }}%
+                </div>
+              </div>
+              {% else %}
+              <h5 class="mb-2"><i class="bi bi-star-fill me-2"></i>Parabéns!</h5>
+              <p class="mb-0">Você atingiu a faixa máxima de comissão (10%)! Continue assim! 🎉</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="alert-next-payment d-flex align-items-center">
+      <i class="bi bi-calendar-event icon"></i>
+      <div>
+        <strong>Próximo Recebimento:</strong> Todo 5º dia útil do mês vigente<br>
+        <small>Os valores pagos no mês serão creditados no próximo ciclo de pagamento</small>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-4 col-sm-6">
+        <div class="metric-card success position-relative">
+          <i class="bi bi-check2-circle metric-icon"></i>
+          <div class="metric-value">R$ {{ total_comissao_recebida|floatformat:2 }}</div>
+          <div class="metric-label">Total Recebido</div>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6">
+        <div class="metric-card warning position-relative">
+          <i class="bi bi-hourglass-split metric-icon"></i>
+          <div class="metric-value">R$ {{ comissao_mes_vigente|floatformat:2 }}</div>
+          <div class="metric-label">À Receber (Mês Vigente)</div>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6">
+        <div class="metric-card primary position-relative">
+          <i class="bi bi-cash-stack metric-icon"></i>
+          <div class="metric-value">R$ {{ valor_previsto_total|floatformat:2 }}</div>
+          <div class="metric-label">Valor Previsto Total</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela de Vendas Recentes -->
+    <div class="section-title mt-5">
+      <i class="bi bi-list-ul"></i>Minhas Vendas Recentes
+    </div>
+
+    <div class="table-responsive table-vendas">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Valor Total</th>
+            <th>Forma Pagto</th>
+            <th>Parcelas</th>
+            <th>Status Parcelas</th>
+            <th>Data Venda</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in vendas_lista %}
+          <tr>
+            <td>
+              <strong>{{ item.nome_cliente }}</strong>
+            </td>
+            <td>
+              <strong class="text-success">R$ {{ item.venda.valor_total|floatformat:2 }}</strong>
+            </td>
+            <td>
+              <span class="badge bg-secondary">{{ item.venda.get_forma_pagamento_display }}</span>
+            </td>
+            <td>
+              <strong>{{ item.venda.quantidade_parcelas }}x</strong> de R$ {{ item.venda.valor_parcela|floatformat:2 }}
+            </td>
+            <td>
+              {% if item.parcelas_pagas > 0 %}
+              <span class="badge-status badge-pago me-1">{{ item.parcelas_pagas }} Pagas</span>
+              {% endif %}
+              {% if item.parcelas_vencidas > 0 %}
+              <span class="badge-status badge-vencido me-1">{{ item.parcelas_vencidas }} Vencidas</span>
+              {% endif %}
+              {% if item.parcelas_abertas > 0 %}
+              <span class="badge-status badge-aberto">{{ item.parcelas_abertas }} Abertas</span>
+              {% endif %}
+            </td>
+            <td>
+              <i class="bi bi-calendar3 me-1"></i>{{ item.venda.data_venda|date:"d/m/Y" }}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center py-5">
+              <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.3;"></i>
+              <p class="text-muted mt-3">Nenhuma venda encontrada</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Informações Adicionais -->
+    <div class="row mt-4 mb-4">
+      <div class="col-12">
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Informações sobre comissões:</strong> As comissões de consultor seguem escala progressiva por faturamento mensal:
+          <ul class="mb-0 mt-2">
+            <li>Faturamento ≥ R$ 20.000 = <strong>2%</strong> de comissão</li>
+            <li>Faturamento ≥ R$ 30.000 = <strong>3%</strong> de comissão</li>
+            <li>Faturamento ≥ R$ 40.000 = <strong>4%</strong> de comissão</li>
+            <li>Faturamento ≥ R$ 50.000 = <strong>5%</strong> de comissão</li>
+            <li>Faturamento ≥ R$ 60.000 = <strong>6%</strong> de comissão</li>
+            <li>Faturamento ≥ R$ 80.000 = <strong>10%</strong> de comissão</li>
+          </ul>
+          <small class="d-block mt-2">
+            Base de cálculo: Entrada + Boletos pagos no mês. Os pagamentos são realizados todo 5º dia útil do mês vigente, 
+            referente aos valores recebidos pelos clientes no mês anterior. O percentual é aplicado retroativamente sobre todo o faturamento do mês.
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // Função para formatar valores em moeda brasileira (R$)
+  function formatarMoeda(valor) {
+    // Remove qualquer formatação existente
+    const numero = typeof valor === 'string' ? parseFloat(valor.replace(/[^\d,.-]/g, '').replace(',', '.')) : valor;
+    
+    if (isNaN(numero)) return 'R$ 0,00';
+    
+    return numero.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  // Função para formatar números grandes com separador de milhares
+  function formatarNumero(valor) {
+    const numero = typeof valor === 'string' ? parseFloat(valor.replace(/[^\d,.-]/g, '').replace(',', '.')) : valor;
+    
+    if (isNaN(numero)) return '0';
+    
+    return numero.toLocaleString('pt-BR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
+  }
+
+  // Aplicar formatação quando a página carregar
+  document.addEventListener('DOMContentLoaded', function() {
+    // Formatar todos os valores monetários
+    document.querySelectorAll('.metric-value').forEach(function(element) {
+      const texto = element.textContent.trim();
+      
+      // Se contém "R$", formatar como moeda
+      if (texto.includes('R$')) {
+        const valorLimpo = texto.replace('R$', '').trim();
+        element.textContent = formatarMoeda(valorLimpo);
+      }
+    });
+
+    // Formatar valores small (subtotais)
+    document.querySelectorAll('small.text-muted').forEach(function(element) {
+      const texto = element.textContent.trim();
+      
+      if (texto.includes('R$')) {
+        const valorLimpo = texto.replace('R$', '').trim();
+        element.textContent = formatarMoeda(valorLimpo);
+      }
+    });
+
+    // Formatar valores na tabela
+    document.querySelectorAll('td strong.text-success').forEach(function(element) {
+      const texto = element.textContent.trim();
+      
+      if (texto.includes('R$')) {
+        const valorLimpo = texto.replace('R$', '').trim();
+        element.textContent = formatarMoeda(valorLimpo);
+      }
+    });
+
+    // Formatar valores de parcelas
+    document.querySelectorAll('td').forEach(function(element) {
+      const texto = element.textContent.trim();
+      const match = texto.match(/de R\$ ([\d.,]+)/);
+      
+      if (match) {
+        const valorLimpo = match[1];
+        const valorFormatado = formatarMoeda(valorLimpo);
+        element.textContent = element.textContent.replace(/de R\$ [\d.,]+/, `de ${valorFormatado}`);
+      }
+    });
+
+    // Formatar faturamento do mês no card de faixa
+    document.querySelectorAll('small').forEach(function(element) {
+      const texto = element.textContent.trim();
+      
+      if (texto.includes('Faturamento do mês:') || texto.includes('Fature mais')) {
+        const matches = texto.match(/R\$ ([\d.,]+)/g);
+        if (matches) {
+          let novoTexto = texto;
+          matches.forEach(function(match) {
+            const valorLimpo = match.replace('R$', '').trim();
+            const valorFormatado = formatarMoeda(valorLimpo);
+            novoTexto = novoTexto.replace(match, valorFormatado);
+          });
+          element.textContent = novoTexto;
+        }
+      }
+    });
+
+    // Animação de entrada dos cards
+    const cards = document.querySelectorAll('.metric-card');
+    cards.forEach((card, index) => {
+      setTimeout(() => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'all 0.5s ease';
+        
+        setTimeout(() => {
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, 50);
+      }, index * 50);
+    });
+  });
+</script>
+
+</body>
+</html>

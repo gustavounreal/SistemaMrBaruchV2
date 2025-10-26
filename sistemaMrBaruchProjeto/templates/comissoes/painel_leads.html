@@ -1,0 +1,234 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Comissões de Leads - Mr. Baruch{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  
+  <!-- Header -->
+  <div class="row align-items-center mb-4">
+    <div class="col-md-8">
+      <h2 class="fw-bold text-dark mb-1">
+        <i class="bi bi-person-check-fill text-primary me-2"></i>Comissões de Leads
+      </h2>
+      <p class="text-muted mb-0">Gerenciamento de comissões por levantamentos com pagamento PIX confirmado</p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+      <a href="{% url 'comissoes:painel_comissoes' %}" class="btn btn-outline-secondary rounded-pill">
+        <i class="bi bi-arrow-left-circle me-1"></i> Voltar
+      </a>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label for="periodo" class="form-label small fw-semibold">Período</label>
+          <select name="periodo" id="periodo" class="form-select">
+            <option value="7" {% if periodo_selecionado == '7' %}selected{% endif %}>Últimos 7 dias</option>
+            <option value="30" {% if periodo_selecionado == '30' %}selected{% endif %}>Últimos 30 dias</option>
+            <option value="60" {% if periodo_selecionado == '60' %}selected{% endif %}>Últimos 60 dias</option>
+            <option value="90" {% if periodo_selecionado == '90' %}selected{% endif %}>Últimos 90 dias</option>
+            <option value="365" {% if periodo_selecionado == '365' %}selected{% endif %}>Último ano</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="status" class="form-label small fw-semibold">Status de Pagamento</label>
+          <select name="status" id="status" class="form-select">
+            <option value="todos" {% if not status_selecionado or status_selecionado == 'todos' %}selected{% endif %}>Todos</option>
+            <option value="pendente" {% if status_selecionado == 'pendente' %}selected{% endif %}>Pendentes</option>
+            <option value="pago" {% if status_selecionado == 'pago' %}selected{% endif %}>Pagos</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-funnel me-1"></i> Filtrar
+          </button>
+        </div>
+        <div class="col-md-3">
+          <a href="{% url 'comissoes:painel_comissoes_leads' %}" class="btn btn-outline-secondary w-100">
+            <i class="bi bi-x-circle me-1"></i> Limpar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Estatísticas do Período -->
+  <div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h6 class="text-muted text-uppercase small mb-1">Total do Período</h6>
+          <h3 class="fw-bold text-primary mb-0">R$ {{ stats.total_valor|floatformat:2|default:"0,00" }}</h3>
+          <small class="text-muted">{{ stats.total_quantidade|default:0 }} comissões</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h6 class="text-muted text-uppercase small mb-1">Pagas</h6>
+          <h3 class="fw-bold text-success mb-0">R$ {{ stats.total_pagas|floatformat:2|default:"0,00" }}</h3>
+          <small class="text-muted">{{ stats.qtd_pagas|default:0 }} registros</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h6 class="text-muted text-uppercase small mb-1">Pendentes</h6>
+          <h3 class="fw-bold text-warning mb-0">R$ {{ stats.total_pendentes|floatformat:2|default:"0,00" }}</h3>
+          <small class="text-muted">{{ stats.qtd_pendentes|default:0 }} registros</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h6 class="text-muted text-uppercase small mb-1">Valor Configurado</h6>
+          <h3 class="fw-bold text-info mb-0">R$ {{ valor_comissao_config }}</h3>
+          <small class="text-muted">por levantamento</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ranking de Atendentes -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light border-0">
+          <h5 class="mb-0">
+            <i class="bi bi-trophy-fill text-warning me-2"></i>Ranking de Atendentes
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Atendente</th>
+                  <th class="text-end">Comissões</th>
+                  <th class="text-end">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for atendente in ranking_atendentes %}
+                <tr>
+                  <td class="fw-bold">{{ forloop.counter }}º</td>
+                  <td>
+                    {% if atendente.atendente__first_name %}
+                      {{ atendente.atendente__first_name }} {{ atendente.atendente__last_name }}
+                    {% else %}
+                      {{ atendente.atendente__username }}
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <span class="badge bg-primary">{{ atendente.quantidade }}</span>
+                  </td>
+                  <td class="text-end fw-bold text-success">
+                    R$ {{ atendente.total_comissoes|floatformat:2 }}
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+                    Nenhuma comissão registrada no período
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lista de Comissões -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-list-ul text-secondary me-2"></i>Últimas Comissões
+          </h5>
+          <span class="badge bg-secondary">Exibindo últimas 100</span>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Data</th>
+                  <th>Atendente</th>
+                  <th>Lead</th>
+                  <th>Valor</th>
+                  <th>Status</th>
+                  <th>Data Pagamento</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for comissao in comissoes %}
+                <tr>
+                  <td>
+                    <small class="text-muted">{{ comissao.data_criacao|date:"d/m/Y H:i" }}</small>
+                  </td>
+                  <td>
+                    <strong>
+                      {% if comissao.atendente.first_name %}
+                        {{ comissao.atendente.get_full_name }}
+                      {% else %}
+                        {{ comissao.atendente.username }}
+                      {% endif %}
+                    </strong>
+                  </td>
+                  <td>
+                    <small>Lead #{{ comissao.lead.id }}</small>
+                  </td>
+                  <td>
+                    <strong class="text-success">R$ {{ comissao.valor|floatformat:2 }}</strong>
+                  </td>
+                  <td>
+                    {% if comissao.pago %}
+                      <span class="badge bg-success">
+                        <i class="bi bi-check-circle-fill me-1"></i>Pago
+                      </span>
+                    {% else %}
+                      <span class="badge bg-warning">
+                        <i class="bi bi-clock-fill me-1"></i>Pendente
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if comissao.data_pagamento %}
+                      <small>{{ comissao.data_pagamento|date:"d/m/Y" }}</small>
+                    {% else %}
+                      <small class="text-muted">—</small>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center text-muted py-5">
+                    <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+                    <p class="mb-0">Nenhuma comissão encontrada com os filtros aplicados</p>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

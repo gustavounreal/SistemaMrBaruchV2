@@ -1,0 +1,187 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Detalhes da Pré-Venda #{{ pre_venda.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-handshake"></i> 
+                        Detalhes da Pré-Venda #{{ pre_venda.id }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Status da Pré-Venda -->
+                    <div class="alert 
+                        {% if pre_venda.status == 'AGUARDANDO_ACEITE' %}alert-warning
+                        {% elif pre_venda.status == 'ACEITO' %}alert-success
+                        {% elif pre_venda.status == 'RECUSADO' %}alert-danger
+                        {% elif pre_venda.status == 'CONVERTIDO' %}alert-info
+                        {% endif %}">
+                        <h5 class="mb-0">
+                            <strong>Status:</strong> {{ pre_venda.get_status_display }}
+                        </h5>
+                    </div>
+
+                    <div class="row">
+                        <!-- Dados do Lead -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0"><i class="fas fa-user"></i> Lead</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Nome:</strong> {{ pre_venda.lead.nome_completo }}</p>
+                                    <p><strong>Telefone:</strong> {{ pre_venda.lead.telefone }}</p>
+                                    <p><strong>Email:</strong> {{ pre_venda.lead.email|default:"Não informado" }}</p>
+                                    <p><strong>Status Lead:</strong> {{ pre_venda.lead.get_status_display }}</p>
+                                    <p class="mb-0"><strong>Data Contato:</strong> {{ pre_venda.lead.data_contato|date:"d/m/Y" }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dados da Pré-Venda -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0"><i class="fas fa-clipboard-list"></i> Proposta</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Data Registro:</strong> {{ pre_venda.data_registro|date:"d/m/Y H:i" }}</p>
+                                    <p><strong>Atendente:</strong> {{ pre_venda.atendente.usuario.get_full_name }}</p>
+                                    <p><strong>Perfil Prazo/Risco:</strong> {{ pre_venda.get_prazo_risco_display }}</p>
+                                    <p><strong>Serviço de Interesse:</strong> {{ pre_venda.get_servico_interesse_display }}</p>
+                                    <p><strong>Valor Proposto:</strong> R$ <span class="format-brl">{{ pre_venda.valor_proposto|floatformat:2 }}</span></p>
+                                    {% if pre_venda.data_resposta_cliente %}
+                                    <p class="mb-0"><strong>Data Resposta Cliente:</strong> {{ pre_venda.data_resposta_cliente|date:"d/m/Y H:i" }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Motivação e Perfil -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0"><i class="fas fa-heart"></i> Motivação</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if pre_venda.motivo_principal %}
+                                    <p><strong>Motivo Principal:</strong> {{ pre_venda.motivo_principal.texto }}</p>
+                                    <p class="mb-0 text-muted">{{ pre_venda.motivo_principal.categoria.descricao|default:"" }}</p>
+                                    {% else %}
+                                    <p class="text-muted mb-0">Motivo não registrado</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Perfil Emocional -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0"><i class="fas fa-smile"></i> Perfil Emocional</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if pre_venda.perfil_emocional %}
+                                    <p><strong>Perfil:</strong> {{ pre_venda.perfil_emocional.texto }}</p>
+                                    <p class="mb-0 text-muted">{{ pre_venda.perfil_emocional.categoria.descricao|default:"" }}</p>
+                                    {% else %}
+                                    <p class="text-muted mb-0">Perfil não registrado</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Observações -->
+                    {% if pre_venda.observacoes %}
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0"><i class="fas fa-comment"></i> Observações</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-0">{{ pre_venda.observacoes|linebreaks }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Aceite do Cliente -->
+                    {% if pre_venda.aceite_cliente != None %}
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card {% if pre_venda.aceite_cliente %}border-success{% else %}border-danger{% endif %}">
+                                <div class="card-header {% if pre_venda.aceite_cliente %}bg-success text-white{% else %}bg-danger text-white{% endif %}">
+                                    <h5 class="mb-0"><i class="fas fa-clipboard-check"></i> Resposta do Cliente</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Cliente:</strong> 
+                                        {% if pre_venda.aceite_cliente %}
+                                            <span class="badge badge-success">ACEITOU a proposta</span>
+                                        {% else %}
+                                            <span class="badge badge-danger">RECUSOU a proposta</span>
+                                        {% endif %}
+                                    </p>
+                                    {% if pre_venda.data_resposta_cliente %}
+                                    <p class="mb-0"><strong>Data da Resposta:</strong> {{ pre_venda.data_resposta_cliente|date:"d/m/Y H:i" }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Venda Convertida -->
+                    {% if pre_venda.venda_convertida %}
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="alert alert-info">
+                                <h5><i class="fas fa-check-circle"></i> Venda Convertida</h5>
+                                <p class="mb-0">
+                                    Esta pré-venda foi convertida em venda. 
+                                    <a href="{% url 'vendas:detalhes_venda' pre_venda.venda_convertida.id %}" 
+                                       class="alert-link">Ver detalhes da venda #{{ pre_venda.venda_convertida.id }}</a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Botões de Ação -->
+                    <div class="row">
+                        <div class="col-12">
+                            <a href="{% url 'vendas:listar_vendas' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+
+                            {% if pre_venda.status == 'AGUARDANDO_ACEITE' %}
+                                <a href="{% url 'vendas:registrar_aceite' pre_venda.id %}" class="btn btn-warning">
+                                    <i class="fas fa-clipboard-check"></i> Registrar Aceite
+                                </a>
+                            {% elif pre_venda.status == 'ACEITO' and not pre_venda.venda_convertida %}
+                                <a href="{% url 'vendas:cadastro_venda' pre_venda.id %}" class="btn btn-success">
+                                    <i class="fas fa-shopping-cart"></i> Cadastrar Venda Completa
+                                </a>
+                            {% endif %}
+
+                            <a href="{% url 'vendas:iniciar_pre_venda' pre_venda.lead.id %}" class="btn btn-info">
+                                <i class="fas fa-edit"></i> Editar Pré-Venda
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

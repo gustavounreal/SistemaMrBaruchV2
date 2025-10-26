@@ -1,0 +1,194 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Gestão Pós-Venda - Compliance{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<style>
+    .compliance-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+    .filter-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    .table-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    /* badges styled centrally in static/css/dashboard.css */
+    
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+        cursor: pointer;
+    }
+    .progress-bar-custom {
+        height: 8px;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="compliance-header">
+        <h2 class="mb-1"><i class="bi bi-file-earmark-check me-2"></i>Gestão Pós-Venda</h2>
+        <p class="mb-0">Acompanhamento de documentos e contratos</p>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-card">
+        <form method="get" action="{% url 'compliance:gestao_pos_venda_lista' %}" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Status do Processo</label>
+                <select name="status" class="form-select">
+                    <option value="">Todos os status</option>
+                    {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if status_filtro == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabela de Gestões -->
+    <div class="table-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">
+                <i class="bi bi-table"></i> 
+                Gestões encontradas: <span class="badge bg-primary">{{ gestoes.count }}</span>
+            </h5>
+            <a href="{% url 'compliance:painel' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar ao Painel
+            </a>
+        </div>
+
+        {% if gestoes %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Lead</th>
+                        <th>Pré-Venda</th>
+                        <th>Status</th>
+                        <th>Progresso</th>
+                        <th>Responsável</th>
+                        <th>Data Criação</th>
+                        <th>Última Atualização</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for gestao in gestoes %}
+                    <tr data-href="{% url 'compliance:gestao_pos_venda_detalhes' gestao.id %}" onclick="window.location.href=this.dataset.href">
+                        <td><strong>#{{ gestao.id }}</strong></td>
+                        <td>
+                            <i class="bi bi-person-circle"></i> 
+                            {{ gestao.pre_venda.lead.nome_completo|truncatechars:30 }}
+                        </td>
+                        <td>
+                            <span class="badge bg-info">#{{ gestao.pre_venda.id }}</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ gestao.status }}">
+                                {{ gestao.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1 progress-bar-custom me-2" style="width: 100px;">
+                                    {% if gestao.status == 'CONFERENCIA_CADASTRO' %}
+                                        <div class="progress-bar bg-info" style="width: 14%"></div>
+                                    {% elif gestao.status == 'COLETA_DOCUMENTOS' %}
+                                        <div class="progress-bar bg-warning" style="width: 28%"></div>
+                                    {% elif gestao.status == 'EMISSAO_CONTRATO' %}
+                                        <div class="progress-bar bg-warning" style="width: 42%"></div>
+                                    {% elif gestao.status == 'ENVIO_CONTRATO' %}
+                                        <div class="progress-bar bg-info" style="width: 56%"></div>
+                                    {% elif gestao.status == 'AGUARDANDO_ASSINATURA' %}
+                                        <div class="progress-bar bg-primary" style="width: 70%"></div>
+                                    {% elif gestao.status == 'ASSINATURA_CONFIRMADA' %}
+                                        <div class="progress-bar bg-success" style="width: 85%"></div>
+                                    {% elif gestao.status == 'CONCLUIDO' %}
+                                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                                    {% elif gestao.status == 'PENDENTE_CORRECAO' %}
+                                        <div class="progress-bar bg-danger" style="width: 35%"></div>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">
+                                    {% if gestao.status == 'CONFERENCIA_CADASTRO' %}14%
+                                    {% elif gestao.status == 'COLETA_DOCUMENTOS' %}28%
+                                    {% elif gestao.status == 'EMISSAO_CONTRATO' %}42%
+                                    {% elif gestao.status == 'ENVIO_CONTRATO' %}56%
+                                    {% elif gestao.status == 'AGUARDANDO_ASSINATURA' %}70%
+                                    {% elif gestao.status == 'ASSINATURA_CONFIRMADA' %}85%
+                                    {% elif gestao.status == 'CONCLUIDO' %}100%
+                                    {% elif gestao.status == 'PENDENTE_CORRECAO' %}35%
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </td>
+                        <td>
+                            {% if gestao.responsavel %}
+                                <i class="bi bi-person-check"></i> 
+                                {{ gestao.responsavel.username }}
+                            {% else %}
+                                <span class="text-muted">Não atribuído</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ gestao.data_criacao|date:"d/m/Y H:i" }}</small>
+                        </td>
+                        <td>
+                            <small>{{ gestao.data_ultima_atualizacao|date:"d/m/Y H:i" }}</small>
+                        </td>
+                        <td>
+                            <a href="{% url 'compliance:gestao_pos_venda_detalhes' gestao.id %}" 
+                               class="btn btn-sm btn-outline-primary"
+                               onclick="event.stopPropagation();">
+                                <i class="bi bi-eye"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle fs-1 d-block mb-3"></i>
+            <h5>Nenhuma gestão pós-venda encontrada</h5>
+            <p class="mb-0">Aguarde vendas concluídas para iniciar o processo.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-submit ao mudar o filtro de status
+    document.querySelector('select[name="status"]').addEventListener('change', function() {
+        this.form.submit();
+    });
+</script>
+{% endblock %}

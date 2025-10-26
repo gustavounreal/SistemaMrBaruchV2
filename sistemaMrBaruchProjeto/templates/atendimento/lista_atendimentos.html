@@ -1,0 +1,51 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Meus Atendimentos</h2>
+        <a href="{% url 'atendimento:novo_atendimento' %}" class="btn btn-success">
+            ➕ Novo Atendimento
+        </a>
+    </div>
+
+    {% if atendimentos %}
+    <div class="row">
+        {% for atendimento in atendimentos %}
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ atendimento.nome_completo }}</h5>
+                    <p class="card-text">
+                        <strong>📞:</strong> {{ atendimento.telefone }}<br>
+                        <strong>🎯:</strong> {{ atendimento.motivo.texto }}<br>
+                        <strong>📊:</strong> {{ atendimento.perfil_emocional.texto }}<br>
+                        <strong>📅:</strong> {{ atendimento.data_criacao|date:"d/m/Y H:i" }}
+                    </p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge 
+                            {% if atendimento.status == 'PAGO' %}bg-success
+                            {% elif atendimento.status == 'AGUARDANDO_PAGAMENTO' %}bg-warning
+                            {% else %}bg-secondary{% endif %}">
+                            {{ atendimento.get_status_display }}
+                        </span>
+                        <a href="#" class="btn btn-sm btn-outline-primary">Ver Detalhes</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+        <h4>Nenhum atendimento encontrado</h4>
+        <p>Comece criando seu primeiro atendimento!</p>
+        <a href="{% url 'atendimento:novo_atendimento' %}" class="btn btn-success">
+            ➕ Criar Primeiro Atendimento
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{% include 'atendimento/sidebar_atendente.html' %}
+{% endblock %}

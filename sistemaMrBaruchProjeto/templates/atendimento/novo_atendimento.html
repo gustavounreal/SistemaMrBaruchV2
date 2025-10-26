@@ -1,0 +1,610 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novo Atendimento - Sistema Mr. Baruch</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/novo_atendimento.css' %}">
+    <style>
+        /* === CPF/CNPJ Consulta Buttons === */
+        .cpf-cnpj-links {
+            display: flex;
+            gap: 10px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+        .cpf-cnpj-links a {
+            font-size: 0.97rem;
+            font-weight: 600;
+            border-radius: 8px !important;
+            padding: 8px 18px !important;
+            box-shadow: 0 2px 8px rgba(59,130,246,0.08);
+            transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+            border-width: 2px !important;
+            letter-spacing: 0.01em;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .cpf-cnpj-links a.btn-outline-primary {
+            background: linear-gradient(90deg, #e3f0ff 0%, #f8fafc 100%);
+            color: #2563eb !important;
+            border-color: #2563eb !important;
+        }
+        .cpf-cnpj-links a.btn-outline-primary:hover {
+            background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+            color: #fff !important;
+            box-shadow: 0 4px 16px rgba(59,130,246,0.15);
+            transform: translateY(-2px);
+        }
+        .cpf-cnpj-links a.btn-outline-secondary {
+            background: linear-gradient(90deg, #f3f4f6 0%, #f8fafc 100%);
+            color: #374151 !important;
+            border-color: #374151 !important;
+        }
+        .cpf-cnpj-links a.btn-outline-secondary:hover {
+            background: linear-gradient(90deg, #374151 0%, #6b7280 100%);
+            color: #fff !important;
+            box-shadow: 0 4px 16px rgba(55,65,81,0.13);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+            <h5 id="loadingTitle">Processando...</h5>
+            <p id="loadingMessage" class="text-muted">Aguarde enquanto processamos</p>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <div class="form-header text-center">
+            <h4 class="mb-1">Novo Atendimento</h4>
+            <small class="opacity-75">Registre o lead e gere o PIX em etapas simples</small>
+        </div>
+
+        <div class="form-body">
+            <!-- Indicador de etapas -->
+            <div class="step-indicator">
+                <div class="step active" id="step1">1</div>
+                <div class="step-line" id="line1"></div>
+                <div class="step" id="step2">2</div>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <form id="atendimentoForm" method="post">
+                {% csrf_token %}
+
+                <!-- Etapa 1 -->
+                <div class="form-step active" id="step1Content">
+                    <h5 class="text-primary text-center mb-4"><i class="bi bi-person-plus me-2"></i>Registro do Lead</h5>
+                    
+                    <div class="mb-3">
+                        <label class="form-label required" for="id_nome_completo">Nome Completo</label>
+                        <input type="text" class="form-control" id="id_nome_completo" placeholder="Digite o nome completo" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required" for="id_captador">Captador (ID do usuário)</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="id_captador" placeholder="Informe o ID do captador" required>
+                            <button type="button" class="btn btn-outline-primary" onclick="pesquisarCaptador()">Pesquisar</button>
+                        </div>
+                        <small id="captadorInfo" class="form-text text-muted ms-1" style="display:block;"></small>
+                    </div>
+    <script>
+    
+
+    function pesquisarCaptador() {
+        const captadorId = document.getElementById('id_captador').value.trim();
+        if (!captadorId) {
+            document.getElementById('captadorInfo').textContent = 'Informe o ID do captador.';
+            return;
+        }
+        fetch(`/accounts/api/buscar-captador/${captadorId}/`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    let nome = data.nome_completo;
+                    if (!nome || nome === 'undefined') {
+                        nome = data.username;
+                    }
+                    document.getElementById('captadorInfo').textContent = `Captador: ${nome} (${data.email})`;
+                } else {
+                    document.getElementById('captadorInfo').textContent = data.message || 'Captador não encontrado.';
+                }
+            })
+            .catch(() => {
+                document.getElementById('captadorInfo').textContent = 'Erro ao buscar captador.';
+            });
+    }
+    // ...existing code...
+    </script>
+                    <div class="mb-3">
+                        <label class="form-label required" for="id_cpf_cnpj">CPF/CNPJ</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="id_cpf_cnpj" placeholder="Informe o CPF ou CNPJ">
+                            <button type="button" class="btn btn-outline-info" onclick="buscarLeadPorCpfCnpj()" title="Buscar lead existente">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                        </div>
+                        <small class="form-text text-muted ms-1" style="display:block;">
+                            Obrigatório apenas para <b>Fazer Levantamento</b>. Para leads sem levantamento, pode deixar em branco.
+                        </small>
+                        <div id="leadEncontradoInfo" style="display:none;" class="alert alert-info mt-2 p-2">
+                            <small><i class="bi bi-info-circle"></i> <span id="leadInfoTexto"></span></small>
+                        </div>
+                        <!-- Links para consulta de CPF/CNPJ -->
+                        <div class="cpf-cnpj-links d-flex flex-row w-100" style="gap: 10px;">
+                            <a href="https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/consultapublica.asp" target="_blank" class="btn btn-outline-primary flex-fill text-nowrap">
+                                <i class="bi bi-person-vcard"></i> Consultar Situação do CPF na Receita Federal
+                            </a>
+                            <a href="https://servicos.receita.fazenda.gov.br/servicos/cnpjreva/cnpjreva_solicitacao.asp" target="_blank" class="btn btn-outline-secondary flex-fill text-nowrap">
+                                <i class="bi bi-building"></i> Consultar Situação do CNPJ na Receita Federal
+                            </a>
+                        </div>
+                        <small class="form-text d-block mt-1">Use os links acima para validar a titularidade e situação do CPF ou CNPJ informado.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required" for="id_telefone">Telefone / WhatsApp</label>
+                        <input type="text" class="form-control" id="id_telefone" placeholder="(00) 00000-0000" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="id_email">E-mail</label>
+                        <input type="email" class="form-control" id="id_email" placeholder="email@exemplo.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required" for="id_origem">Origem do Lead</label>
+                        <select class="form-select" id="id_origem" required>
+                            <option value="" selected disabled>Selecione a origem</option>
+                            {% for origem in origens %}
+                                <option value="{{ origem.id }}">{{ origem.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4 btn-row-mobile" id="botoesAcao">
+                        <button type="button" class="btn btn-warning btn-step" onclick="salvarLeadSemLevantamento()" id="btnSemLevantamento">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Não fez Levantamento
+                        </button>
+
+                        <button type="button" class="btn btn-success btn-step" onclick="salvarLead()" id="btnFazerLevantamento">
+                            <i class="bi bi-arrow-right me-2"></i>Fazer Levantamento
+                        </button>
+                        
+                        <!-- Botão de Reativação (oculto por padrão) -->
+                        <button type="button" class="btn btn-primary btn-step" onclick="reativarLead()" id="btnReativar" style="display:none;">
+                            <i class="bi bi-arrow-repeat me-2"></i>Reativar Lead
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Etapa 2 -->
+                <div class="form-step" id="step2Content">
+                    <h5 class="text-primary text-center mb-4"><i class="bi bi-qr-code me-2"></i>Geração do PIX</h5>
+
+                    <div id="pixContent" class="text-center">
+                        <p class="text-muted">Carregando informações do PIX...</p>
+                    </div>
+                </div>
+                <!-- Botão Voltar para Área de trabalho 
+    <div class="row mt-5">
+      <div class="col-12 d-flex justify-content-center">
+        <a href="{% url 'atendimento:area_de_trabalho_atendente' %}" class="btn btn-outline-secondary rounded-pill px-4 py-2 shadow-sm">
+          <i class="bi bi-arrow-left-circle me-1"></i> Voltar para Área de trabalho
+        </a>
+      </div>-->
+    </div>                
+            </form>
+        </div>
+        
+    </div>
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+
+
+    let currentStep = 1;
+let leadId = null;
+let leadEncontrado = null; // Armazena dados do lead encontrado
+
+function showStep(step) {
+    // Oculta todas as etapas
+    document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+    // Mostra a etapa atual
+    document.getElementById(`step${step}Content`).classList.add('active');
+    // Atualiza o indicador de progresso
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active', 'completed'));
+
+    if (step >= 1) document.getElementById('step1').classList.add('active');
+    if (step >= 2) {
+        document.getElementById('step1').classList.add('completed');
+        document.getElementById('line1').classList.add('active');
+        document.getElementById('step2').classList.add('active');
+    }
+    currentStep = step;
+}
+
+function showAlert(message, type = 'info') {
+    const alertContainer = document.getElementById('alertContainer');
+    alertContainer.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+    setTimeout(() => alertContainer.innerHTML = '', 5000);
+}
+
+function showLoading(title, msg) {
+    document.getElementById('loadingTitle').textContent = title;
+    document.getElementById('loadingMessage').textContent = msg;
+    document.getElementById('loadingOverlay').style.display = 'flex';
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+// Função para buscar lead existente por CPF/CNPJ
+function buscarLeadPorCpfCnpj() {
+    const cpfCnpj = document.getElementById('id_cpf_cnpj').value.trim();
+    
+    if (!cpfCnpj) {
+        showAlert('Informe o CPF/CNPJ para realizar a busca.', 'warning');
+        return;
+    }
+    
+    showLoading('Buscando lead...', 'Verificando se já existe cadastro');
+    
+    fetch('/atendimento/api/buscar-lead-cpf-cnpj/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({ cpf_cnpj: cpfCnpj })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.encontrado) {
+            leadEncontrado = data.lead;
+            
+            // Preenche os campos com os dados do lead
+            document.getElementById('id_nome_completo').value = data.lead.nome_completo;
+            document.getElementById('id_telefone').value = data.lead.telefone;
+            document.getElementById('id_email').value = data.lead.email || '';
+            if (data.lead.origem_id) {
+                document.getElementById('id_origem').value = data.lead.origem_id;
+            }
+            
+            // Exibe informações sobre o lead encontrado
+            let infoTexto = `Lead encontrado: ${data.lead.nome_completo} - Status: ${data.lead.status_display}`;
+            
+            // Alerta se há múltiplos leads com mesmo CPF/CNPJ
+            if (data.aviso) {
+                showAlert(data.aviso, 'warning');
+                infoTexto += `<br><small class="text-warning"> ${data.aviso}</small>`;
+            }
+            
+            // Ajusta botões de acordo com a situação
+            const btnSemLevantamento = document.getElementById('btnSemLevantamento');
+            const btnFazerLevantamento = document.getElementById('btnFazerLevantamento');
+            const btnReativar = document.getElementById('btnReativar');
+            
+            if (data.situacao === 'pre_venda_ativa') {
+                // Lead tem pré-venda ativa
+                infoTexto += ' Este lead possui uma pré-venda ATIVA em andamento!';
+                showAlert('Lead possui pré-venda ativa. Verifique antes de prosseguir.', 'warning');
+                btnSemLevantamento.style.display = 'none';
+                btnFazerLevantamento.style.display = 'none';
+                btnReativar.style.display = 'none';
+                
+            } else if (data.situacao === 'levantamento_feito') {
+                // Fez levantamento mas não tem pré-venda ativa
+                infoTexto += '  Levantamento pago. Pronto para pré-venda!';
+                btnSemLevantamento.style.display = 'none';
+                btnFazerLevantamento.style.display = 'none';
+                btnReativar.style.display = 'block';
+                btnReativar.innerHTML = '<i class="bi bi-arrow-right me-2"></i>Iniciar Pré-Venda';
+                showAlert('Lead encontrado! Clique em "Iniciar Pré-Venda" para continuar.', 'success');
+                
+            } else if (data.situacao === 'reativacao') {
+                // Teve pré-venda mas não concluiu
+                infoTexto += ' Lead necessita reativação (pré-venda anterior não concluída)';
+                btnSemLevantamento.style.display = 'none';
+                btnFazerLevantamento.style.display = 'block';
+                btnReativar.style.display = 'block';
+                btnReativar.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Reativar para Pré-Venda';
+                
+                if (data.historico.ultima_pre_venda && data.historico.ultima_pre_venda.motivo_recusa) {
+                    infoTexto += `<br><small>Motivo recusa anterior: ${data.historico.ultima_pre_venda.motivo_recusa}</small>`;
+                }
+                showAlert('Lead encontrado com histórico. Pode fazer novo levantamento ou reativar direto para pré-venda.', 'info');
+                
+            } else {
+                // Lead novo ou sem histórico relevante
+                infoTexto += '  Lead cadastrado mas sem levantamento';
+                btnSemLevantamento.style.display = 'block';
+                btnFazerLevantamento.style.display = 'block';
+                btnReativar.style.display = 'none';
+                showAlert('Lead encontrado! Continue com o fluxo normal.', 'info');
+            }
+            
+            document.getElementById('leadInfoTexto').innerHTML = infoTexto;
+            document.getElementById('leadEncontradoInfo').style.display = 'block';
+            
+        } else {
+            // Nenhum lead encontrado
+            leadEncontrado = null;
+            document.getElementById('leadEncontradoInfo').style.display = 'none';
+            showAlert('Nenhum lead encontrado com este CPF/CNPJ. Você pode cadastrar um novo.', 'info');
+            
+            // Mostra todos os botões
+            document.getElementById('btnSemLevantamento').style.display = 'block';
+            document.getElementById('btnFazerLevantamento').style.display = 'block';
+            document.getElementById('btnReativar').style.display = 'none';
+        }
+    })
+    .catch(err => {
+        console.error('Erro ao buscar lead:', err);
+        showAlert('Erro ao buscar lead. Tente novamente.', 'danger');
+    })
+    .finally(() => hideLoading());
+}
+
+// Função para reativar lead (encaminhar para pré-venda)
+function reativarLead() {
+    if (!leadEncontrado) {
+        showAlert('Nenhum lead selecionado para reativação.', 'danger');
+        return;
+    }
+    
+    showLoading('Reativando lead...', 'Preparando para pré-venda');
+    
+    // Redireciona para o módulo de pré-venda com o ID do lead
+    setTimeout(() => {
+        window.location.href = `/vendas/pre-venda/iniciar/${leadEncontrado.id}/`;
+    }, 1000);
+}
+
+// Função para salvar lead sem levantamento
+function salvarLeadSemLevantamento() {
+    const nome = document.getElementById('id_nome_completo').value.trim();
+    const tel = document.getElementById('id_telefone').value.trim();
+    const email = document.getElementById('id_email').value.trim();
+    const origem = document.getElementById('id_origem').value;
+    const cpfCnpj = document.getElementById('id_cpf_cnpj').value.trim();
+
+    if (!nome || !tel) {
+        showAlert('Preencha nome e telefone corretamente.', 'danger');
+        return;
+    }
+    if (!origem) {
+        showAlert('Selecione a origem do lead.', 'danger');
+        return;
+    }
+    
+    // Se lead já existe, apenas atualizar status
+    if (leadEncontrado) {
+        showAlert('Lead já existe no sistema. Redirecionando...', 'info');
+        setTimeout(() => {
+            window.location.href = '/atendimento/leads-pix/';
+        }, 1500);
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('nome_completo', nome);
+    formData.append('telefone', tel);
+    formData.append('email', email);
+    formData.append('origem', origem);
+    formData.append('cpf_cnpj', cpfCnpj);
+
+    showLoading('Salvando lead...', 'Aguarde enquanto registramos o lead');
+
+    fetch('/atendimento/api/salvar-lead-sem-levantamento/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = '/atendimento/leads-pix/';
+        } else {
+            showAlert(data.message || 'Erro ao salvar lead', 'danger');
+        }
+    })
+    .catch(() => showAlert('Erro de conexão. Tente novamente.', 'danger'))
+    .finally(() => hideLoading());
+}
+
+// Etapa 1 → salva o lead e carrega etapa 2
+function salvarLead() {
+    const nome = document.getElementById('id_nome_completo').value.trim();
+    const tel = document.getElementById('id_telefone').value.trim();
+    const email = document.getElementById('id_email').value.trim();
+    const origem = document.getElementById('id_origem').value;
+    const cpfCnpj = document.getElementById('id_cpf_cnpj').value.trim();
+
+    // CPF/CNPJ obrigatório apenas para "Fazer Levantamento"
+    if (!nome || !tel) {
+        showAlert('Preencha nome e telefone corretamente.', 'danger');
+        return;
+    }
+    if (!cpfCnpj) {
+        showAlert('O campo CPF/CNPJ é obrigatório para fazer levantamento.', 'danger');
+        return;
+    }
+    // Limpa o valor para apenas números
+    const cpfCnpjLimpo = cpfCnpj.replace(/\D/g, '');
+    let tipoDoc = '';
+    if (cpfCnpjLimpo.length === 11) tipoDoc = 'CPF';
+    else if (cpfCnpjLimpo.length === 14) tipoDoc = 'CNPJ';
+    else tipoDoc = 'Desconhecido';
+    if (!validarCpfCnpj(cpfCnpjLimpo)) {
+        showAlert(tipoDoc + ' inválido.', 'danger');
+        return;
+    }
+// Validação de CPF/CNPJ
+function validarCpfCnpj(valor) {
+    valor = valor.replace(/\D/g, '');
+    if (valor.length === 11) {
+        return validarCPF(valor);
+    } else if (valor.length === 14) {
+        return validarCNPJ(valor);
+    }
+    return false;
+}
+
+function validarCPF(cpf) {
+    if (!cpf || cpf.length !== 11 || /^([0-9])\1+$/.test(cpf)) return false;
+    let soma = 0, resto;
+    for (let i = 1; i <= 9; i++) soma += parseInt(cpf[i-1]) * (11 - i);
+    resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+    if (resto !== parseInt(cpf[9])) return false;
+    soma = 0;
+    for (let i = 1; i <= 10; i++) soma += parseInt(cpf[i-1]) * (12 - i);
+    resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+    return resto === parseInt(cpf[10]);
+}
+
+function validarCNPJ(cnpj) {
+    if (!cnpj || cnpj.length !== 14 || /^([0-9])\1+$/.test(cnpj)) return false;
+    let tamanho = cnpj.length - 2;
+    let numeros = cnpj.substring(0, tamanho);
+    let digitos = cnpj.substring(tamanho);
+    let soma = 0;
+    let pos = tamanho - 7;
+    for (let i = tamanho; i >= 1; i--) {
+        soma += numeros.charAt(tamanho - i) * pos--;
+        if (pos < 2) pos = 9;
+    }
+    let resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+    if (resultado != digitos.charAt(0)) return false;
+    tamanho++;
+    numeros = cnpj.substring(0, tamanho);
+    soma = 0;
+    pos = tamanho - 7;
+    for (let i = tamanho; i >= 1; i--) {
+        soma += numeros.charAt(tamanho - i) * pos--;
+        if (pos < 2) pos = 9;
+    }
+    resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+    return resultado == digitos.charAt(1);
+}
+    
+    // Se lead já existe, usar o ID dele
+    if (leadEncontrado) {
+        leadId = leadEncontrado.id;
+        showStep(2);
+        carregarPix(leadId);
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('nome_completo', nome);
+    formData.append('telefone', tel);
+    formData.append('email', email);
+    formData.append('origem', origem);
+    formData.append('cpf_cnpj', cpfCnpj);
+
+    showLoading('Salvando lead...', 'Aguarde enquanto registramos o cliente');
+
+    fetch('/atendimento/api/salvar-lead/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            leadId = data.lead_id;
+            showAlert('Lead cadastrado com sucesso!', 'success');
+            showStep(2); // Transição para a etapa 2
+            carregarPix(leadId); // Carrega os dados do PIX
+        } else {
+            showAlert(data.message || 'Erro ao salvar lead', 'danger');
+        }
+    })
+    .catch(() => showAlert('Erro de conexão. Tente novamente.', 'danger'))
+    .finally(() => hideLoading());
+}
+
+// Etapa 2 → carrega dados do PIX
+function carregarPix(id) {
+    showLoading('Gerando PIX...', 'Conectando ao Asaas...');
+    fetch(`/atendimento/api/gerar-pix/${id}/`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('pixContent').innerHTML = `
+                    <div class="mb-3 text-start">
+                        <label class="form-label">Valor do PIX</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-primary text-white"><i class="bi bi-currency-dollar"></i></span>
+                            <input class="form-control fixed-value" value="${data.valor}" readonly>
+                        </div>
+                    </div>
+                    <div class="mb-3 text-start">
+                        <label class="form-label">Copia e Cola</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-success text-white"><i class="bi bi-clipboard"></i></span>
+                            <input id="pixCode" class="form-control fixed-value" value="${data.pix_copia_cola}" readonly>
+                            <button class="btn btn-outline-secondary" onclick="copiarPix()">Copiar</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('pixContent').innerHTML = `<div class="alert alert-danger">Erro ao gerar PIX.</div>`;
+            }
+        })
+        .catch(() => document.getElementById('pixContent').innerHTML = `<div class="alert alert-danger">Falha de conexão.</div>`)
+        .finally(() => hideLoading());
+}
+
+function copiarPix() {
+    const input = document.getElementById('pixCode');
+    input.select();
+    document.execCommand('copy');
+    showAlert('Código PIX copiado!', 'success');
+}
+
+    function copiarPix() {
+        const input = document.getElementById('pixCode');
+        input.select();
+        document.execCommand('copy');
+        showAlert('Código PIX copiado!', 'success');
+    }
+
+    // Formatação automática do telefone
+    document.getElementById('id_telefone')?.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        
+        if (value.length > 11) {
+            value = value.substring(0, 11);
+        }
+        
+        if (value.length > 10) {
+            value = value.replace(/^(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+        } else if (value.length > 6) {
+            value = value.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+        } else if (value.length > 2) {
+            value = value.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+        } else if (value.length > 0) {
+            value = value.replace(/^(\d{0,2})/, '($1');
+        }
+        
+        e.target.value = value;
+    });
+    </script>
+
+    {% include 'atendimento/sidebar_atendente.html' %}
+</body>
+</html>

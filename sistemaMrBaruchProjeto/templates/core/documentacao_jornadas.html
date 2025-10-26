@@ -1,0 +1,347 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Jornadas do Sistema - Mr. Baruch{% endblock %}
+
+{% block extra_head %}
+<style>
+  .journey-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 3rem;
+  }
+  
+  .journey-card {
+    transition: all 0.3s ease;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    height: 100%;
+  }
+  
+  .journey-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border-color: #667eea;
+  }
+  
+  .journey-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+  }
+  
+  .status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+  }
+  
+  .feature-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    margin: 0.25rem;
+  }
+  
+  .journey-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  
+  <!-- Header -->
+  <div class="journey-header">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+      <div>
+        <h1 class="fw-bold mb-2">Jornadas do Sistema</h1>
+        <p class="mb-0 opacity-90">Selecione uma jornada para ver a documentação completa do fluxo</p>
+      </div>
+      <a href="{% url 'core:central_documentacao' %}" class="btn btn-light">
+        Voltar à Central
+      </a>
+    </div>
+  </div>
+  
+  <!-- Jornadas Disponíveis -->
+  <div class="row g-4">
+    
+    <!-- Jornada: Lead -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card journey-card">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-start mb-3">
+            <div class="journey-icon bg-primary me-3">
+              LE
+            </div>
+            <div class="flex-grow-1">
+              <h5 class="fw-bold mb-1">Jornada Lead</h5>
+              <span class="status-badge bg-success text-white">Disponível</span>
+            </div>
+          </div>
+          
+          <p class="text-muted mb-3">
+            Fluxo completo de captação, cadastro, pagamento PIX e comissionamento
+          </p>
+          
+          <div class="mb-3">
+            <span class="feature-tag">Captação</span>
+            <span class="feature-tag">PIX</span>
+            <span class="feature-tag">Comissão</span>
+          </div>
+          
+          <a href="{% url 'core:documentacao_lead' %}?from=jornadas" class="btn btn-primary w-100">
+            Ver Documentação
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Jornada: Atendimento -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card journey-card journey-disabled">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-start mb-3">
+            <div class="journey-icon bg-success me-3">
+              AT
+            </div>
+            <div class="flex-grow-1">
+              <h5 class="fw-bold mb-1">Jornada Atendimento</h5>
+              <span class="status-badge bg-secondary text-white">Em Breve</span>
+            </div>
+          </div>
+          
+          <p class="text-muted mb-3">
+            Processo de atendimento ao cliente desde o primeiro contato até o fechamento
+          </p>
+          
+          <div class="mb-3">
+            <span class="feature-tag">Contato</span>
+            <span class="feature-tag">Follow-up</span>
+            <span class="feature-tag">Qualificação</span>
+          </div>
+          
+          <button class="btn btn-outline-secondary w-100" disabled>
+            Em Desenvolvimento
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Jornada: Vendas -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card journey-card journey-disabled">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-start mb-3">
+            <div class="journey-icon bg-warning me-3">
+              VE
+            </div>
+            <div class="flex-grow-1">
+              <h5 class="fw-bold mb-1">Jornada Vendas</h5>
+              <span class="status-badge bg-secondary text-white">Em Breve</span>
+            </div>
+          </div>
+          
+          <p class="text-muted mb-3">
+            Ciclo de vendas completo: proposta, negociação, fechamento e contratos
+          </p>
+          
+          <div class="mb-3">
+            <span class="feature-tag">Proposta</span>
+            <span class="feature-tag">Negociação</span>
+            <span class="feature-tag">Contrato</span>
+          </div>
+          
+          <button class="btn btn-outline-secondary w-100" disabled>
+            Em Desenvolvimento
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Jornada: Financeiro -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card journey-card journey-disabled">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-start mb-3">
+            <div class="journey-icon bg-success me-3">
+              FI
+            </div>
+            <div class="flex-grow-1">
+              <h5 class="fw-bold mb-1">Jornada Financeiro</h5>
+              <span class="status-badge bg-secondary text-white">Em Breve</span>
+            </div>
+          </div>
+          
+          <p class="text-muted mb-3">
+            Gestão financeira completa: contas a pagar/receber, fluxo de caixa e reconciliação
+          </p>
+          
+          <div class="mb-3">
+            <span class="feature-tag">Contas</span>
+            <span class="feature-tag">Fluxo</span>
+            <span class="feature-tag">Relatórios</span>
+          </div>
+          
+          <button class="btn btn-outline-secondary w-100" disabled>
+            Em Desenvolvimento
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Jornada: Pós-venda -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card journey-card journey-disabled">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-start mb-3">
+            <div class="journey-icon bg-info me-3">
+              PV
+            </div>
+            <div class="flex-grow-1">
+              <h5 class="fw-bold mb-1">Jornada Pós-venda</h5>
+              <span class="status-badge bg-secondary text-white">Em Breve</span>
+            </div>
+          </div>
+          
+          <p class="text-muted mb-3">
+            Acompanhamento pós-venda: satisfação, suporte, renovações e fidelização
+          </p>
+          
+          <div class="mb-3">
+            <span class="feature-tag">Suporte</span>
+            <span class="feature-tag">NPS</span>
+            <span class="feature-tag">Renovação</span>
+          </div>
+          
+          <button class="btn btn-outline-secondary w-100" disabled>
+            Em Desenvolvimento
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Jornada: Jurídico -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card journey-card journey-disabled">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-start mb-3">
+            <div class="journey-icon bg-danger me-3">
+              JU
+            </div>
+            <div class="flex-grow-1">
+              <h5 class="fw-bold mb-1">Jornada Jurídico</h5>
+              <span class="status-badge bg-secondary text-white">Em Breve</span>
+            </div>
+          </div>
+          
+          <p class="text-muted mb-3">
+            Processos jurídicos: análise de contratos, compliance e gestão de documentos
+          </p>
+          
+          <div class="mb-3">
+            <span class="feature-tag">Contratos</span>
+            <span class="feature-tag">Compliance</span>
+            <span class="feature-tag">Processos</span>
+          </div>
+          
+          <button class="btn btn-outline-secondary w-100" disabled>
+            Em Desenvolvimento
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Jornada: Marketing -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card journey-card journey-disabled">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-start mb-3">
+            <div class="journey-icon bg-purple me-3" style="background: #6f42c1;">
+              MK
+            </div>
+            <div class="flex-grow-1">
+              <h5 class="fw-bold mb-1">Jornada Marketing</h5>
+              <span class="status-badge bg-secondary text-white">Em Breve</span>
+            </div>
+          </div>
+          
+          <p class="text-muted mb-3">
+            Estratégias de marketing: campanhas, captação de leads e análise de conversão
+          </p>
+          
+          <div class="mb-3">
+            <span class="feature-tag">Campanhas</span>
+            <span class="feature-tag">Leads</span>
+            <span class="feature-tag">Analytics</span>
+          </div>
+          
+          <button class="btn btn-outline-secondary w-100" disabled>
+            Em Desenvolvimento
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Jornada: Diagnóstico -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card journey-card journey-disabled">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-start mb-3">
+            <div class="journey-icon bg-info me-3">
+              DI
+            </div>
+            <div class="flex-grow-1">
+              <h5 class="fw-bold mb-1">Jornada Diagnóstico</h5>
+              <span class="status-badge bg-secondary text-white">Em Breve</span>
+            </div>
+          </div>
+          
+          <p class="text-muted mb-3">
+            Processo de análise e diagnóstico empresarial para identificação de oportunidades
+          </p>
+          
+          <div class="mb-3">
+            <span class="feature-tag">Análise</span>
+            <span class="feature-tag">Relatório</span>
+            <span class="feature-tag">Soluções</span>
+          </div>
+          
+          <button class="btn btn-outline-secondary w-100" disabled>
+            Em Desenvolvimento
+          </button>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+  
+  <!-- Info Footer -->
+  <div class="alert alert-info mt-5 border-0">
+    <div class="d-flex align-items-start">
+      <div class="flex-grow-1">
+        <h6 class="fw-bold mb-2">O que é uma Jornada?</h6>
+        <p class="mb-0">
+          Uma jornada documenta o fluxo completo de um processo no sistema, desde o início até o fim, 
+          incluindo todos os passos, telas, configurações e integrações envolvidas.
+        </p>
+      </div>
+    </div>
+  </div>
+  
+</div>
+{% endblock %}

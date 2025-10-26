@@ -1,0 +1,323 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Jurídico - Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .btn-cyan {
+        background-color: #17a2b8;
+        border-color: #17a2b8;
+        color: white;
+    }
+    .btn-cyan:hover {
+        background-color: #138496;
+        border-color: #117a8b;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-briefcase-fill me-2"></i>Módulo Jurídico</h2>
+                    <p class="text-muted mb-0">Gerencie contratos e documentos legais</p>
+                </div>
+                <div>
+                    <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Voltar ao Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de estatísticas -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="text-muted mb-1">Aguardando Geração</h6>
+                            <h3 class="mb-0">{{ contratos_aguardando }}</h3>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-hourglass-split text-warning fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="text-muted mb-1">Pendente Assinatura</h6>
+                            <h3 class="mb-0">{{ contratos_gerados }}</h3>
+                        </div>
+                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-pencil-square text-info fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="text-muted mb-1">Contratos Assinados</h6>
+                            <h3 class="mb-0">{{ contratos_assinados }}</h3>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-check-circle text-success fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="text-muted mb-1">Total de Contratos</h6>
+                            <h3 class="mb-0">{{ total_contratos }}</h3>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-files text-primary fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações rápidas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        <i class="bi bi-lightning-fill text-warning me-2"></i>Ações Rápidas
+                    </h5>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{% url 'juridico:lista_contratos' %}" class="btn btn-primary">
+                            <i class="bi bi-list-ul me-2"></i>Ver Todos os Contratos
+                        </a>
+                        <a href="{% url 'juridico:lista_contratos' %}?status=AGUARDANDO_GERACAO" class="btn btn-warning">
+                            <i class="bi bi-hourglass-split me-2"></i>Aguardando Geração
+                        </a>
+                        <a href="{% url 'juridico:lista_contratos' %}?status=GERADO" class="btn btn-info">
+                            <i class="bi bi-exclamation-circle me-2"></i>Pendente Assinatura
+                        </a>
+                        <a href="{% url 'juridico:painel_contratos_enviados' %}" class="btn btn-cyan">
+                            <i class="bi bi-send me-2"></i>Contratos Enviados
+                        </a>
+                        <a href="{% url 'juridico:lista_contratos' %}?status=ASSINADO" class="btn btn-success">
+                            <i class="bi bi-check-circle me-2"></i>Contratos Assinados
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Contratos aguardando geração -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">
+                        <i class="bi bi-hourglass-split text-warning me-2"></i>
+                        Contratos Aguardando Geração
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if contratos_pendentes %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Venda</th>
+                                        <th>Data</th>
+                                        <th>Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for contrato in contratos_pendentes %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-2">
+                                                    <i class="bi bi-person text-primary"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold">{{ contrato.cliente.lead.nome_completo|truncatechars:30 }}</div>
+                                                    <small class="text-muted">
+                                                        {% if contrato.cliente and contrato.cliente.lead and contrato.cliente.lead.cpf_cnpj %}
+                                                            {{ contrato.cliente.lead.cpf_cnpj }}
+                                                        {% else %}
+                                                            Sem CPF
+                                                        {% endif %}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">ID: {{ contrato.venda.id }}</span>
+                                        </td>
+                                        <td>
+                                            <small>{{ contrato.data_criacao|date:"d/m/Y" }}</small>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'juridico:gerar_contrato' contrato.venda.id %}" 
+                                               class="btn btn-sm btn-primary">
+                                                <i class="bi bi-file-earmark-plus"></i> Gerar
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            <p>Nenhum contrato aguardando geração</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Contratos recentes -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history text-primary me-2"></i>
+                        Contratos Recentes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if contratos_recentes %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Contrato</th>
+                                        <th>Cliente</th>
+                                        <th>Status</th>
+                                        <th>Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for contrato in contratos_recentes %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ contrato.numero_contrato }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold">{{ contrato.cliente.lead.nome_completo|truncatechars:25 }}</div>
+                                            <small class="text-muted">{{ contrato.data_atualizacao|date:"d/m/Y H:i" }}</small>
+                                        </td>
+                                        <td>
+                                            {% if contrato.status == 'GERADO' %}
+                                                <span class="badge bg-info">{{ contrato.get_status_display }}</span>
+                                            {% elif contrato.status == 'ENVIADO' %}
+                                                <span class="badge bg-warning">{{ contrato.get_status_display }}</span>
+                                            {% elif contrato.status == 'ASSINADO' %}
+                                                <span class="badge bg-success">{{ contrato.get_status_display }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ contrato.get_status_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'juridico:detalhes_contrato' contrato.id %}" 
+                                                   class="btn btn-sm btn-outline-primary"
+                                                   title="Ver Detalhes">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                {% if contrato.status == 'GERADO' %}
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-success"
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#modalEnviarContrato{{ contrato.id }}"
+                                                        title="Enviar para Assinatura">
+                                                    <i class="bi bi-send"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            <p>Nenhum contrato recente</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modais de Ação Rápida -->
+{% for contrato in contratos_recentes %}
+{% if contrato.status == 'GERADO' %}
+<div class="modal fade" id="modalEnviarContrato{{ contrato.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+                <form method="post" action="{% url 'juridico:marcar_contrato_enviado' contrato.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-send me-2"></i>Enviar Contrato para Assinatura
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Contrato:</strong> {{ contrato.numero_contrato }}</p>
+                    <p><strong>Cliente:</strong> {{ contrato.cliente.lead.nome_completo }}</p>
+                    <hr>
+                    <div class="mb-3">
+                        <label for="observacao{{ contrato.id }}" class="form-label">Observações (opcional)</label>
+                        <textarea class="form-control" id="observacao{{ contrato.id }}" name="observacao" rows="3" 
+                                  placeholder="Ex: Enviado via WhatsApp, E-mail enviado, etc."></textarea>
+                    </div>
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        O status do contrato será alterado para <strong>"Enviado ao Cliente"</strong>.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-lg me-2"></i>Confirmar Envio
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,306 @@
+{% extends 'core/doc_base.html' %}
+
+{% block doc_content %}
+
+<h2 id="visao-geral">📋 Visão Geral</h2>
+<p>
+  Implementação completa de um sistema de comissões profissional para o Mr. Baruch, focado inicialmente na 
+  <strong>jornada de leads</strong> com pagamento PIX confirmado via webhook ASAAS.
+</p>
+
+<h2 id="arquitetura">🎯 Arquitetura da Solução</h2>
+
+<h3 id="decisao-profissional">✅ Por que NOT usar .env?</h3>
+
+<div class="doc-alert doc-alert-success">
+  <strong>Decisão Profissional:</strong> Usar <code>ConfiguracaoSistema</code> (banco de dados)
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Aspecto</th>
+      <th>.env</th>
+      <th>ConfiguracaoSistema (DB)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Alteração</strong></td>
+      <td>❌ Requer reiniciar servidor</td>
+      <td>✅ Tempo real via web</td>
+    </tr>
+    <tr>
+      <td><strong>Auditoria</strong></td>
+      <td>❌ Sem histórico</td>
+      <td>✅ <code>ultima_atualizacao</code></td>
+    </tr>
+    <tr>
+      <td><strong>Validação</strong></td>
+      <td>❌ Manual</td>
+      <td>✅ Tipo (NUMERO, BOOLEANO)</td>
+    </tr>
+    <tr>
+      <td><strong>Interface</strong></td>
+      <td>❌ Editor de texto</td>
+      <td>✅ Painel web intuitivo</td>
+    </tr>
+    <tr>
+      <td><strong>Backup</strong></td>
+      <td>❌ Arquivo separado</td>
+      <td>✅ Junto com banco</td>
+    </tr>
+    <tr>
+      <td><strong>Multi-tenant</strong></td>
+      <td>❌ Global</td>
+      <td>✅ Por instalação</td>
+    </tr>
+    <tr>
+      <td><strong>Permissões</strong></td>
+      <td>❌ Acesso filesystem</td>
+      <td>✅ Por grupo Django</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Conclusão:</strong> ConfiguracaoSistema é <strong>significativamente mais profissional</strong> para parâmetros de negócio que mudam com frequência.</p>
+
+<h2 id="estrutura">🏗️ Estrutura Implementada</h2>
+
+<h3 id="modelo">1. Modelo Atualizado</h3>
+<p class="text-muted"><code>comissoes/models.py</code></p>
+
+<pre><code class="language-python">class ComissaoLead(models.Model):
+    lead = models.ForeignKey('marketing.Lead', ...)
+    atendente = models.ForeignKey(User, ...)
+    valor = models.DecimalField(...)  # SEM default hardcoded
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    pago = models.BooleanField(default=False)  # ✅ NOVO
+    data_pagamento = models.DateField(null=True, blank=True)  # ✅ NOVO
+    observacoes = models.TextField(blank=True)  # ✅ NOVO
+    
+    @classmethod
+    def obter_valor_comissao(cls):
+        """Busca valor da configuração COMISSAO_ATENDENTE_VALOR_FIXO"""
+        config = ConfiguracaoSistema.objects.get(chave='COMISSAO_ATENDENTE_VALOR_FIXO')
+        return Decimal(config.valor)</code></pre>
+
+<div class="doc-card">
+  <strong>Melhorias:</strong>
+  <ul class="mb-0">
+    <li>✅ Valor dinâmico via ConfiguracaoSistema</li>
+    <li>✅ Campos para controle de pagamento</li>
+    <li>✅ Observações para auditoria</li>
+    <li>✅ Meta ordering por data_criacao</li>
+  </ul>
+</div>
+
+<h3 id="urls">2. URLs</h3>
+<p class="text-muted"><code>comissoes/urls.py</code></p>
+
+<pre><code class="language-python">urlpatterns = [
+    path('', views.painel_comissoes, name='painel_comissoes'),
+    path('leads/', views.painel_comissoes_leads, name='painel_comissoes_leads'),
+    path('relatorio/', views.relatorio_comissoes, name='relatorio_comissoes'),
+]</code></pre>
+
+<p>Registrado em <code>sistemaMrBaruchProjeto/urls.py</code>:</p>
+<pre><code class="language-python">path('comissoes/', include('comissoes.urls', namespace='comissoes')),</code></pre>
+
+<h3 id="views">3. Views</h3>
+<p class="text-muted"><code>comissoes/views.py</code></p>
+
+<h4>3.1 painel_comissoes</h4>
+<p>Painel principal com:</p>
+<ul>
+  <li>✅ Total de comissões (geral)</li>
+  <li>✅ Pagas vs Pendentes</li>
+  <li>✅ Comissões do mês atual</li>
+  <li>✅ Valor configurado atual</li>
+  <li>✅ Cards para diferentes tipos (Leads, Vendas, Captadores)</li>
+</ul>
+
+<h4>3.2 painel_comissoes_leads</h4>
+<p>Painel específico de leads com:</p>
+<ul>
+  <li>✅ Filtros: Período (7/30/60/90/365 dias), Status (pago/pendente/todos), Atendente</li>
+  <li>✅ Estatísticas do período filtrado</li>
+  <li>✅ Ranking de atendentes (top 10)</li>
+  <li>✅ Lista das últimas 100 comissões</li>
+  <li>✅ Aggregates: Sum, Count com Q objects</li>
+</ul>
+
+<h2 id="configuracoes">⚙️ Configurações do Sistema</h2>
+
+<p>Configurações gerenciadas via <code>ConfiguracaoSistema</code>:</p>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Chave</th>
+      <th>Valor Padrão</th>
+      <th>Tipo</th>
+      <th>Descrição</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>COMISSAO_ATIVA</code></td>
+      <td>true</td>
+      <td><span class="doc-badge doc-badge-info">BOOLEANO</span></td>
+      <td>Ativar/desativar sistema automático</td>
+    </tr>
+    <tr>
+      <td><code>COMISSAO_ATENDENTE_VALOR_FIXO</code></td>
+      <td>0.50</td>
+      <td><span class="doc-badge doc-badge-info">NUMERO</span></td>
+      <td>Valor por levantamento PIX confirmado</td>
+    </tr>
+    <tr>
+      <td><code>COMISSAO_CAPTADOR_PERCENTUAL</code></td>
+      <td>3</td>
+      <td><span class="doc-badge doc-badge-info">NUMERO</span></td>
+      <td>% para captadores externos</td>
+    </tr>
+    <tr>
+      <td><code>COMISSAO_VENDAS_MIN</code></td>
+      <td>2</td>
+      <td><span class="doc-badge doc-badge-info">NUMERO</span></td>
+      <td>% mínimo sobre vendas</td>
+    </tr>
+    <tr>
+      <td><code>COMISSAO_VENDAS_MAX</code></td>
+      <td>10</td>
+      <td><span class="doc-badge doc-badge-info">NUMERO</span></td>
+      <td>% máximo sobre vendas</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="doc-alert doc-alert-info">
+  <strong>Command para popular:</strong>
+  <pre class="mt-2 mb-0"><code>python manage.py configurar_comissoes</code></pre>
+</div>
+
+<h2 id="funcionalidades">📊 Funcionalidades Implementadas</h2>
+
+<h3 id="painel-principal">✅ Painel Principal de Comissões</h3>
+<ul>
+  <li>✅ Cards de estatísticas gerais</li>
+  <li>✅ Total acumulado histórico</li>
+  <li>✅ Pagas vs Pendentes</li>
+  <li>✅ Comissões do mês atual</li>
+  <li>✅ Módulos por tipo (Leads, Vendas, Captadores)</li>
+  <li>✅ Link rápido para configurações</li>
+</ul>
+
+<h3 id="painel-leads">✅ Painel de Comissões de Leads</h3>
+<ul>
+  <li>✅ Filtros por período (7/30/60/90/365 dias)</li>
+  <li>✅ Filtro por status de pagamento</li>
+  <li>✅ Estatísticas do período filtrado</li>
+  <li>✅ Ranking de atendentes (top 10)</li>
+  <li>✅ Lista últimas 100 comissões</li>
+  <li>✅ Exibição de valor configurado atual</li>
+  <li>✅ Badge de status (Pago/Pendente)</li>
+  <li>✅ Data de pagamento (se aplicável)</li>
+</ul>
+
+<h3 id="sistema-config">✅ Sistema de Configuração</h3>
+<ul>
+  <li>✅ 5 parâmetros de comissão em ConfiguracaoSistema</li>
+  <li>✅ Command <code>configurar_comissoes</code> para seed</li>
+  <li>✅ Método <code>obter_valor_comissao()</code> no modelo</li>
+  <li>✅ Valor dinâmico (sem hardcode)</li>
+  <li>✅ Auditoria via <code>ultima_atualizacao</code></li>
+</ul>
+
+<h2 id="urls-disponiveis">🔗 URLs Disponíveis</h2>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>URL</th>
+      <th>View</th>
+      <th>Descrição</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>/comissoes/</code></td>
+      <td><code>painel_comissoes</code></td>
+      <td>Painel principal</td>
+    </tr>
+    <tr>
+      <td><code>/comissoes/leads/</code></td>
+      <td><code>painel_comissoes_leads</code></td>
+      <td>Painel específico de leads</td>
+    </tr>
+    <tr>
+      <td><code>/comissoes/relatorio/</code></td>
+      <td><code>relatorio_comissoes</code></td>
+      <td>Relatórios (futuro)</td>
+    </tr>
+    <tr>
+      <td><code>/core/painel_configuracoes/</code></td>
+      <td>-</td>
+      <td>Ajustar valores de comissão</td>
+    </tr>
+    <tr>
+      <td><code>/admin/core/configuracaosistema/</code></td>
+      <td>-</td>
+      <td>Admin Django (avançado)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="como-testar">🧪 Como Testar</h2>
+
+<h3>1. Acessar Painel Principal</h3>
+<pre><code>http://localhost:8000/comissoes/</code></pre>
+<p>✅ Deve exibir estatísticas e 3 cards de tipos de comissão</p>
+
+<h3>2. Acessar Painel de Leads</h3>
+<pre><code>http://localhost:8000/comissoes/leads/</code></pre>
+<p>✅ Deve exibir filtros, ranking e lista de comissões</p>
+
+<h3>3. Verificar Configurações</h3>
+<pre><code>http://localhost:8000/core/painel_configuracoes/</code></pre>
+<p>✅ Na aba "Etapa: Comissionamento" deve ter <code>COMISSAO_ATENDENTE_VALOR_FIXO</code></p>
+
+<h3>4. Ajustar Valor</h3>
+<ul>
+  <li>Alterar valor de <code>0.50</code> para <code>1.00</code></li>
+  <li>Salvar</li>
+  <li>Voltar ao painel de comissões</li>
+  <li>✅ Deve exibir <code>R$ 1.00</code></li>
+</ul>
+
+<h2 id="proximos-passos">🚀 Próximos Passos</h2>
+
+<h3>Curto Prazo</h3>
+<ul>
+  <li>⏳ <strong>Webhook ASAAS</strong>: Integrar geração automática ao confirmar PIX</li>
+  <li>⏳ <strong>Marcar como Pago</strong>: Ação no painel para marcar comissões pagas</li>
+  <li>⏳ <strong>Exportar CSV</strong>: Botão para exportar lista de comissões</li>
+  <li>⏳ <strong>Notificações</strong>: Alertar atendente quando comissão é gerada</li>
+</ul>
+
+<h3>Médio Prazo</h3>
+<ul>
+  <li>⏳ <strong>Comissões de Vendas</strong>: Percentual sobre valor da venda</li>
+  <li>⏳ <strong>Comissões de Captadores</strong>: Percentual para captadores externos</li>
+  <li>⏳ <strong>Pagamento em Lote</strong>: Processar múltiplas comissões de uma vez</li>
+  <li>⏳ <strong>Relatório Mensal</strong>: PDF com total a pagar por atendente</li>
+  <li>⏳ <strong>Dashboard de Atendente</strong>: Painel individual para cada atendente ver suas comissões</li>
+</ul>
+
+<h2 id="suporte">📞 Suporte</h2>
+
+<div class="doc-card">
+  <p class="mb-2"><strong>Desenvolvido por:</strong> GitHub Copilot + Equipe Mr. Baruch</p>
+  <p class="mb-2"><strong>Data:</strong> 14 de Outubro de 2025</p>
+  <p class="mb-0"><strong>Status:</strong> <span class="doc-badge doc-badge-success">PRONTO PARA PRODUÇÃO</span></p>
+</div>
+
+{% endblock %}

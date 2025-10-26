@@ -1,0 +1,628 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão Pós-Venda - Compliance | Mr. Baruch</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(120deg, #eef2ff, #fdf2e9);
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 280px;
+            background: #1a1f36;
+            padding: 20px 0;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h4 {
+            color: #fff;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.85rem;
+            margin: 0;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0 15px;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 5px;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+
+        .sidebar-menu a:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            transform: translateX(5px);
+        }
+
+        .sidebar-menu a.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .sidebar-menu a i {
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+            padding: 2rem 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f6f7fb;
+        }
+
+        .central-container {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto 2rem auto;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(102, 126, 234, 0.08);
+            border: 1.5px solid #e3e6f0;
+            padding: 2.5rem 2rem 2rem 2rem;
+        }
+
+        /* Hero Header */
+        .hero-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            border-radius: 0 0 30px 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .hero-header h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .hero-header p {
+            opacity: 0.95;
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        /* Content Container */
+        .content-container {
+            padding: 0 30px 30px 30px;
+        }
+
+        /* Statistics Cards */
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.05);
+            height: 100%;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .stat-number {
+            font-size: 1.7rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .stat-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 2rem;
+            opacity: 0.2;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .filter-section label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .filter-section .form-control,
+        .filter-section .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 10px 15px;
+            transition: all 0.3s;
+        }
+
+        .filter-section .form-control:focus,
+        .filter-section .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+        }
+
+        .filter-section .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .filter-section .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Table Card */
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 2px solid #dee2e6;
+            padding: 20px 25px;
+        }
+
+        .card-header h5 {
+            margin: 0;
+            font-weight: 700;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Table Styling */
+        .table {
+            margin: 0;
+            width: 100%;
+            table-layout: auto;
+        }
+
+        .table thead th {
+            background: #f8f9fa;
+            color: #495057;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #dee2e6;
+            padding: 15px 12px;
+        }
+
+        .table tbody td {
+            vertical-align: middle;
+            padding: 12px 10px;
+            color: #495057;
+            font-size: 0.92rem;
+        }
+        
+        .table-hover tbody tr {
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: scale(1.01);
+        }
+
+        /* Garantir que a tabela não quebre o card central - usar overflow horizontal quando necessário */
+        .central-container .card .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Forçar que o elemento de tabela não exceda o container pai */
+        .central-container .card {
+            overflow: hidden;
+        }
+
+        .central-container .card .table {
+            min-width: 1100px; /* permite scroll quando necessário, mas evita estourar visualmente */
+            max-width: 100%;
+        }
+
+        /* Badge Styling */
+        .badge-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Button Styling */
+        .btn-sm {
+            padding: 6px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Pagination */
+        .pagination {
+            margin: 0;
+        }
+
+        .page-link {
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            margin: 0 3px;
+            color: #667eea;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .page-link:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .page-item.active .page-link {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+        }
+
+        /* Empty State */
+        .text-center.py-5 i {
+            color: #ccc;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .hero-header h2 {
+                font-size: 1.5rem;
+            }
+
+            .stat-number {
+                font-size: 2rem;
+            }
+
+            .content-container {
+                padding: 0 15px 15px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include 'compliance/sidebar_compliance.html' %}
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="central-container">
+        <!-- Hero Header -->
+        <div class="hero-header">
+            <h2>
+                <i class="fas fa-clipboard-check"></i>
+                Gestão Pós-Venda
+            </h2>
+            <p>Acompanhamento completo do fluxo pós-venda e conferência</p>
+        </div>
+
+        <div class="content-container">
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-clipboard-check"></i> Gestão Pós-Venda</h2>
+            <p class="text-muted mb-0">Acompanhamento completo do fluxo pós-venda</p>
+        </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-number text-primary">{{ total_vendas }}</div>
+                <div class="stat-label">Total de Vendas</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-number text-warning">{{ aguardando_conferencia }}</div>
+                <div class="stat-label">Aguardando Conferência</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-number text-info">{{ coletando_documentos }}</div>
+                <div class="stat-label">Coletando Documentos</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-number text-danger">{{ aguardando_assinatura }}</div>
+                <div class="stat-label">Aguardando Assinatura</div>
+            </div>
+        </div>
+        <div class="col-md-3 mt-3">
+            <div class="stat-card">
+                <div class="stat-number text-success">{{ concluidos_hoje }}</div>
+                <div class="stat-label">Concluídos Hoje</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-section">
+        <form method="GET" action="{% url 'compliance:painel_pos_venda' %}">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Status Compliance</label>
+                    <select class="form-select" name="status">
+                        <option value="">Todos os Status</option>
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if filtro_status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Status Pagamento</label>
+                    <select class="form-select" name="pagamento">
+                        <option value="">Todos</option>
+                        {% for value, label in pagamento_choices %}
+                        <option value="{{ value }}" {% if filtro_pagamento == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">Buscar</label>
+                    <input type="text" class="form-control" name="busca" 
+                           placeholder="Nome, CPF ou ID da venda..." 
+                           value="{{ filtro_busca }}">
+                </div>
+                
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabela de Vendas -->
+    <div class="card">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="fas fa-list"></i> Lista de Vendas</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>CPF/CNPJ</th>
+                            <th>Valor Total</th>
+                            <th>Status Compliance</th>
+                            <th>Data Criação</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for venda in vendas %}
+                        <tr onclick="window.location='{% url 'compliance:gestao_pos_venda' venda.id %}'">
+                            <td><strong>#{{ venda.id }}</strong></td>
+                            <td>{{ venda.cliente.lead.nome_completo }}</td>
+                            <td>{{ venda.cliente.lead.cpf_cnpj }}</td>
+                            <td>R$ {{ venda.valor_total|floatformat:2 }}</td>
+                            <td>
+                                <span class="badge-status 
+                                    {% if venda.status_compliance_pos_venda == 'aguardando_conferencia' %}bg-warning
+                                    {% elif venda.status_compliance_pos_venda == 'em_conferencia' %}bg-info
+                                    {% elif venda.status_compliance_pos_venda == 'reprovado' %}bg-danger
+                                    {% elif venda.status_compliance_pos_venda == 'coletando_documentos' %}bg-primary
+                                    {% elif venda.status_compliance_pos_venda == 'documentos_ok' %}bg-success
+                                    {% elif venda.status_compliance_pos_venda == 'emitindo_contrato' %}bg-secondary
+                                    {% elif venda.status_compliance_pos_venda == 'aguardando_assinatura' %}bg-warning
+                                    {% elif venda.status_compliance_pos_venda == 'contrato_assinado' %}bg-info
+                                    {% elif venda.status_compliance_pos_venda == 'concluido' %}bg-success
+                                    {% endif %}">
+                                    {{ venda.get_status_compliance_pos_venda_display }}
+                                </span>
+                            </td>
+                            <td>{{ venda.data_criacao|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <a href="{% url 'compliance:gestao_pos_venda' venda.id %}" 
+                                   class="btn btn-sm btn-primary" 
+                                   onclick="event.stopPropagation();">
+                                    <i class="fas fa-eye"></i> Gerenciar
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p>Nenhuma venda encontrada com os filtros selecionados.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Paginação -->
+        {% if vendas.has_other_pages %}
+        <div class="card-footer bg-white">
+            <nav aria-label="Navegação de página">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if vendas.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ vendas.previous_page_number }}{% if filtro_status %}&status={{ filtro_status }}{% endif %}{% if filtro_pagamento %}&pagamento={{ filtro_pagamento }}{% endif %}{% if filtro_busca %}&busca={{ filtro_busca }}{% endif %}">
+                            Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in vendas.paginator.page_range %}
+                    {% if vendas.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > vendas.number|add:'-3' and num < vendas.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if filtro_status %}&status={{ filtro_status }}{% endif %}{% if filtro_pagamento %}&pagamento={{ filtro_pagamento }}{% endif %}{% if filtro_busca %}&busca={{ filtro_busca }}{% endif %}">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if vendas.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ vendas.next_page_number }}{% if filtro_status %}&status={{ filtro_status }}{% endif %}{% if filtro_pagamento %}&pagamento={{ filtro_pagamento }}{% endif %}{% if filtro_busca %}&busca={{ filtro_busca }}{% endif %}">
+                            Próxima
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+        </div> <!-- End content-container -->
+      </div> <!-- End central-container -->
+    </div> <!-- End main-content -->
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Mobile sidebar toggle
+        const sidebar = document.querySelector('.sidebar');
+        const menuToggle = document.createElement('button');
+        menuToggle.className = 'btn btn-primary d-md-none position-fixed';
+        menuToggle.style.cssText = 'top: 10px; left: 10px; z-index: 1001;';
+        menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
+        
+        if (window.innerWidth <= 768) {
+            document.body.appendChild(menuToggle);
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('show');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,360 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Cadastro de Venda - {{ pre_venda.lead.nome_completo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Melhorias visuais para campos de formulário */
+    .form-control, .form-control-file, select.form-control {
+        border: 2px solid #5a6c7d !important;
+        border-radius: 6px !important;
+        padding: 10px 12px !important;
+        font-size: 15px !important;
+        background-color: #ffffff !important;
+        transition: all 0.3s ease;
+    }
+    
+    /* Borda ainda mais visível para inputs de texto */
+    input.form-control {
+        border: 2px solid #5a6c7d !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .form-control:focus {
+        border-color: #1cc88a !important;
+        box-shadow: 0 0 0 0.2rem rgba(28, 200, 138, 0.25) !important;
+        background-color: #ffffff !important;
+    }
+    
+    .form-control:hover {
+        border-color: #3a4a5b !important;
+    }
+    
+    select.form-control {
+        cursor: pointer;
+        border: 2px solid #5a6c7d !important;
+    }
+    
+    /* Garantir que textareas também tenham borda visível */
+    textarea.form-control {
+        border: 2px solid #5a6c7d !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .form-group label {
+        font-weight: 600;
+        color: #3a3b45;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+    
+    .text-danger {
+        color: #e74a3b !important;
+        font-weight: bold;
+    }
+    
+    .input-group-text {
+        border: 2px solid #5a6c7d !important;
+        background-color: #f8f9fc;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-shopping-cart"></i> 
+                        Cadastro Completo de Venda - {{ pre_venda.lead.nome_completo }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Seção 1: Dados do Cliente -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="fas fa-user"></i> 1. Dados do Cliente</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="nome">Nome Completo <span class="text-danger">*</span></label>
+                                            <input type="text" name="nome" id="nome" class="form-control" 
+                                                   value="{{ pre_venda.lead.nome_completo }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="cpf">CPF <span class="text-danger">*</span></label>
+                                            <input type="text" name="cpf" id="cpf" class="form-control" 
+                                                   placeholder="000.000.000-00" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="email">Email <span class="text-danger">*</span></label>
+                                            <input type="email" name="email" id="email" class="form-control" 
+                                                   value="{{ pre_venda.lead.email }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="telefone">Telefone <span class="text-danger">*</span></label>
+                                            <input type="text" name="telefone" id="telefone" class="form-control" 
+                                                   value="{{ pre_venda.lead.telefone }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="data_nascimento">Data de Nascimento <span class="text-danger">*</span></label>
+                                            <input type="date" name="data_nascimento" id="data_nascimento" 
+                                                   class="form-control" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="form-group">
+                                            <label for="endereco">Endereço Completo <span class="text-danger">*</span></label>
+                                            <input type="text" name="endereco" id="endereco" class="form-control" 
+                                                   placeholder="Rua, número, complemento" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="cep">CEP <span class="text-danger">*</span></label>
+                                            <input type="text" name="cep" id="cep" class="form-control" 
+                                                   placeholder="00000-000" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="form-group">
+                                            <label for="cidade">Cidade <span class="text-danger">*</span></label>
+                                            <input type="text" name="cidade" id="cidade" class="form-control" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="estado">Estado <span class="text-danger">*</span></label>
+                                            <select name="estado" id="estado" class="form-control" required>
+                                                <option value="">Selecione...</option>
+                                                <option value="AC">Acre</option>
+                                                <option value="AL">Alagoas</option>
+                                                <option value="AP">Amapá</option>
+                                                <option value="AM">Amazonas</option>
+                                                <option value="BA">Bahia</option>
+                                                <option value="CE">Ceará</option>
+                                                <option value="DF">Distrito Federal</option>
+                                                <option value="ES">Espírito Santo</option>
+                                                <option value="GO">Goiás</option>
+                                                <option value="MA">Maranhão</option>
+                                                <option value="MT">Mato Grosso</option>
+                                                <option value="MS">Mato Grosso do Sul</option>
+                                                <option value="MG">Minas Gerais</option>
+                                                <option value="PA">Pará</option>
+                                                <option value="PB">Paraíba</option>
+                                                <option value="PR">Paraná</option>
+                                                <option value="PE">Pernambuco</option>
+                                                <option value="PI">Piauí</option>
+                                                <option value="RJ">Rio de Janeiro</option>
+                                                <option value="RN">Rio Grande do Norte</option>
+                                                <option value="RS">Rio Grande do Sul</option>
+                                                <option value="RO">Rondônia</option>
+                                                <option value="RR">Roraima</option>
+                                                <option value="SC">Santa Catarina</option>
+                                                <option value="SP">São Paulo</option>
+                                                <option value="SE">Sergipe</option>
+                                                <option value="TO">Tocantins</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Seção 2: Dados da Venda -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="fas fa-file-invoice-dollar"></i> 2. Dados da Venda</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label for="servico">Serviço <span class="text-danger">*</span></label>
+                                            <select name="servico" id="servico" class="form-control" required>
+                                                <option value="">Selecione o serviço...</option>
+                                                {% for servico in servicos %}
+                                                    <option value="{{ servico.id }}" data-valor="{{ servico.preco_base }}">
+                                                        {{ servico.nome }} - R$ <span class="format-brl">{{ servico.preco_base|floatformat:2 }}</span>
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="valor_entrada">Valor da Entrada <span class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text">R$</span>
+                                                </div>
+                                                <input type="number" step="0.01" name="valor_entrada" id="valor_entrada" 
+                                                       class="form-control" value="0.00" required min="0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="numero_parcelas">Número de Parcelas <span class="text-danger">*</span></label>
+                                            <input type="number" name="numero_parcelas" id="numero_parcelas" 
+                                                   class="form-control" value="1" required min="1" max="36">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="forma_pagamento_entrada">Forma de Pagamento Entrada <span class="text-danger">*</span></label>
+                                            <select name="forma_pagamento_entrada" id="forma_pagamento_entrada" 
+                                                    class="form-control" required>
+                                                <option value="">Selecione...</option>
+                                                {% for value, label in formas_pagamento %}
+                                                    <option value="{{ value }}">{{ label }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="observacoes">Observações</label>
+                                    <textarea name="observacoes" id="observacoes" class="form-control" rows="3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Seção 3: Documentos -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="fas fa-file-upload"></i> 3. Upload de Documentos</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="documentos-container">
+                                    <div class="documento-item mb-3">
+                                        <div class="row">
+                                            <div class="col-md-5">
+                                                <select name="tipo_documento" class="form-control">
+                                                    {% for value, label in tipos_documento %}
+                                                        <option value="{{ value }}">{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="col-md-7">
+                                                <input type="file" name="documentos" class="form-control-file">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-secondary" id="addDocumento">
+                                    <i class="fas fa-plus"></i> Adicionar Mais Documentos
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Botões de Ação -->
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-check"></i> Finalizar Cadastro de Venda
+                            </button>
+                            <a href="{% url 'vendas:detalhes_pre_venda' pre_venda.id %}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Adicionar mais campos de documento
+document.getElementById('addDocumento').addEventListener('click', function() {
+    const container = document.getElementById('documentos-container');
+    const newItem = document.querySelector('.documento-item').cloneNode(true);
+    newItem.querySelector('input[type="file"]').value = '';
+    container.appendChild(newItem);
+});
+
+// Máscara CPF
+document.getElementById('cpf').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 11) {
+        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+        value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        e.target.value = value;
+    }
+});
+
+// Máscara CEP
+document.getElementById('cep').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 8) {
+        value = value.replace(/(\d{5})(\d)/, '$1-$2');
+        e.target.value = value;
+    }
+});
+
+// Buscar CEP
+document.getElementById('cep').addEventListener('blur', function() {
+    const cep = this.value.replace(/\D/g, '');
+    if (cep.length === 8) {
+        fetch(`https://viacep.com.br/ws/${cep}/json/`)
+            .then(response => response.json())
+            .then(data => {
+                if (!data.erro) {
+                    document.getElementById('endereco').value = data.logradouro;
+                    document.getElementById('cidade').value = data.localidade;
+                    document.getElementById('estado').value = data.uf;
+                }
+            })
+            .catch(error => console.error('Erro ao buscar CEP:', error));
+    }
+});
+
+// Validação do formulário
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+</script>
+{% endblock %}

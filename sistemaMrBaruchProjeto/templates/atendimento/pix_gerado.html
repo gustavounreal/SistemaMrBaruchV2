@@ -1,0 +1,189 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">✅ PIX Gerado com Sucesso!</h4>
+                    <small>Envie para o cliente via WhatsApp</small>
+                </div>
+                <div class="card-body">
+                    
+                    <!-- Informações do Cliente -->
+                    <div class="alert alert-info">
+                        <h5>👤 Cliente: {{ atendimento.nome_completo }}</h5>
+                        <p class="mb-1"><strong>📞 Telefone:</strong> {{ atendimento.telefone }}</p>
+                        <p class="mb-1"><strong>🎯 Motivo:</strong> {{ atendimento.motivo.texto }}</p>
+                        <p class="mb-0"><strong>📊 Perfil:</strong> {{ atendimento.perfil_emocional.texto }}</p>
+                    </div>
+
+                    <!-- QR Code PIX -->
+                    {% if pix_data.encodedImage %}
+                    <div class="text-center mb-4">
+                        <h5>📱 QR Code PIX</h5>
+                        <img src="data:image/png;base64,{{ pix_data.encodedImage }}" 
+                             alt="QR Code PIX" 
+                             class="img-fluid border rounded"
+                             style="max-width: 250px;">
+                        <p class="text-muted small mt-2">Cliente pode escanear este QR Code</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Código PIX Copia e Cola -->
+                    <div class="mb-4">
+                        <h5>📋 Código PIX (Copia e Cola)</h5>
+                        <div class="input-group">
+                            <textarea id="pixCode" class="form-control" rows="4" readonly 
+                                      style="font-family: monospace; font-size: 12px;">{{ pix_data.payload }}</textarea>
+                            <button class="btn btn-outline-primary" type="button" onclick="copiarPix()">
+                                📋 Copiar
+                            </button>
+                        </div>
+                        <small class="text-muted">Cole este código no app do seu banco para pagar</small>
+                    </div>
+
+                    <!-- Instruções para o Cliente -->
+                    <div class="alert alert-warning">
+                        <h6>📝 Como enviar para o cliente:</h6>
+                        <ol class="mb-0">
+                            <li><strong>Copie o código PIX</strong> acima (botão "Copiar")</li>
+                            <li><strong>Abra o WhatsApp</strong> do cliente</li>
+                            <li><strong>Cole o código</strong> e envie a mensagem</li>
+                            <li><strong>Inclua as instruções</strong> abaixo se necessário</li>
+                        </ol>
+                    </div>
+
+                    <!-- Mensagem Pronta para WhatsApp -->
+                    <div class="mb-3">
+                        <h6>💬 Mensagem pronta para WhatsApp:</h6>
+                        <div class="input-group">
+                            <textarea id="whatsappMessage" class="form-control" rows="5" readonly>
+Olá {{ atendimento.nome_completo }}! 
+
+Segue o PIX para a taxa de levantamento no valor de R$ 29,90:
+
+{{ pix_data.payload }}
+
+*Instruções para pagar:*
+1. Copie todo o código acima
+2. Abra seu app do banco
+3. Vá em "PIX" → "Pagar com PIX Copia e Cola"
+4. Cole o código e confirme o pagamento
+
+Após o pagamento, enviaremos o levantamento em até 24h! 🚀
+                            </textarea>
+                            <button class="btn btn-outline-success" type="button" onclick="copiarMensagem()">
+                                💬 Copiar Mensagem
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                        <a href="{% url 'atendimento:novo_atendimento' %}" class="btn btn-outline-secondary">
+                            ➕ Novo Atendimento
+                        </a>
+                        <a href="{% url 'atendimento:lista_atendimentos' %}" class="btn btn-outline-primary">
+                            📋 Ver Todos os Atendimentos
+                        </a>
+                        <button class="btn btn-success" onclick="abrirWhatsApp()">
+                            📱 Abrir WhatsApp
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copiarPix() {
+    const pixText = document.getElementById('pixCode');
+    pixText.select();
+    pixText.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+    
+    // Feedback visual
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '✅ Copiado!';
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+    }, 2000);
+}
+
+function copiarMensagem() {
+    const messageText = document.getElementById('whatsappMessage');
+    messageText.select();
+    messageText.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+    
+    // Feedback visual
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '✅ Mensagem Copiada!';
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+    }, 2000);
+}
+
+function abrirWhatsApp() {
+    const phone = '{{ atendimento.telefone|escapejs }}'.replace(/\D/g, '');
+    const message = document.getElementById('whatsappMessage').value;
+    const encodedMessage = encodeURIComponent(message);
+    const url = `https://wa.me/55${phone}?text=${encodedMessage}`;
+    window.open(url, '_blank');
+}
+
+
+// Debug do carregamento da página
+console.log('=== DEBUG ATENDIMENTO ===');
+console.log('Página atendimento/novo/ carregada');
+console.log('Token JWT:', localStorage.getItem('access_token'));
+console.log('User Data:', localStorage.getItem('user_data'));
+
+// Verificar se há scripts fazendo requisições automáticas
+const originalFetch = window.fetch;
+window.fetch = function(...args) {
+    console.log('Fetch interceptado:', args[0]);
+    return originalFetch.apply(this, args);
+};
+
+// Interceptar cliques em links
+document.addEventListener('click', function(e) {
+    if (e.target.tagName === 'A') {
+        console.log('Link clicado:', e.target.href);
+    }
+});
+</script>
+
+<div class="container mt-4">
+    
+</div>
+
+</script>
+
+<style>
+.card {
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    border: none;
+}
+.alert {
+    border: none;
+    border-left: 4px solid;
+}
+.btn-success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border: none;
+    font-weight: bold;
+}
+#pixCode, #whatsappMessage {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    background: #f8f9fa;
+}
+</style>
+{% endblock %}

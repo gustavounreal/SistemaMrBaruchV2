@@ -1,0 +1,299 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Painel Compliance{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<style>
+/* CSS Mobile-First para Painel Compliance */
+
+/* Header responsivo */
+.compliance-header {
+    padding: 1.5rem !important;
+    text-align: center !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.compliance-header h1 {
+    font-size: 1.5rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.compliance-header p {
+    font-size: 0.9rem !important;
+}
+
+/* Cards de estatísticas - mobile */
+@media (max-width: 768px) {
+    .compliance-stats {
+        display: block !important;
+        padding: 0 !important;
+    }
+    
+    .compliance-stats .col-md-3 {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: none !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .compliance-stats .stat-card {
+        height: auto !important;
+        padding: 1.25rem !important;
+        text-align: center !important;
+    }
+    
+    .compliance-stats .stat-value {
+        font-size: 2rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .compliance-stats .stat-label {
+        font-size: 0.95rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .compliance-stats .btn {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+}
+
+/* Tabelas responsivas */
+@media (max-width: 768px) {
+    .card-header h5 {
+        font-size: 1rem !important;
+        text-align: center !important;
+    }
+    
+    .table-responsive {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    
+    .table {
+        font-size: 0.85rem !important;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.5rem !important;
+        white-space: nowrap !important;
+    }
+    
+    .table .btn {
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.75rem !important;
+    }
+}
+
+/* Lista de histórico */
+@media (max-width: 768px) {
+    .list-group-item {
+        padding: 0.75rem !important;
+    }
+    
+    .list-group-item .d-flex {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+    
+    .list-group-item small {
+        font-size: 0.8rem !important;
+    }
+}
+
+/* Ajuste de margem para sidebar colapsada em mobile */
+@media (max-width: 900px) {
+    .dashboard-main {
+        margin-left: 0 !important;
+        padding: 1rem !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+        <!-- Header / Banner -->
+        <div class="compliance-header">
+            <h1 class="mb-1"><i class="bi bi-shield-check me-2"></i> Painel Compliance</h1>
+            <p class="mb-0">Análise de leads e gestão pós-venda</p>
+        </div>
+
+        <!-- Estatísticas (todas em uma linha) -->
+    <div class="row mb-4 compliance-stats">
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-value">{{ total_aguardando }}</div>
+                <div class="stat-label">
+                    <i class="bi bi-hourglass-split"></i> Aguardando Análise
+                </div>
+                <a href="{% url 'compliance:lista_analises' %}?status=AGUARDANDO" class="btn btn-sm btn-outline-primary mt-2">
+                    Ver todos
+                </a>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-value text-info">{{ total_em_analise }}</div>
+                <div class="stat-label">
+                    <i class="bi bi-search"></i> Em Análise
+                </div>
+                <a href="{% url 'compliance:lista_analises' %}?status=EM_ANALISE" class="btn btn-sm btn-outline-info mt-2">
+                    Ver todos
+                </a>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-value text-success">{{ total_atribuidos_hoje }}</div>
+                <div class="stat-label">
+                    <i class="bi bi-check-circle"></i> Atribuídos Hoje
+                </div>
+                <a href="{% url 'compliance:lista_analises' %}?status=ATRIBUIDO" class="btn btn-sm btn-outline-success mt-2">
+                    Ver todos
+                </a>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-value text-warning">{{ total_aprovados_aguardando }}</div>
+                <div class="stat-label">
+                    <i class="bi bi-clipboard-check"></i> Aprovados - Aguardando Atribuição
+                </div>
+                <a href="{% url 'compliance:lista_analises' %}?status=APROVADO" class="btn btn-sm btn-outline-warning mt-2">
+                    Ver todos
+                </a>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-value text-warning">{{ total_pos_venda_pendente }}</div>
+                <div class="stat-label">
+                    <i class="bi bi-file-earmark-text"></i> Pós-Venda Pendente
+                </div>
+                <a href="{% url 'compliance:gestao_pos_venda_lista' %}" class="btn btn-sm btn-outline-warning mt-2">
+                    Ver todos
+                </a>
+            </div>
+        </div>
+    </div>
+    <!-- Leads Aguardando Análise -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>Leads Aguardando Análise</h5>
+        </div>
+        <div class="card-body">
+            {% if leads_aguardando %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Lead</th>
+                            <th>CPF/CNPJ</th>
+                            <th>Telefone</th>
+                            <th>Data Cadastro</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for analise in leads_aguardando %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ analise.lead.nome_completo }}</td>
+                            <td>{{ analise.lead.cpf_cnpj|default:"-" }}</td>
+                            <td>{{ analise.lead.telefone }}</td>
+                            <td>{{ analise.data_criacao|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <a href="{% url 'compliance:detalhes_lead' analise.lead.id %}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-eye"></i> Analisar
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted text-center">Nenhum lead aguardando análise no momento.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Leads em Análise (pelo usuário) -->
+    {% if leads_em_analise %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-search me-2"></i>Minhas Análises em Andamento</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Lead</th>
+                            <th>Classificação</th>
+                            <th>Valor Dívida</th>
+                            <th>Data Análise</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for analise in leads_em_analise %}
+                        <tr>
+                            <td>{{ analise.lead.nome_completo }}</td>
+                            <td>
+                                <span class="badge bg-secondary">{{ analise.get_classificacao_display }}</span>
+                            </td>
+                            <td>R$ {{ analise.valor_divida_total|default:0|floatformat:2 }}</td>
+                            <td>{{ analise.data_analise|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <a href="{% url 'compliance:detalhes_lead' analise.lead.id %}" class="btn btn-sm btn-info">
+                                    <i class="bi bi-pencil"></i> Continuar
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Histórico Recente -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Histórico Recente</h5>
+        </div>
+        <div class="card-body">
+            {% if historico_recente %}
+            <div class="list-group list-group-flush">
+                {% for item in historico_recente %}
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ item.analise.lead.nome_completo }}</strong> - {{ item.acao }}
+                            <br>
+                            <small class="text-muted">
+                                por {{ item.usuario.get_full_name|default:item.usuario.username }} • {{ item.data|date:"d/m/Y H:i" }}
+                            </small>
+                            <br>
+                            <small>{{ item.descricao }}</small>
+                        </div>
+                        <a href="{% url 'compliance:detalhes_lead' item.analise.lead.id %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted text-center">Nenhum histórico recente.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

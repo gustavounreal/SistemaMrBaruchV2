@@ -1,0 +1,568 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Detalhes do Contrato{% endblock %}
+
+{% block extra_css %}
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 0;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .timeline-item:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        left: 5px;
+        top: 20px;
+        bottom: -15px;
+        width: 2px;
+        background: #e0e0e0;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: 0;
+        top: 3px;
+    }
+    
+    .timeline-item strong {
+        font-size: 0.9rem;
+        color: #333;
+    }
+    
+    .timeline-item small {
+        font-size: 0.75rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-file-earmark-text me-2"></i>Detalhes do Contrato</h2>
+                    <p class="text-muted mb-0">{{ contrato.numero_contrato }}</p>
+                </div>
+                <div>
+                    <a href="{% url 'juridico:lista_contratos' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- Informações do Contrato -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">Informações do Contrato</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="text-muted small">Número do Contrato</label>
+                            <p class="fw-semibold">{{ contrato.numero_contrato|default:"Não gerado" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Status</label>
+                            <p>
+                                {% if contrato.status == 'AGUARDANDO_GERACAO' %}
+                                    <span class="badge bg-warning">{{ contrato.get_status_display }}</span>
+                                {% elif contrato.status == 'GERADO' %}
+                                    <span class="badge bg-info">{{ contrato.get_status_display }}</span>
+                                {% elif contrato.status == 'ENVIADO' %}
+                                    <span class="badge bg-primary">{{ contrato.get_status_display }}</span>
+                                {% elif contrato.status == 'ASSINADO' %}
+                                    <span class="badge bg-success">{{ contrato.get_status_display }}</span>
+                                {% elif contrato.status == 'CANCELADO' %}
+                                    <span class="badge bg-danger">{{ contrato.get_status_display }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Data de Criação</label>
+                            <p class="fw-semibold">{{ contrato.data_criacao|date:"d/m/Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Data de Geração</label>
+                            <p class="fw-semibold">{{ contrato.data_geracao|date:"d/m/Y H:i"|default:"-" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Data de Envio</label>
+                            <p class="fw-semibold">{{ contrato.data_envio|date:"d/m/Y H:i"|default:"-" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Data de Assinatura</label>
+                            <p class="fw-semibold">{{ contrato.data_assinatura|date:"d/m/Y H:i"|default:"-" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Usuário Responsável</label>
+                            <p class="fw-semibold">
+                                {% if contrato.usuario_geracao %}
+                                    {{ contrato.usuario_geracao.get_full_name|default:contrato.usuario_geracao.username }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Assinatura Gov.br</label>
+                            <p>
+                                {% if contrato.assinatura_gov %}
+                                    <span class="badge bg-success">Sim</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Não</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        {% if contrato.observacoes %}
+                        <div class="col-12">
+                            <label class="text-muted small">Observações</label>
+                            <p class="fw-semibold">{{ contrato.observacoes }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informações do Cliente -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">Informações do Cliente</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="text-muted small">Nome Completo</label>
+                            <p class="fw-semibold">{{ contrato.cliente.lead.nome_completo }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">CPF/CNPJ</label>
+                            <p class="fw-semibold">
+                                {% if contrato.cliente and contrato.cliente.lead and contrato.cliente.lead.cpf_cnpj %}
+                                    {{ contrato.cliente.lead.cpf_cnpj }}
+                                {% else %}
+                                    Não informado
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">RG</label>
+                            <p class="fw-semibold">{{ contrato.cliente.rg|default:"Não informado" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Telefone</label>
+                            <p class="fw-semibold">
+                                {% if contrato.cliente and contrato.cliente.lead and contrato.cliente.lead.telefone %}
+                                    {{ contrato.cliente.lead.telefone }}
+                                {% else %}
+                                    Não informado
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-12">
+                            <label class="text-muted small">Endereço</label>
+                            <p class="fw-semibold">
+                                {{ contrato.cliente.rua }}, {{ contrato.cliente.numero }} - 
+                                {{ contrato.cliente.bairro }}, {{ contrato.cliente.cidade }}/{{ contrato.cliente.estado }}
+                                - CEP: {{ contrato.cliente.cep }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informações da Venda -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">Informações da Venda</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="text-muted small">ID da Venda</label>
+                            <p class="fw-semibold">{{ contrato.venda.id }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Valor Total</label>
+                            <p class="fw-semibold text-success">R$ {{ contrato.venda.valor_total }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Valor da Entrada</label>
+                            <p class="fw-semibold">R$ {{ contrato.venda.valor_entrada }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Parcelas</label>
+                            <p class="fw-semibold">{{ contrato.venda.quantidade_parcelas }}x de R$ {{ contrato.venda.valor_parcela }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Serviços Contratados</label>
+                            <p class="fw-semibold">
+                                {% if contrato.venda.limpa_nome %}<span class="badge bg-info me-1">Limpa Nome</span>{% endif %}
+                                {% if contrato.venda.retirada_travas %}<span class="badge bg-warning me-1">Retirada de Travas</span>{% endif %}
+                                {% if contrato.venda.recuperacao_score %}<span class="badge bg-success me-1">Recuperação Score</span>{% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Data da Venda</label>
+                            <p class="fw-semibold">{{ contrato.venda.data_venda|date:"d/m/Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parcelas -->
+            {% if parcelas %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">Parcelas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Parcela</th>
+                                    <th>Valor</th>
+                                    <th>Vencimento</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for parcela in parcelas %}
+                                <tr>
+                                    <td>{{ parcela.numero_parcela }}</td>
+                                    <td>R$ {{ parcela.valor }}</td>
+                                    <td>{{ parcela.data_vencimento|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if parcela.id_asaas %}
+                                            {% if parcela.status == 'paga' %}
+                                                <span class="badge bg-success">Pago</span>
+                                            {% elif parcela.status == 'vencida' %}
+                                                <span class="badge bg-danger">Vencida</span>
+                                            {% elif parcela.status == 'aberta' %}
+                                                <span class="badge bg-warning text-dark">A vencer</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Aberta</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-secondary">Não gerado no ASAAS</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar de ações -->
+        <div class="col-lg-4">
+            <!-- Timeline do Contrato -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Timeline do Contrato</h5>
+                </div>
+                <div class="card-body">
+                    {% if contrato.historico_status %}
+                        <div class="timeline">
+                            {% for entrada in contrato.historico_status %}
+                            <div class="timeline-item mb-3">
+                                <div class="d-flex">
+                                    <div class="timeline-marker me-3">
+                                        {% if entrada.status == 'GERADO' %}
+                                            <div class="bg-info rounded-circle" style="width: 12px; height: 12px;"></div>
+                                        {% elif entrada.status == 'ENVIADO' %}
+                                            <div class="bg-primary rounded-circle" style="width: 12px; height: 12px;"></div>
+                                        {% elif entrada.status == 'ASSINADO' %}
+                                            <div class="bg-success rounded-circle" style="width: 12px; height: 12px;"></div>
+                                        {% else %}
+                                            <div class="bg-secondary rounded-circle" style="width: 12px; height: 12px;"></div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong class="d-block">
+                                                    {% if entrada.status == 'AGUARDANDO_GERACAO' %}Aguardando Geração
+                                                    {% elif entrada.status == 'GERADO' %}Contrato Gerado
+                                                    {% elif entrada.status == 'ENVIADO' %}Enviado ao Cliente
+                                                    {% elif entrada.status == 'ASSINADO' %}Assinado
+                                                    {% elif entrada.status == 'CANCELADO' %}Cancelado
+                                                    {% else %}{{ entrada.status }}
+                                                    {% endif %}
+                                                </strong>
+                                                <small class="text-muted">{{ entrada.usuario }}</small>
+                                            </div>
+                                            <small class="text-muted">{{ entrada.data|slice:":10" }}</small>
+                                        </div>
+                                        {% if entrada.observacao %}
+                                        <p class="mb-0 mt-1 small text-muted">{{ entrada.observacao }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center mb-0">Nenhum histórico disponível</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">Ações</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if contrato.status == 'AGUARDANDO_GERACAO' %}
+                        <a href="{% url 'juridico:gerar_contrato' contrato.venda.id %}" 
+                           class="btn btn-primary">
+                            <i class="bi bi-file-earmark-plus me-2"></i>Gerar Contrato
+                        </a>
+                        {% endif %}
+                        
+                        {% if contrato.arquivo_contrato %}
+                        <a href="{{ contrato.arquivo_contrato.url }}" target="_blank" 
+                           class="btn btn-info">
+                            <i class="bi bi-download me-2"></i>Baixar PDF do Contrato
+                        </a>
+                        {% endif %}
+
+                        {# Visualizar/Imprimir diretamente (abre inline) #}
+                        <a href="{% url 'juridico:gerar_contrato' contrato.venda.id %}?inline=1" target="_blank" class="btn btn-outline-secondary">
+                            <i class="bi bi-eye me-2"></i>Visualizar / Imprimir
+                        </a>
+                        
+
+                        {% if contrato.status == 'GERADO' %}
+                        <form method="POST" action="{% url 'juridico:marcar_contrato_enviado' contrato.id %}" 
+                              style="display: inline-block;"
+                              onsubmit="return confirm('Confirma que o contrato foi enviado ao cliente?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="meio_envio" value="whatsapp">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send me-2"></i>Marcar como Enviado
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        {# Botão para gerar boletos no ASAAS se houver parcelas não geradas #}
+                        {% if tem_parcelas_sem_boleto %}
+                            <form id="form-gerar-boletos" method="POST" action="{% url 'juridico:reenviar_boletos_asaas' contrato.id %}">
+                                {% csrf_token %}
+                                <button id="btn-gerar-boletos" type="submit" class="btn btn-warning btn-block">
+                                    <i class="bi bi-cash-coin me-2"></i>Gerar Boletos no ASAAS
+                                </button>
+                            </form>
+                            <div id="feedback-gerar-boletos" class="mt-2"></div>
+                            <script>
+                                // Feedback visual ao enviar o formulário
+                                (function() {
+                                    const formGerar = document.getElementById('form-gerar-boletos');
+                                    const btnGerar = document.getElementById('btn-gerar-boletos');
+                                    if (formGerar && btnGerar) {
+                                        formGerar.addEventListener('submit', function(e) {
+                                            btnGerar.disabled = true;
+                                            btnGerar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Gerando boletos...';
+                                        });
+                                    }
+                                })();
+                            </script>
+                        {% endif %}
+                        
+                        {% if contrato.status == 'ENVIADO' %}
+                            
+                            {# INFORMAÇÕES DOS BOLETOS #}
+                            <div class="alert alert-info mb-3">
+                                <h6 class="alert-heading mb-2">
+                                    <i class="bi bi-info-circle me-2"></i>Status dos Boletos ASAAS
+                                </h6>
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <strong>Total de Parcelas:</strong> {{ total_parcelas }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Enviadas ao ASAAS:</strong> 
+                                        <span class="badge bg-success">{{ parcelas_enviadas }}</span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Pendentes:</strong> 
+                                        {% if parcelas_pendentes > 0 %}
+                                            <span class="badge bg-warning text-dark">{{ parcelas_pendentes }}</span>
+                                        {% else %}
+                                            <span class="badge bg-success">0</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                {% if not todos_boletos_enviados %}
+                                <hr class="my-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    É necessário que todos os boletos sejam enviados ao ASAAS antes de confirmar a assinatura.
+                                </small>
+                                {% endif %}
+                            </div>
+                            
+                            {# BOTÃO REENVIAR (se há boletos pendentes) #}
+                            {% if parcelas_pendentes > 0 %}
+                            <form method="POST" action="{% url 'juridico:reenviar_boletos_asaas' contrato.id %}" 
+                                  style="display: inline-block;"
+                                  onsubmit="return confirm('🔄 Tentar reenviar os {{ parcelas_pendentes }} boleto(s) pendente(s) ao ASAAS?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-arrow-clockwise me-2"></i>Tentar Reenviar Boletos ({{ parcelas_pendentes }})
+                                </button>
+                            </form>
+                            {% endif %}
+                            
+                            {# BOTÃO CONFIRMAR ASSINATURA (só se TODOS os boletos foram enviados) #}
+                            {% if todos_boletos_enviados %}
+                            <form method="POST" action="{% url 'juridico:marcar_contrato_assinado' contrato.id %}" 
+                                  enctype="multipart/form-data" style="display: inline-block;"
+                                  onsubmit="return confirm('✅ TODOS OS BOLETOS FORAM ENVIADOS AO ASAAS!\n\nDeseja confirmar a assinatura do contrato agora?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="tipo_assinatura" value="MANUAL">
+                                <input type="hidden" name="data_assinatura" value="{{ 'now'|date:'Y-m-d' }}">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-circle me-2"></i>Confirmar Assinatura
+                                </button>
+                            </form>
+                            {% else %}
+                            {# Botão desabilitado se não enviou todos os boletos #}
+                            <button type="button" class="btn btn-secondary" disabled 
+                                    title="É necessário enviar todos os boletos ao ASAAS primeiro">
+                                <i class="bi bi-x-circle me-2"></i>Confirmar Assinatura (Bloqueado)
+                            </button>
+                            {% endif %}
+                            
+                        {% endif %}
+                        
+                        {% if contrato.arquivo_assinado %}
+                        <a href="{{ contrato.arquivo_assinado.url }}" target="_blank" 
+                           class="btn btn-outline-success">
+                            <i class="bi bi-file-earmark-check me-2"></i>Ver Contrato Assinado
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentos anexados -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">Documentos</h5>
+                </div>
+                <div class="card-body">
+                    {% if documentos %}
+                        <div class="list-group list-group-flush">
+                            {% for doc in documentos %}
+                            <div class="list-group-item px-0">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-file-earmark-pdf text-danger fs-4 me-3"></i>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-0">{{ doc.nome_documento }}</h6>
+                                        <small class="text-muted">{{ doc.get_tipo_display }} - {{ doc.data_upload|date:"d/m/Y" }}</small>
+                                    </div>
+                                    <a href="{{ doc.arquivo.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center mb-0">Nenhum documento anexado</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+}
+
+.timeline-item {
+    position: relative;
+}
+
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 20px;
+    bottom: -12px;
+    width: 2px;
+    background: #e0e0e0;
+}
+
+.timeline-marker {
+    position: relative;
+    z-index: 1;
+    padding-top: 4px;
+}
+</style>
+
+<!-- Ensure modals appear above any loading overlays (which may use z-index:9999) -->
+<style>
+    /* Bootstrap default backdrop z-index is 1040/1050; raise it above known overlays */
+    .modal-backdrop {
+        z-index: 10020 !important;
+    }
+    .modal {
+        z-index: 10030 !important;
+    }
+</style>
+
+<style>
+    /* Ensure modal receives pointer events */
+    .modal,
+    .modal .modal-dialog,
+    .modal .modal-content {
+        pointer-events: auto !important;
+    }
+
+    /* When a modal is open, hide or disable common loading overlays that may cover the UI */
+    body.modal-open .loading-overlay,
+    body.modal-open .loading,
+    body.modal-open #loadingOverlay,
+    body.modal-open .auth-loading {
+        display: none !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
+    }
+
+    /* As a last resort, ensure backdrop is above other elements but below modal */
+    .modal-backdrop.show { z-index: 10020 !important; }
+    .modal.show { z-index: 10030 !important; }
+</style>
+
+{% endblock %}
+

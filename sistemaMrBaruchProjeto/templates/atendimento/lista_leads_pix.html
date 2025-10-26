@@ -1,0 +1,221 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Leads PIX - Sistema Mr. Baruch{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<style>
+  .alert-sm {
+    font-size: 0.875rem;
+  }
+  
+  .btn-warning:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s;
+  }
+  
+  .card-hover {
+    transition: box-shadow 0.3s, transform 0.3s;
+  }
+  
+  .card-hover:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    transform: translateY(-2px);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5">
+  
+  <!-- Cabeçalho -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1"></i> Leads PIX</h2>
+      <p class="text-muted mb-0">Leads registrados nas últimas 24 horas</p>
+    </div>
+    <a href="{% url 'atendimento:novo_atendimento' %}" class="btn btn-primary mt-3 mt-md-0 shadow-sm">
+      <i class="bi bi-plus-lg"></i> Cadastrar Novo Lead
+    </a>
+  </div>
+
+  <!-- Corpo -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      {% if leads %}
+      <div class="row">
+        {% for lead in leads %}
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="card border-0 h-100 card-hover">
+            <div class="card-body">
+              <h5 class="card-title mb-2"><i class="bi bi-person-circle me-2 text-primary"></i>{{ lead.nome_completo }}</h5>
+              <p class="card-text small text-muted mb-3"><i class="bi bi-telephone me-1"></i>{{ lead.telefone }}</p>
+
+              <div class="mb-2">
+                <strong>Valor PIX:</strong> 
+                {% if lead.pix_real %}
+                  <span class="text-success fw-semibold">R$ {{ lead.pix_valor|floatformat:2 }}</span>
+                {% else %}
+                  <span class="text-muted">Sem PIX gerado</span>
+                {% endif %}
+              </div>
+
+              <div class="mb-3">
+                <strong>Copia e Cola PIX:</strong>
+                {% if lead.pix_code %}
+                  <div class="input-group mt-1">
+                    <input type="text" id="pixCode{{ forloop.counter }}" class="form-control form-control-sm" value="{{ lead.pix_code }}" readonly>
+                    <button class="btn btn-outline-primary btn-sm" type="button" onclick="copiarPix('{{ forloop.counter }}', this)">
+                      <i class="bi bi-clipboard"></i> Copiar
+                    </button>
+                  </div>
+                {% else %}
+                  <div class="alert alert-warning alert-sm mt-1 mb-2 py-2 px-2 d-flex justify-content-between align-items-center">
+                    <small><i class="bi bi-exclamation-triangle me-1"></i>PIX não gerado</small>
+                    <button class="btn btn-warning btn-sm" type="button" data-lead-id="{{ lead.id }}" onclick="gerarPixLead(parseInt(this.dataset.leadId,10), this)">
+                      <i class="bi bi-qr-code"></i> Gerar PIX
+                    </button>
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="mb-2">
+                <strong>Status:</strong>
+                <span class="badge 
+                  {% if lead.pix_status == 'pago' %}bg-success
+                  {% elif lead.pix_status == 'pendente' %}bg-warning text-dark
+                  {% elif lead.pix_status == 'vencido' %}bg-danger
+                  {% else %}bg-secondary{% endif %}">
+                  {% if lead.pix_status == 'pago' %}Pago
+                  {% elif lead.pix_status == 'pendente' %}Aguardando Pagamento
+                  {% elif lead.pix_status == 'vencido' %}Vencido
+                  {% else %}Sem PIX{% endif %}
+                </span>
+              </div>
+
+              <small class="text-muted d-block mt-2">
+                <i class="bi bi-clock"></i> Registrado em: {{ lead.data_cadastro|date:"d/m/Y H:i" }} <span class="fw-bold">(Lead - {{ forloop.revcounter }})</span>
+              </small>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Paginação -->
+      <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center">
+          {% if leads.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ leads.previous_page_number }}" aria-label="Previous">
+              <span aria-hidden="true">&laquo;</span>
+            </a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <span class="page-link">&laquo;</span>
+          </li>
+          {% endif %}
+
+          {% for num in leads.paginator.page_range %}
+          <li class="page-item {% if leads.number == num %}active{% endif %}">
+            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+          </li>
+          {% endfor %}
+
+          {% if leads.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ leads.next_page_number }}" aria-label="Next">
+              <span aria-hidden="true">&raquo;</span>
+            </a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <span class="page-link">&raquo;</span>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% else %}
+      <div class="alert alert-info text-center mt-3">
+        <i class="bi bi-info-circle me-1"></i> Nenhum lead registrado nas últimas 24 horas.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <!-- Botão Voltar para Área de Trabalho 
+    <div class="row mt-5">
+      <div class="col-12 d-flex justify-content-center">
+        <a href="{% url 'atendimento:area_de_trabalho_atendente' %}" class="btn btn-outline-secondary rounded-pill px-4 py-2 shadow-sm">
+          <i class="bi bi-arrow-left-circle me-1"></i> Voltar para Área de Trabalho
+        </a>
+      </div>
+    </div>-->
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copiarPix(id, btn) {
+  const input = document.getElementById('pixCode' + id);
+  input.select();
+  input.setSelectionRange(0, 99999);
+  document.execCommand('copy');
+
+  btn.innerHTML = '<i class="bi bi-check2-circle"></i> Copiado!';
+  btn.classList.remove('btn-outline-primary');
+  btn.classList.add('btn-success');
+
+  setTimeout(() => {
+    btn.innerHTML = '<i class="bi bi-clipboard"></i> Copiar';
+    btn.classList.remove('btn-success');
+    btn.classList.add('btn-outline-primary');
+  }, 1800);
+}
+
+function gerarPixLead(leadId, btn) {
+  // Desabilita o botão e mostra loading
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Gerando...';
+  
+  // Faz requisição para gerar PIX
+  fetch(`/atendimento/api/gerar-pix/${leadId}/`, {
+    method: 'GET',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Mostra mensagem de sucesso
+      btn.innerHTML = '<i class="bi bi-check-circle"></i> PIX Gerado!';
+      btn.classList.remove('btn-warning');
+      btn.classList.add('btn-success');
+      
+      // Atualiza a página após 1.5 segundos
+      setTimeout(() => {
+        location.reload();
+      }, 1500);
+    } else {
+      // Mostra erro
+      alert('Erro ao gerar PIX: ' + (data.message || 'Tente novamente.'));
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  })
+  .catch(error => {
+    console.error('Erro:', error);
+    alert('Erro ao gerar PIX. Tente novamente.');
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  });
+}
+</script>
+{% endblock %}
+
+

@@ -1,0 +1,300 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venda Cadastrada - Sistema Mr. Baruch</title>
+
+    <!-- Ícones Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --cor-primaria: #1e88e5;
+            --cor-secundaria: #1565c0;
+            --cor-fundo: #f4f6f9;
+            --cor-texto: #333;
+            --cor-sucesso: #4caf50;
+            --cor-borda: #dcdcdc;
+            --cor-secondary: #6c757d;
+            --radius: 16px;
+            --sombra-suave: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--cor-fundo);
+            color: var(--cor-texto);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: #fff;
+            border-radius: var(--radius);
+            box-shadow: var(--sombra-suave);
+            max-width: 1000px;
+            width: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--cor-primaria), var(--cor-secundaria));
+            color: #fff;
+            padding: 24px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .conteudo {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: var(--radius);
+            box-shadow: var(--sombra-suave);
+            border: 1px solid var(--cor-borda);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .card h3 {
+            color: var(--cor-primaria);
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-bottom: 2px solid var(--cor-primaria);
+            padding-bottom: 8px;
+            margin: 0;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.95rem;
+            border-bottom: 1px dashed #e0e0e0;
+            padding: 6px 0;
+        }
+
+        .info-item span:first-child {
+            color: #555;
+        }
+
+        .info-item span:last-child {
+            font-weight: 600;
+        }
+
+        .pix-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--cor-borda);
+        }
+
+        .pix-section strong {
+            color: var(--cor-primaria);
+            font-size: 0.9rem;
+        }
+
+        .pix-code-box {
+            background: #f8f9fb;
+            border: 1px dashed #e6e6e6;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 8px;
+            word-break: break-all;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #333;
+        }
+
+        .botoes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            background: var(--cor-primaria);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 18px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover {
+            background: var(--cor-secundaria);
+            transform: translateY(-1px);
+            color: #fff;
+        }
+
+        .btn-sucesso {
+            background: var(--cor-sucesso);
+        }
+
+        .btn-sucesso:hover {
+            background: #3c9140;
+        }
+
+        .btn-secondary {
+            background: var(--cor-secondary);
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        @keyframes fadeIn {
+            from {opacity: 0; transform: translateY(10px);} 
+            to {opacity: 1; transform: translateY(0);} 
+        }
+
+        @media (max-width: 768px) {
+            .conteudo { grid-template-columns: 1fr; }
+            .header { font-size: 1.3rem; }
+            body { padding: 20px 10px; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <i class="bi bi-bag-check-fill me-2"></i> Venda Cadastrada com Sucesso!
+        </div>
+
+        <div class="conteudo">
+            <!-- Coluna Esquerda: Dados da Venda -->
+            <div class="card">
+                <h3>Dados da Venda</h3>
+                <div class="info-item"><span>Cliente:</span><span>{{ venda.cliente.lead.nome_completo }}</span></div>
+                <div class="info-item"><span>Valor Total:</span><span>R$ {{ venda.valor_total|floatformat:2 }}</span></div>
+                <div class="info-item"><span>Entrada:</span><span>R$ {{ venda.valor_entrada|floatformat:2 }}</span></div>
+                <div class="info-item"><span>Forma de Pagamento:</span><span>{{ venda.get_frequencia_pagamento_display }}</span></div>
+                <div class="info-item"><span>Data:</span><span>{{ venda.data_criacao|date:"d/m/Y H:i" }}</span></div>
+                <div class="info-item"><span>Status:</span><span>{{ venda.get_status_display }}</span></div>
+
+                {% if pix_entrada %}
+                <div class="pix-section">
+                    <strong>PIX Copia e Cola</strong>
+                    <div class="pix-code-box" id="pixCode">{{ pix_entrada.pix_code }}</div>
+                    <button class="btn" id="btnCopyPix" style="width: 100%; margin-top: 8px;">
+                        <i class="bi bi-clipboard"></i> Copiar Código PIX
+                    </button>
+                    <small style="display: block; margin-top: 8px; color: #666;">
+                        <i class="bi bi-info-circle"></i> Salvo em: {{ pix_entrada.data_criacao|date:"d/m/Y H:i" }}
+                    </small>
+                </div>
+                {% elif venda.valor_entrada > 0 %}
+                <div class="pix-section">
+                    <div class="alert alert-warning" style="margin: 0; padding: 12px; font-size: 0.9rem;">
+                        <i class="bi bi-exclamation-triangle"></i> 
+                        <strong>PIX de Entrada Pendente</strong><br>
+                        <small>O PIX está sendo gerado. Atualize a página em alguns instantes ou entre em contato com o suporte.</small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Coluna Direita: Ações -->
+            <div class="card">
+                <h3>Ações Rápidas</h3>
+                <div class="botoes">
+                    {% if pix_entrada %}
+                   <!-- <a href="{% url 'vendas:exibir_pix_entrada' venda.id %}" class="btn">
+                        <i class="bi bi-qr-code"></i> Ver QR Code PIX
+                    </a>
+                    <button class="btn" id="btnWhats">
+                        <i class="bi bi-whatsapp"></i> Enviar no WhatsApp
+                    </button>-->
+                    {% endif %}
+                    <a href="{% url 'vendas:detalhes_venda' venda.id %}" class="btn">
+                        <i class="bi bi-eye"></i> Ver Detalhes
+                    </a>
+                    <a href="{% url 'vendas:painel_leads_pagos' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Voltar ao Painel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Copiar código PIX
+            const btnCopyPix = document.getElementById('btnCopyPix');
+            if (btnCopyPix) {
+                btnCopyPix.addEventListener('click', function() {
+                    const pixCodeEl = document.getElementById('pixCode');
+                    if (!pixCodeEl) return;
+                    const pixCode = pixCodeEl.textContent.trim();
+                    
+                    navigator.clipboard.writeText(pixCode).then(() => {
+                        const originalHTML = btnCopyPix.innerHTML;
+                        btnCopyPix.innerHTML = '<i class="bi bi-check2"></i> Copiado!';
+                        btnCopyPix.style.background = '#4caf50';
+                        setTimeout(() => {
+                            btnCopyPix.innerHTML = originalHTML;
+                            btnCopyPix.style.background = '';
+                        }, 2000);
+                    }).catch(err => {
+                        alert('Erro ao copiar: ' + err);
+                    });
+                });
+            }
+
+            // Enviar WhatsApp
+            const btnWhats = document.getElementById('btnWhats');
+            if (btnWhats) {
+                btnWhats.addEventListener('click', function() {
+                    const clientName = "{{ venda.cliente.lead.nome_completo }}";
+                    const vendaId = "{{ venda.id }}";
+                    const valor = "{{ venda.valor_entrada|floatformat:2 }}";
+                    const pixCodeEl = document.getElementById('pixCode');
+                    const pixCode = pixCodeEl ? pixCodeEl.textContent.trim() : '';
+
+                    const message = `🎉 *Olá ${clientName}!*\n\n` +
+                                   `Sua venda foi cadastrada com sucesso! ✅\n\n` +
+                                   `📋 *Venda #${vendaId}*\n` +
+                                   `💰 *Valor da Entrada:* R$ ${valor}\n\n` +
+                                   `Para iniciar o serviço, realize o pagamento da entrada via PIX:\n\n` +
+                                   `*PIX Copia e Cola:*\n${pixCode}\n\n` +
+                                   `Ou acesse o link para ver o QR Code: ${window.location.origin}/vendas/${vendaId}/pix-entrada/\n\n` +
+                                   `Após o pagamento, seu contrato será gerado automaticamente! 🚀`;
+
+                    const tel = "{{ venda.cliente.lead.telefone|cut:' '|cut:'-'|cut:'('|cut:')'|cut:'+' }}";
+                    const whatsappUrl = `https://wa.me/${tel}?text=${encodeURIComponent(message)}`;
+                    window.open(whatsappUrl, '_blank');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

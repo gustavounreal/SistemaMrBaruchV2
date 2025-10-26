@@ -1,0 +1,102 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} - Mr. Baruch{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+      
+      <!-- Card de "Em Breve" -->
+      <div class="card border-0 shadow-lg text-center">
+        <div class="card-body p-5">
+          
+          <!-- Ícone -->
+          <div class="mb-4" style="font-size: 5rem; opacity: 0.6;">
+            <i class="bi bi-hourglass-split text-warning"></i>
+          </div>
+
+          <!-- Título -->
+          <h2 class="fw-bold text-dark mb-3">{{ titulo }}</h2>
+          
+          <!-- Descrição -->
+          <p class="text-muted fs-5 mb-4">{{ descricao }}</p>
+
+          <!-- Badge "Em Desenvolvimento" -->
+          <div class="mb-4">
+            <span class="badge bg-warning text-dark px-4 py-2 fs-6">
+              <i class="bi bi-tools me-2"></i>Em Desenvolvimento
+            </span>
+          </div>
+
+          <!-- Mensagem -->
+          <div class="alert alert-info border-0 shadow-sm mt-4">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <strong>Aguarde!</strong> Este módulo está sendo desenvolvido e estará disponível em breve.
+          </div>
+
+          <!-- Botões de Navegação -->
+          <div class="mt-4 d-flex gap-2 justify-content-center flex-wrap">
+            <a href="{% url 'relatorios:painel_relatorios' %}" class="btn btn-primary px-4">
+              <i class="bi bi-arrow-left me-2"></i>Voltar para Relatórios
+            </a>
+            <a href="/accounts/dashboard/" class="btn btn-outline-secondary px-4">
+              <i class="bi bi-house me-2"></i>Ir para Dashboard
+            </a>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Card de Sugestão -->
+      <div class="card border-0 shadow-sm mt-4">
+        <div class="card-body p-4">
+          <h5 class="fw-bold mb-3">
+            <i class="bi bi-lightbulb text-warning me-2"></i>Enquanto isso...
+          </h5>
+          <p class="text-muted mb-3">
+            Você pode explorar outros relatórios já disponíveis:
+          </p>
+          <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'relatorios:relatorio_leads' %}" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-people-fill me-1"></i>Relatório de Leads
+            </a>
+            <a href="{% url 'relatorios:relatorio_comissoes' %}" class="btn btn-sm btn-outline-warning">
+              <i class="bi bi-trophy-fill me-1"></i>Relatório de Comissões
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+.card {
+  border-radius: 15px;
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.btn {
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+</style>
+{% endblock %}

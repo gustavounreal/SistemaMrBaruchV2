@@ -1,0 +1,465 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% load compliance_extras %}
+
+{% block title %}Análise de Lead - Compliance{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="compliance-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-1">
+                    <i class="bi bi-person-circle me-2"></i>
+                    {{ lead.nome_completo }}
+                </h2>
+                <p class="mb-0">
+                    Análise #{{ analise.id }} - 
+                    <span class="badge badge-{{ analise.status }}">{{ analise.get_status_display }}</span>
+                    {% if analise.classificacao %}
+                        <span class="badge badge-{{ analise.classificacao }} ms-2">
+                            {{ analise.get_classificacao_display }}
+                        </span>
+                    {% endif %}
+                </p>
+            </div>
+            <a href="{% url 'compliance:lista_analises' %}" class="btn btn-light">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Informações do Lead -->
+        <div class="col-md-8">
+            <div class="info-card">
+                <h5 class="mb-3"><i class="bi bi-info-circle"></i> Informações do Lead</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted">Nome Completo</label>
+                        <p class="mb-0"><strong>{{ lead.nome_completo }}</strong></p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label text-muted">CPF/CNPJ</label>
+                        <p class="mb-0"><strong>{{ lead.cpf_cnpj }}</strong></p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label text-muted">Telefone</label>
+                        <p class="mb-0"><strong>{{ lead.telefone }}</strong></p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted">Email</label>
+                        <p class="mb-0">{{ lead.email|default:"-" }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted">Origem</label>
+                        <p class="mb-0">{{ lead.origem|default:"-" }}</p>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label text-muted">Observações do Lead</label>
+                        <p class="mb-0">{{ lead.observacoes|default:"Nenhuma observação" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Levantamentos -->
+            <div class="info-card">
+                <h5 class="mb-3"><i class="bi bi-cash-stack"></i> Levantamentos</h5>
+                {% if levantamentos %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Valor</th>
+                                <th>Status</th>
+                                <th>Data Criação</th>
+                                <th>Data Pagamento</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lev in levantamentos %}
+                            <tr>
+                                <td>#{{ lev.id }}</td>
+                                <td>R$ {{ lev.valor_levantamento|floatformat:2 }}</td>
+                                <td>
+                                    <span class="badge bg-{% if lev.status_pagamento == 'pago' %}success{% else %}warning{% endif %}">
+                                        {{ lev.get_status_pagamento_display }}
+                                    </span>
+                                </td>
+                                <td>{{ lev.data_criacao|date:"d/m/Y H:i" }}</td>
+                                <td>{{ lev.data_pagamento|date:"d/m/Y H:i"|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">Nenhum levantamento encontrado</p>
+                {% endif %}
+            </div>
+
+            <!-- Formulário de Análise -->
+            {% if analise.status == 'AGUARDANDO' or analise.status == 'EM_ANALISE' %}
+            <div class="info-card">
+                <h5 class="mb-3"><i class="bi bi-clipboard-check"></i> Realizar Análise</h5>
+                <form id="formAnalise">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Valor Total da Dívida (R$)</label>
+               <input type="text" class="form-control" id="valor_divida" 
+                   value="{% if analise.valor_divida_total %}R$ {{ analise.valor_divida_total|floatformat:2 }}{% endif %}" required>
+                        <small class="text-muted">Este valor será usado para classificar o lead</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observações da Análise</label>
+                        <textarea class="form-control" id="observacoes" rows="3">{{ analise.observacoes_analise|default:'' }}</textarea>
+                    </div>
+
+                    {% if analise.status == 'AGUARDANDO' %}
+                    <button type="button" class="btn btn-primary" onclick="iniciarAnalise()">
+                        <i class="bi bi-play-circle"></i> Iniciar Análise
+                    </button>
+                    {% endif %}
+
+                    {% if analise.status == 'EM_ANALISE' %}
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-success" onclick="aprovarAnalise()">
+                            <i class="bi bi-check-circle"></i> Aprovar Lead
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="reprovarAnalise()">
+                            <i class="bi bi-x-circle"></i> Reprovar Lead
+                        </button>
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Atribuição de Consultor -->
+            {% if analise.status == 'APROVADO' %}
+            <div class="info-card">
+                <h5 class="mb-3"><i class="bi bi-person-check"></i> Atribuir Consultor</h5>
+                <form id="formAtribuir">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Selecione o Consultor</label>
+                        <select class="form-select" id="consultor_id" required>
+                            <option value="">Selecione...</option>
+                            {% for consultor in consultores %}
+                            <option value="{{ consultor.id }}">
+                                {{ consultor.username }} - {{ consultor.leads_ativos }} lead(s) ativo(s)
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="atribuirConsultor()">
+                        <i class="bi bi-arrow-right-circle"></i> Atribuir Lead
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Histórico -->
+            <div class="info-card">
+                <h5 class="mb-3"><i class="bi bi-clock-history"></i> Histórico de Ações</h5>
+                {% if historico %}
+                <div class="timeline">
+                    {% for item in historico %}
+                    <div class="timeline-item">
+                        <small class="text-muted">{{ item.data|date:"d/m/Y H:i" }}</small>
+                        <p class="mb-0">
+                            <strong>{{ item.usuario.username }}</strong> - {{ item.get_acao_display }}
+                        </p>
+                        {% if item.descricao %}
+                        <p class="text-muted mb-0"><small>{{ item.descricao }}</small></p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">Nenhum histórico registrado</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sidebar - Informações da Análise -->
+        <div class="col-md-4">
+            <div class="info-card">
+                <h5 class="mb-3"><i class="bi bi-clipboard-data"></i> Dados da Análise</h5>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted">Status Atual</label>
+                    <p><span class="badge badge-{{ analise.status }}">{{ analise.get_status_display }}</span></p>
+                </div>
+
+                {% if analise.classificacao %}
+                <div class="mb-3">
+                    <label class="form-label text-muted">Classificação</label>
+                    <p><span class="badge badge-{{ analise.classificacao }}">{{ analise.get_classificacao_display }}</span></p>
+                </div>
+                {% endif %}
+
+                {% if analise.valor_divida_total %}
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">Valor da Dívida</label>
+                                    <p class="fs-5 text-success mb-0">R$ {{ analise.valor_divida_total|floatformat:2 }}</p>
+                                </div>
+                                {% endif %}
+
+                {% if analise.analista_responsavel %}
+                <div class="mb-3">
+                    <label class="form-label text-muted">Analista Responsável</label>
+                    <p class="mb-0">{{ analise.analista_responsavel.username }}</p>
+                </div>
+                {% endif %}
+
+                {% if analise.consultor_atribuido %}
+                <div class="mb-3">
+                    <label class="form-label text-muted">Consultor Atribuído</label>
+                    <p class="mb-0">{{ analise.consultor_atribuido.username }}</p>
+                </div>
+                {% endif %}
+
+                    {% if lead.atendente %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Atendente Responsável</label>
+                        <p class="mb-0">{{ lead.atendente.username }}</p>
+                    </div>
+                    {% endif %}
+
+                {% if analise.data_criacao %}
+                <div class="mb-3">
+                    <label class="form-label text-muted">Data de Criação</label>
+                    <p class="mb-0">{{ analise.data_criacao|date:"d/m/Y H:i" }}</p>
+                </div>
+                {% endif %}
+
+                {% if analise.data_atribuicao %}
+                <div class="mb-3">
+                    <label class="form-label text-muted">Data de Atribuição</label>
+                    <p class="mb-0">{{ analise.data_atribuicao|date:"d/m/Y H:i" }}</p>
+                </div>
+                {% endif %}
+
+                {% if analise.motivo_reprovacao %}
+                <div class="mb-3">
+                    <label class="form-label text-muted">Motivo da Reprovação</label>
+                    <div class="alert alert-danger mb-0">
+                        {{ analise.motivo_reprovacao }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Pré-Vendas -->
+            {% if pre_vendas %}
+            <div class="info-card">
+                <h5 class="mb-3"><i class="bi bi-cart-check"></i> Pré-Vendas</h5>
+                {% for pv in pre_vendas %}
+                <div class="mb-2">
+                    <span class="badge bg-info">#{{ pv.id }}</span>
+                    <small class="text-muted">{{ pv.data_criacao|date:"d/m/Y" }}</small>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Format helpers for BRL currency
+    function formatCurrencyBRL(value) {
+        if (value === null || value === undefined || value === '') return '';
+        const num = Number(value);
+        if (isNaN(num)) return '';
+        return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function parseCurrencyBRL(formatted) {
+        if (!formatted) return null;
+        // Remove currency symbol and thousand separators, replace comma with dot
+        const cleaned = formatted.replace(/[^0-9,-]+/g, '').replace(/\./g, '').replace(/,/, '.');
+        const parsed = parseFloat(cleaned);
+        return isNaN(parsed) ? null : parsed.toFixed(2);
+    }
+
+    // Attach formatting behavior
+    const valorInput = document.getElementById('valor_divida');
+    if (valorInput) {
+        valorInput.addEventListener('focus', function() {
+            // show raw numeric when focusing
+            const raw = parseCurrencyBRL(this.value);
+            this.value = raw === null ? '' : raw;
+        });
+
+        valorInput.addEventListener('blur', function() {
+            // format as BRL on blur
+            const raw = parseCurrencyBRL(this.value);
+            this.value = raw === null ? '' : formatCurrencyBRL(raw);
+        });
+    }
+    function iniciarAnalise() {
+        const rawVal = document.getElementById('valor_divida').value;
+        const valor_divida = parseCurrencyBRL(rawVal);
+        const observacoes = document.getElementById('observacoes').value;
+
+        if (!valor_divida) {
+            alert('Por favor, informe o valor da dívida');
+            return;
+        }
+
+        fetch(`/compliance/api/analisar/{{ analise.id }}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+                body: JSON.stringify({
+                acao: 'iniciar',
+                valor_divida: valor_divida,
+                observacoes: observacoes
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Análise iniciada com sucesso!');
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao iniciar análise');
+        });
+    }
+
+    function aprovarAnalise() {
+        const rawVal = document.getElementById('valor_divida').value;
+        const valor_divida = parseCurrencyBRL(rawVal);
+        const observacoes = document.getElementById('observacoes').value;
+
+        if (!valor_divida) {
+            alert('Por favor, informe o valor da dívida');
+            return;
+        }
+
+        if (!confirm('Deseja aprovar este lead?')) return;
+
+        fetch(`/compliance/api/analisar/{{ analise.id }}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                acao: 'aprovar',
+                valor_divida: valor_divida,
+                observacoes: observacoes
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Lead aprovado com sucesso!');
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao aprovar lead');
+        });
+    }
+
+    function reprovarAnalise() {
+        const motivo = prompt('Informe o motivo da reprovação:');
+        if (!motivo) return;
+
+        fetch(`/compliance/api/analisar/{{ analise.id }}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                acao: 'reprovar',
+                motivo_reprovacao: motivo
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Lead reprovado');
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao reprovar lead');
+        });
+    }
+
+    function atribuirConsultor() {
+        const consultor_id = document.getElementById('consultor_id').value;
+
+        if (!consultor_id) {
+            alert('Por favor, selecione um consultor');
+            return;
+        }
+
+        fetch(`/compliance/api/atribuir/{{ analise.id }}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                consultor_id: consultor_id
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Lead atribuído com sucesso ao consultor!');
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao atribuir consultor');
+        });
+    }
+
+    // Fallback: format any raw R$ values rendered without thousands separators
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            const nodes = document.querySelectorAll('.fs-5.text-success.mb-0');
+            nodes.forEach(n => {
+                const txt = (n.textContent || '').trim();
+                if (txt.startsWith('R$')) {
+                    const parsed = parseCurrencyBRL(txt);
+                    if (parsed) n.textContent = formatCurrencyBRL(parsed);
+                }
+            });
+        } catch (e) {
+            console.debug('Fallback currency formatter skipped', e);
+        }
+    });
+</script>
+{% endblock %}

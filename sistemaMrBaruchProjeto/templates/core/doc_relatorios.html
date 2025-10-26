@@ -1,0 +1,327 @@
+{% extends 'core/doc_base.html' %}
+
+{% block doc_content %}
+
+<h2 id="visao-geral">📋 Visão Geral</h2>
+<p>
+  Implementação completa de um módulo de relatórios gerenciais para o Sistema Mr. Baruch, permitindo 
+  análises detalhadas de leads, comissões, vendas e finanças com <strong>filtros avançados</strong> e 
+  <strong>exportação de dados</strong>.
+</p>
+
+<h2 id="funcionalidades">🎯 Funcionalidades Implementadas</h2>
+
+<h3 id="painel-principal">✅ Painel Principal de Relatórios</h3>
+<ul>
+  <li>📊 <strong>Estatísticas Gerais</strong>: Total de leads, taxa de conversão, comissões totais</li>
+  <li>🏆 <strong>Top 5 Atendentes</strong>: Ranking de performance do período</li>
+  <li>🎴 <strong>Cards de Módulos</strong>: Acesso rápido aos relatórios específicos</li>
+  <li>📈 <strong>Indicadores Visuais</strong>: Cards coloridos com métricas chave</li>
+</ul>
+
+<h3 id="relatorio-leads">✅ Relatório de Leads</h3>
+
+<h4>🔍 Filtros Avançados:</h4>
+<ul>
+  <li>Período (7/30/60/90/365 dias ou todos)</li>
+  <li>Status (Pago/Pendente/Expirado)</li>
+  <li>Atendente específico</li>
+</ul>
+
+<h4>📊 Estatísticas do Período:</h4>
+<ul>
+  <li>Total de leads</li>
+  <li>Leads pagos (com valor total)</li>
+  <li>Leads pendentes</li>
+  <li>Leads expirados</li>
+</ul>
+
+<h4>Recursos Adicionais:</h4>
+<ul>
+  <li>📉 <strong>Distribuição por Status</strong>: Análise visual percentual</li>
+  <li>📋 <strong>Lista Detalhada</strong>: Últimos 100 leads com informações completas</li>
+  <li>💾 <strong>Exportação CSV</strong>: Download dos dados filtrados</li>
+</ul>
+
+<h3 id="relatorio-comissoes">✅ Relatório de Comissões</h3>
+
+<h4>🔍 Filtros Específicos:</h4>
+<ul>
+  <li>Período personalizável</li>
+  <li>Status de pagamento (Pago/Pendente/Todos)</li>
+  <li>Filtro por atendente</li>
+</ul>
+
+<h4>💰 Análise Financeira:</h4>
+<ul>
+  <li>Total de comissões</li>
+  <li>Total pago vs pendente</li>
+  <li>Ticket médio</li>
+  <li>Taxa de pagamento</li>
+</ul>
+
+<h4>Recursos Adicionais:</h4>
+<ul>
+  <li>🏅 <strong>Ranking de Atendentes</strong>: Top 10 com destaque visual</li>
+  <li>📊 <strong>Detalhamento Individual</strong>: Lista completa de comissões</li>
+  <li>💾 <strong>Exportação CSV</strong>: Relatório completo para contabilidade</li>
+</ul>
+
+<h3 id="relatorios-futuros">✅ Relatórios Futuros (Placeholder)</h3>
+<ul>
+  <li>🛒 <strong>Relatório de Vendas</strong>: Em desenvolvimento</li>
+  <li>💵 <strong>Relatório Financeiro</strong>: Em desenvolvimento</li>
+  <li>🎨 <strong>Template "Em Breve"</strong>: Interface elegante com navegação</li>
+</ul>
+
+<h2 id="arquitetura">🏗️ Arquitetura Técnica</h2>
+
+<h3 id="urls">1. URLs</h3>
+<p class="text-muted"><code>relatorios/urls.py</code></p>
+
+<pre><code class="language-python">urlpatterns = [
+    path('', views.painel_relatorios, name='painel_relatorios'),
+    path('leads/', views.relatorio_leads, name='relatorio_leads'),
+    path('vendas/', views.relatorio_vendas, name='relatorio_vendas'),
+    path('comissoes/', views.relatorio_comissoes, name='relatorio_comissoes'),
+    path('financeiro/', views.relatorio_financeiro, name='relatorio_financeiro'),
+    path('exportar/&lt;str:tipo&gt;/', views.exportar_relatorio, name='exportar_relatorio'),
+]</code></pre>
+
+<p><strong>Namespace:</strong> <code>relatorios</code></p>
+
+<h3 id="views">2. Views</h3>
+<p class="text-muted"><code>relatorios/views.py</code></p>
+
+<h4>2.1 painel_relatorios</h4>
+<div class="doc-card">
+  <p><strong>Propósito:</strong> Painel principal com visão geral</p>
+  <p class="mb-2"><strong>Funcionalidades:</strong></p>
+  <ul class="mb-2">
+    <li>Estatísticas gerais de leads e comissões</li>
+    <li>Top 5 atendentes do período (últimos 30 dias)</li>
+    <li>Links para relatórios específicos</li>
+  </ul>
+  <p class="mb-0"><strong>Query Performance:</strong></p>
+  <ul class="mb-0">
+    <li><code>aggregate()</code> para totais</li>
+    <li><code>values()</code> + <code>annotate()</code> para agrupamentos</li>
+    <li>Limita top 5 automaticamente</li>
+  </ul>
+</div>
+
+<h4>2.2 relatorio_leads</h4>
+<div class="doc-card">
+  <p><strong>Propósito:</strong> Análise detalhada de leads</p>
+  <p class="mb-2"><strong>Filtros Disponíveis:</strong></p>
+  <ul class="mb-2">
+    <li><code>periodo</code>: 7, 30, 60, 90, 365, 'todos'</li>
+    <li><code>status</code>: PAGO, PENDENTE, EXPIRADO, 'todos'</li>
+    <li><code>atendente</code>: ID do usuário ou vazio</li>
+  </ul>
+  <p class="mb-2"><strong>Estatísticas Calculadas:</strong></p>
+  <ul class="mb-2">
+    <li>Total de leads no período</li>
+    <li>Distribuição por status</li>
+    <li>Valor total (R$ 50,00 por lead pago)</li>
+    <li>Lista limitada a 100 registros</li>
+  </ul>
+  <p class="mb-0"><strong>Otimizações:</strong></p>
+  <ul class="mb-0">
+    <li><code>select_related('captador')</code> para evitar N+1</li>
+    <li>Filtros encadeados eficientes</li>
+    <li>Paginação implícita (100 registros)</li>
+  </ul>
+</div>
+
+<h4>2.3 relatorio_comissoes</h4>
+<div class="doc-card">
+  <p><strong>Propósito:</strong> Análise financeira de comissões</p>
+  <p class="mb-2"><strong>Filtros Disponíveis:</strong></p>
+  <ul class="mb-2">
+    <li><code>periodo</code>: 7, 30, 60, 90, 365, 'todos'</li>
+    <li><code>pago</code>: 'pago', 'pendente', 'todos'</li>
+    <li><code>atendente</code>: ID do usuário ou vazio</li>
+  </ul>
+  <p class="mb-2"><strong>Estatísticas Avançadas:</strong></p>
+  <ul class="mb-2">
+    <li>Total de comissões (quantidade e valor)</li>
+    <li>Pagas vs Pendentes</li>
+    <li>Ticket médio calculado</li>
+    <li>Taxa de pagamento percentual</li>
+    <li>Ranking top 10 atendentes com drill-down</li>
+  </ul>
+  <p class="mb-0"><strong>Otimizações:</strong></p>
+  <ul class="mb-0">
+    <li><code>select_related()</code> para FKs</li>
+    <li><code>Q objects</code> para filtros condicionais</li>
+    <li><code>aggregate()</code> para cálculos eficientes</li>
+  </ul>
+</div>
+
+<h4>2.4 exportar_relatorio</h4>
+<div class="doc-card">
+  <p><strong>Propósito:</strong> Exportar dados em CSV</p>
+  <p class="mb-2"><strong>Tipos Suportados:</strong></p>
+  <ul class="mb-2">
+    <li><code>leads</code>: Exporta relatório de leads</li>
+    <li><code>comissoes</code>: Exporta relatório de comissões</li>
+  </ul>
+  <p class="mb-0"><strong>Características:</strong></p>
+  <ul class="mb-0">
+    <li><strong>UTF-8 BOM</strong>: Excel reconhece acentuação</li>
+    <li><strong>Timestamp no nome</strong>: Evita sobrescritas</li>
+    <li><strong>Preserva filtros</strong>: Via <code>request.GET.urlencode</code></li>
+    <li><strong>Headers personalizados</strong>: Content-Disposition para download</li>
+  </ul>
+</div>
+
+<h2 id="exemplos-uso">📊 Exemplos de Uso</h2>
+
+<h3>1. Filtrar Leads Pagos do Último Mês</h3>
+<pre><code>URL: /relatorios/leads/?periodo=30&amp;status=PAGO</code></pre>
+<div class="doc-alert doc-alert-success">
+  <strong>Resultado:</strong>
+  <ul class="mb-0">
+    <li>Lista de todos os leads pagos nos últimos 30 dias</li>
+    <li>Estatísticas específicas do período</li>
+    <li>Valor total calculado (quantidade × R$ 50,00)</li>
+  </ul>
+</div>
+
+<h3>2. Comissões Pendentes por Atendente</h3>
+<pre><code>URL: /relatorios/comissoes/?pago=pendente&amp;atendente=5</code></pre>
+<div class="doc-alert doc-alert-success">
+  <strong>Resultado:</strong>
+  <ul class="mb-0">
+    <li>Todas as comissões pendentes do atendente ID 5</li>
+    <li>Total a pagar</li>
+    <li>Datas de criação</li>
+    <li>Leads associados</li>
+  </ul>
+</div>
+
+<h3>3. Exportar Relatório de Comissões</h3>
+<pre><code>URL: /relatorios/exportar/comissoes/?periodo=90</code></pre>
+<div class="doc-alert doc-alert-success">
+  <strong>Resultado:</strong>
+  <ul class="mb-0">
+    <li>Arquivo CSV: <code>relatorio_comissoes_20251014_153045.csv</code></li>
+    <li>UTF-8 com BOM (compatível Excel)</li>
+    <li>Últimos 90 dias de comissões</li>
+  </ul>
+</div>
+
+<h2 id="urls-disponiveis">🔗 URLs Disponíveis</h2>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>URL</th>
+      <th>Nome</th>
+      <th>Descrição</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>/relatorios/</code></td>
+      <td><code>relatorios:painel_relatorios</code></td>
+      <td>Painel principal</td>
+    </tr>
+    <tr>
+      <td><code>/relatorios/leads/</code></td>
+      <td><code>relatorios:relatorio_leads</code></td>
+      <td>Relatório de leads</td>
+    </tr>
+    <tr>
+      <td><code>/relatorios/comissoes/</code></td>
+      <td><code>relatorios:relatorio_comissoes</code></td>
+      <td>Relatório de comissões</td>
+    </tr>
+    <tr>
+      <td><code>/relatorios/vendas/</code></td>
+      <td><code>relatorios:relatorio_vendas</code></td>
+      <td>Placeholder vendas</td>
+    </tr>
+    <tr>
+      <td><code>/relatorios/financeiro/</code></td>
+      <td><code>relatorios:relatorio_financeiro</code></td>
+      <td>Placeholder financeiro</td>
+    </tr>
+    <tr>
+      <td><code>/relatorios/exportar/&lt;tipo&gt;/</code></td>
+      <td><code>relatorios:exportar_relatorio</code></td>
+      <td>Exportar CSV</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="como-testar">🧪 Como Testar</h2>
+
+<h3>1. Acessar Painel Principal</h3>
+<pre><code>http://localhost:8000/relatorios/</code></pre>
+<p>✅ Deve exibir estatísticas gerais e top 5 atendentes</p>
+
+<h3>2. Testar Filtros de Leads</h3>
+<pre><code>http://localhost:8000/relatorios/leads/</code></pre>
+<ul>
+  <li>Selecionar "Últimos 7 dias"</li>
+  <li>Status "Pago"</li>
+  <li>Clicar em "Filtrar"</li>
+</ul>
+<p>✅ Lista deve atualizar com leads pagos nos últimos 7 dias</p>
+
+<h3>3. Testar Ranking de Comissões</h3>
+<pre><code>http://localhost:8000/relatorios/comissoes/</code></pre>
+<p>✅ Deve exibir ranking com badges ouro/prata/bronze para top 3</p>
+
+<h3>4. Exportar CSV</h3>
+<pre><code>http://localhost:8000/relatorios/exportar/leads/</code></pre>
+<p>✅ Deve fazer download de arquivo CSV com dados formatados</p>
+
+<h2 id="performance">⚡ Performance e Otimizações</h2>
+
+<h3>Queries Otimizadas</h3>
+<ul>
+  <li>✅ <code>select_related()</code> para ForeignKeys (evita N+1)</li>
+  <li>✅ <code>aggregate()</code> para cálculos no banco</li>
+  <li>✅ <code>values()</code> + <code>annotate()</code> para agrupamentos eficientes</li>
+  <li>✅ Limites de registros (100 por página)</li>
+</ul>
+
+<h3>Recomendações Futuras</h3>
+<ul>
+  <li>⏳ <strong>Índices no BD</strong>: Criar índices em colunas filtradas</li>
+  <li>⏳ <strong>Cache</strong>: Implementar cache para estatísticas gerais</li>
+  <li>⏳ <strong>Paginação</strong>: Lazy loading para listas grandes</li>
+  <li>⏳ <strong>Background Jobs</strong>: Gerar relatórios pesados em background (Celery)</li>
+</ul>
+
+<h2 id="proximos-passos">🚀 Próximos Passos</h2>
+
+<h3>Curto Prazo</h3>
+<ul>
+  <li>⏳ <strong>Paginação</strong>: Implementar paginação para listas &gt; 100 registros</li>
+  <li>⏳ <strong>Gráficos</strong>: Adicionar Chart.js para visualizações</li>
+  <li>⏳ <strong>Filtro de Data</strong>: Adicionar datepicker para períodos customizados</li>
+  <li>⏳ <strong>Mais Formatos</strong>: Exportação em Excel (XLSX) e PDF</li>
+</ul>
+
+<h3>Médio Prazo</h3>
+<ul>
+  <li>⏳ <strong>Relatório de Vendas</strong>: Implementar quando módulo de vendas estiver pronto</li>
+  <li>⏳ <strong>Relatório Financeiro</strong>: Integrar com módulo financeiro</li>
+  <li>⏳ <strong>Dashboard Interativo</strong>: Gráficos interativos com drill-down</li>
+  <li>⏳ <strong>Comparação de Períodos</strong>: Análise mês a mês, ano a ano</li>
+  <li>⏳ <strong>Agendamento</strong>: Envio automático de relatórios por e-mail</li>
+</ul>
+
+<h2 id="suporte">📞 Suporte</h2>
+
+<div class="doc-card">
+  <p class="mb-2"><strong>Desenvolvido por:</strong> GitHub Copilot + Equipe Mr. Baruch</p>
+  <p class="mb-2"><strong>Data:</strong> 14 de Outubro de 2025</p>
+  <p class="mb-0"><strong>Status:</strong> <span class="doc-badge doc-badge-success">PRONTO PARA PRODUÇÃO</span></p>
+</div>
+
+{% endblock %}

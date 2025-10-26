@@ -1,0 +1,286 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Central de Documentação - Mr. Baruch{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  
+  <!-- Cabeçalho -->
+  <div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+      <h1 class="fw-bold text-dark mb-2">
+        Central de Documentação
+      </h1>
+      <p class="text-muted mb-0">
+        Explore guias, tutoriais e documentação técnica do Sistema Mr. Baruch
+      </p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+      <a href="/accounts/dashboard/" class="btn btn-outline-secondary">
+        Voltar ao Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Cards de Navegação Principal -->
+  <div class="row g-4 mb-4">
+    
+    <!-- Card: Jornadas do Sistema -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card border-0 shadow-lg h-100 card-hover card-gradient-primary">
+        <div class="card-body p-4 text-center">
+          <div class="icon-circle bg-primary mb-3">
+            <span class="fw-bold fs-4">JO</span>
+          </div>
+          <h4 class="fw-bold mb-3">Jornadas do Sistema</h4>
+          <p class="text-muted mb-4">
+            Fluxos completos por módulo: Lead, Atendimento, Vendas, Financeiro e mais
+          </p>
+          <div class="d-flex gap-2 justify-content-center flex-wrap mb-3">
+            <span class="badge bg-success">Lead</span>
+            <span class="badge bg-warning text-dark">Atendimento</span>
+            <span class="badge bg-info">Vendas</span>
+            <span class="badge bg-danger">+5 módulos</span>
+          </div>
+          <a href="{% url 'core:documentacao_jornadas' %}" class="btn btn-primary w-100">
+            Explorar Jornadas
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Documentação de Módulos -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card border-0 shadow-lg h-100 card-hover card-gradient-success">
+        <div class="card-body p-4 text-center">
+          <div class="icon-circle bg-success mb-3">
+            <span class="fw-bold fs-4">MO</span>
+          </div>
+          <h4 class="fw-bold mb-3">Documentação de Módulos</h4>
+          <p class="text-muted mb-4">
+            Guias detalhados de funcionalidades, APIs e configurações por módulo
+          </p>
+          <div class="d-flex gap-2 justify-content-center flex-wrap mb-3">
+            <span class="badge bg-primary">Comissões</span>
+            <span class="badge bg-danger">Relatórios</span>
+            <span class="badge bg-warning text-dark">Core</span>
+            <span class="badge bg-info">Marketing</span>
+          </div>
+          <a href="{% url 'core:documentacao_modulos' %}" class="btn btn-success w-100">
+            Ver Módulos
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Documentação Técnica -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card border-0 shadow-lg h-100 card-hover card-gradient-info">
+        <div class="card-body p-4 text-center">
+          <div class="icon-circle bg-info mb-3">
+            <span class="fw-bold fs-4">TE</span>
+          </div>
+          <h4 class="fw-bold mb-3">Documentação Técnica</h4>
+          <p class="text-muted mb-4">
+            Arquitetura, stack, deploy e configurações do sistema
+          </p>
+          <div class="d-flex gap-2 justify-content-center flex-wrap mb-3">
+            <span class="badge bg-success">Django</span>
+            <span class="badge bg-primary">PostgreSQL</span>
+            <span class="badge bg-warning text-dark">Deploy</span>
+            <span class="badge bg-danger">API</span>
+          </div>
+          <a href="{% url 'core:documentacao_tecnica' %}" class="btn btn-info w-100">
+            Ver Documentação
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Seção: Recursos Adicionais -->
+  <div class="row">
+    <div class="col-12 mb-3">
+      <h3 class="fw-bold text-dark">
+        Recursos Adicionais
+      </h3>
+    </div>
+
+    <!-- FAQ -->
+    <div class="col-lg-4 col-md-6 mb-4">
+      <div class="card h-100 border-0 shadow-sm resource-card">
+        <div class="card-body p-4 text-center">
+          <i class="bi bi-question-circle-fill text-info fs-1 mb-3"></i>
+          <h5 class="fw-bold mb-2">FAQ - Perguntas Frequentes</h5>
+          <p class="text-muted small mb-3">
+            Respostas para as dúvidas mais comuns sobre o sistema
+          </p>
+          <button class="btn btn-sm btn-outline-info" disabled>
+            <i class="bi bi-hourglass-split me-1"></i>Em Breve
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vídeos Tutoriais -->
+    <div class="col-lg-4 col-md-6 mb-4">
+      <div class="card h-100 border-0 shadow-sm resource-card">
+        <div class="card-body p-4 text-center">
+          <i class="bi bi-play-circle-fill text-danger fs-1 mb-3"></i>
+          <h5 class="fw-bold mb-2">Vídeos Tutoriais</h5>
+          <p class="text-muted small mb-3">
+            Aprenda com vídeos passo a passo
+          </p>
+          <button class="btn btn-sm btn-outline-danger" disabled>
+            <i class="bi bi-hourglass-split me-1"></i>Em Breve
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Suporte Técnico -->
+    <div class="col-lg-4 col-md-6 mb-4">
+      <div class="card h-100 border-0 shadow-sm resource-card">
+        <div class="card-body p-4 text-center">
+          <i class="bi bi-life-preserver text-success fs-1 mb-3"></i>
+          <h5 class="fw-bold mb-2">Suporte Técnico</h5>
+          <p class="text-muted small mb-3">
+            Entre em contato com nossa equipe de suporte
+          </p>
+          <button class="btn btn-sm btn-outline-success" disabled>
+            <i class="bi bi-hourglass-split me-1"></i>Em Breve
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<style>
+/* Cards com Hover Effect */
+.card-hover {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.card-hover:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.2) !important;
+}
+
+/* Cards com Gradiente Sutil */
+.card-gradient-primary {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f4ff 100%);
+  border-left: 4px solid #0d6efd;
+}
+
+.card-gradient-success {
+  background: linear-gradient(135deg, #ffffff 0%, #f0fff4 100%);
+  border-left: 4px solid #198754;
+}
+
+.card-gradient-warning {
+  background: linear-gradient(135deg, #ffffff 0%, #fffbf0 100%);
+  border-left: 4px solid #ffc107;
+}
+
+/* Ícones Circulares */
+.icon-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  font-size: 2.5rem;
+}
+
+/* Icon Badge para Módulos */
+.icon-badge {
+  width: 45px;
+  height: 45px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+/* Cards de Módulos */
+.module-doc-card {
+  transition: all 0.3s ease;
+}
+
+.module-doc-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+}
+
+/* Cards de Recursos */
+.resource-card {
+  transition: all 0.3s ease;
+}
+
+.resource-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+}
+
+/* Badges Customizados */
+.badge {
+  font-weight: 500;
+  padding: 0.4rem 0.8rem;
+}
+
+/* Scroll Suave */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Botões */
+.btn {
+  transition: all 0.3s ease;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .icon-circle {
+    width: 60px;
+    height: 60px;
+    font-size: 2rem;
+  }
+  
+  h1 {
+    font-size: 1.75rem;
+  }
+  
+  h4 {
+    font-size: 1.25rem;
+  }
+}
+</style>
+
+<script>
+// Smooth scroll para links internos
+document.querySelectorAll('.scroll-link').forEach(link => {
+  link.addEventListener('click', function(e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+
+{% endblock %}

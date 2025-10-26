@@ -1,0 +1,275 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Sistema Mr. Baruch{% endblock %}
+
+{% block content %}
+<div id="auth-loading" class="text-center py-5">
+  <div class="spinner-border text-primary mb-3" role="status">
+    <span class="visually-hidden">Carregando...</span>
+  </div>
+  <p>Verificando autenticação...</p>
+</div>
+
+<div id="dashboard-content" style="display:none;">
+  <div class="container-fluid">
+    <!-- Cabeçalho -->
+    <div class="row mb-4">
+      <div class="col-12 text-center text-md-start">
+        <h1 class="fw-bold text-dark mb-1">Painel de Controle</h1>
+        <p class="text-muted">Bem-vindo ao Sistema CRM Mr. Baruch, <span id="user-name" class="fw-semibold text-primary">{{ user.get_full_name|default:user.email }}</span>!</p>
+      </div>
+    </div>
+
+    <!-- Cards de Estatísticas -->
+    <div class="row g-4 mb-4">
+      <div class="col-xl-3 col-md-6">
+        <div class="card stat-card gradient-blue">
+          <div class="card-body text-white">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="text-white-50 mb-1">Clientes Ativos</h6>
+                <h2 class="fw-bold">{{ clientes_count }}</h2>
+              </div>
+              <i class="bi bi-people fs-1 opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-3 col-md-6">
+        <div class="card stat-card gradient-orange">
+          <div class="card-body text-white">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="text-white-50 mb-1">Vendas do Mês</h6>
+                <h2 class="fw-bold">R$ {{ vendas_mes|floatformat:2 }}</h2>
+              </div>
+              <i class="bi bi-graph-up fs-1 opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-3 col-md-6">
+        <div class="card stat-card gradient-purple">
+          <div class="card-body text-white">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="text-white-50 mb-1">Atendimentos</h6>
+                <h2 class="fw-bold">{{ atendimentos_count }}</h2>
+              </div>
+              <i class="bi bi-headset fs-1 opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-3 col-md-6">
+        <div class="card stat-card gradient-green">
+          <div class="card-body text-white">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="text-white-50 mb-1">Comissões do Mês</h6>
+                <h2 class="fw-bold">R$ {{ comissoes_valor|floatformat:2 }}</h2>
+              </div>
+              <i class="bi bi-currency-dollar fs-1 opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Módulos do Sistema -->
+    <div class="row">
+      <div class="col-12 mb-3">
+        <h3 class="fw-bold text-dark">Módulos do Sistema</h3>
+      </div>
+
+      {% comment %} módulos {% endcomment %}
+      <!-- Card estático: Compliance -->
+      <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+        <div class="card module-card h-100 text-center">
+          <div class="card-body p-4">
+            <i class="bi bi-shield-check text-primary fs-1 mb-3"></i>
+            <h5 class="fw-bold mb-2">Compliance</h5>
+            <p class="text-muted small">Análises de leads e gestão pós-venda</p>
+            <a href="/compliance/painel/" class="btn btn-outline-primary">Acessar</a>
+          </div>
+        </div>
+      </div>
+      {% for modulo in modulos %}
+            <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+            <div class="card module-card h-100 text-center">
+                <div class="card-body p-4">
+                <i class="bi bi-{{ modulo.icon }} text-{{ modulo.color }} fs-1 mb-3"></i>
+                <h5 class="fw-bold mb-2">{{ modulo.nome }}</h5>
+                <p class="text-muted small">{{ modulo.texto }}</p>
+                <a href="{{ modulo.link }}" class="btn btn-outline-{{ modulo.color }}">Acessar</a>
+                </div>
+            </div>
+            </div>
+        {% endfor %}              
+       
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ======== Controle de Sessão e Autenticação ======== */
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.startsWith(name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+function acessarModuloComSessao(modulo) {
+  const token = localStorage.getItem('access_token');
+  // Se não houver token, tenta sessão Django
+  if (!token) {
+    // Verifica se está autenticado por sessão Django
+    fetch('/accounts/api/profile/', {
+      method: 'GET',
+      credentials: 'same-origin'
+    })
+    .then(res => {
+      if (res.ok) {
+        // Sessão válida, redireciona normalmente
+        if (modulo === 'atendimento') {
+          window.location.href = '/atendimento/leads-pix/';
+        } else {
+          window.location.href = `/${modulo}/`;
+        }
+      } else {
+        // Sessão expirada
+        alert('Sessão expirada. Faça login novamente.');
+        window.location.href = '/accounts/login/';
+      }
+    })
+    .catch(() => {
+      alert('Sessão expirada. Faça login novamente.');
+      window.location.href = '/accounts/login/';
+    });
+    return;
+  }
+
+  // Se houver token, autentica via JWT
+  fetch('/atendimento/api/autenticar/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({ 'token': token })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      if (modulo === 'atendimento') {
+        window.location.href = '/atendimento/leads-pix/';
+      } else {
+        window.location.href = `/${modulo}/`;
+      }
+    } else {
+      // Token JWT inválido, tenta sessão Django
+      localStorage.clear();
+      fetch('/accounts/api/profile/', {
+        method: 'GET',
+        credentials: 'same-origin'
+      })
+      .then(res => {
+        if (res.ok) {
+          if (modulo === 'atendimento') {
+            window.location.href = '/atendimento/leads-pix/';
+          } else {
+            window.location.href = `/${modulo}/`;
+          }
+        } else {
+          alert('Sessão expirada. Faça login novamente.');
+          window.location.href = '/accounts/login/';
+        }
+      })
+      .catch(() => {
+        alert('Sessão expirada. Faça login novamente.');
+        window.location.href = '/accounts/login/';
+      });
+    }
+  })
+  .catch(() => {
+    alert('Sessão expirada. Faça login novamente.');
+    window.location.href = '/accounts/login/';
+  });
+}
+
+class AuthGuard {
+  static checkAuth() {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      this.validateToken(token);
+    } else {
+      this.checkSession();
+    }
+  }
+
+  static async validateToken(token) {
+    try {
+      const response = await fetch('/accounts/api/profile/', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Token inválido');
+      const user = await response.json();
+      this.loadDashboard(user);
+    } catch {
+      localStorage.clear();
+      this.checkSession();
+    }
+  }
+
+  static checkSession() {
+    fetch('/accounts/api/profile/', {
+      method: 'GET',
+      credentials: 'same-origin'
+    })
+    .then(res => {
+      if (res.ok) {
+        this.loadDashboardFromSession();
+      } else {
+        window.location.href = '/accounts/login/';
+      }
+    })
+    .catch(() => {
+      window.location.href = '/accounts/login/';
+    });
+  }
+
+  static loadDashboardFromSession() {
+    document.getElementById('auth-loading').style.display = 'none';
+    document.getElementById('dashboard-content').style.display = 'block';
+    const userNameElement = document.getElementById('user-name');
+    if (userNameElement && !userNameElement.textContent) {
+      userNameElement.textContent = 'Usuário';
+    }
+  }
+
+  static loadDashboard(user) {
+    document.getElementById('auth-loading').style.display = 'none';
+    document.getElementById('dashboard-content').style.display = 'block';
+    const userName = user.first_name || user.email.split('@')[0];
+    document.getElementById('user-name').textContent = userName;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => AuthGuard.checkAuth());
+</script>
+{% endblock %}

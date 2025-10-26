@@ -1,0 +1,201 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Contratos Enviados - Aguardando Assinatura{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-clock-history me-2"></i>Contratos Enviados</h2>
+                    <p class="text-muted mb-0">Acompanhe contratos aguardando assinatura do cliente</p>
+                </div>
+                <div>
+                    <a href="{% url 'juridico:dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Lista de contratos enviados -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">
+                        <i class="bi bi-send text-primary me-2"></i>
+                        Contratos com Cliente ({{ contratos_enviados.count }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if contratos_enviados %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Contrato</th>
+                                        <th>Cliente</th>
+                                        <th>Valor</th>
+                                        <th>Data Envio</th>
+                                        <th>Tempo com Cliente</th>
+                                        <th class="text-center">Status</th>
+                                        <th class="text-center">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for contrato in contratos_enviados %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ contrato.numero_contrato }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-2">
+                                                    <i class="bi bi-person text-primary"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold">{{ contrato.cliente.lead.nome_completo|truncatechars:35 }}</div>
+                                                    <small class="text-muted">{{ contrato.cliente.lead.telefone }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <strong class="text-success">R$ {{ contrato.venda.valor_total }}</strong>
+                                        </td>
+                                        <td>
+                                            <small>{{ contrato.data_envio|date:"d/m/Y H:i" }}</small>
+                                        </td>
+                                        <td>
+                                            {% if contrato.dias_cliente == 0 %}
+                                                <span class="badge bg-info">Hoje</span>
+                                            {% elif contrato.dias_cliente <= 3 %}
+                                                <span class="badge bg-success">{{ contrato.dias_cliente }} dia{{ contrato.dias_cliente|pluralize }}</span>
+                                            {% elif contrato.dias_cliente <= 7 %}
+                                                <span class="badge bg-warning">{{ contrato.dias_cliente }} dias</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">{{ contrato.dias_cliente }} dias ⚠️</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary">
+                                                <i class="bi bi-send me-1"></i>Enviado
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'juridico:detalhes_contrato' contrato.id %}" 
+                                                   class="btn btn-outline-primary" 
+                                                   title="Ver detalhes">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <button type="button" 
+                                                        class="btn btn-success" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#modalAssinado{{ contrato.id }}"
+                                                        title="Marcar como assinado">
+                                                    <i class="bi bi-check-circle"></i> Assinado
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Modal para confirmar assinatura -->
+                                    <div class="modal fade" id="modalAssinado{{ contrato.id }}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-success text-white">
+                                                    <h5 class="modal-title">
+                                                        <i class="bi bi-check-circle me-2"></i>Confirmar Assinatura
+                                                    </h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <form method="post" action="{% url 'juridico:atualizar_status' contrato.id %}">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="status" value="ASSINADO">
+                                                    <div class="modal-body">
+                                                        <div class="alert alert-info">
+                                                            <i class="bi bi-info-circle me-2"></i>
+                                                            <strong>Importante:</strong> Ao confirmar, as parcelas do contrato serão automaticamente enviadas ao ASAAS para cobrança.
+                                                        </div>
+                                                        
+                                                        <h6 class="mb-3">Dados do Contrato:</h6>
+                                                        <ul class="list-unstyled">
+                                                            <li><strong>Número:</strong> {{ contrato.numero_contrato }}</li>
+                                                            <li><strong>Cliente:</strong> {{ contrato.cliente.lead.nome_completo }}</li>
+                                                            <li><strong>Valor Total:</strong> R$ {{ contrato.venda.valor_total }}</li>
+                                                            <li><strong>Parcelas:</strong> {{ contrato.venda.quantidade_parcelas }}x de R$ {{ contrato.venda.valor_parcela }}</li>
+                                                        </ul>
+                                                        
+                                                        <p class="text-muted mb-0">
+                                                            <small>O contrato está com o cliente há {{ contrato.tempo_envio_formatado }}.</small>
+                                                        </p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                        <button type="submit" class="btn btn-success">
+                                                            <i class="bi bi-check-circle me-2"></i>Confirmar Assinatura
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                            <h5>Nenhum contrato enviado aguardando assinatura</h5>
+                            <p>Todos os contratos enviados já foram assinados ou estão em outro status.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card informativo -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-body">
+                    <h6 class="card-title text-info">
+                        <i class="bi bi-info-circle me-2"></i>Como funciona?
+                    </h6>
+                    <ul class="mb-0">
+                        <li>Contratos marcados como <span class="badge bg-primary">Enviado</span> aparecem aqui</li>
+                        <li>O tempo com cliente é contado automaticamente desde o envio</li>
+                        <li>Ao clicar em <span class="badge bg-success">Assinado</span>, o sistema:
+                            <ul>
+                                <li>✅ Marca o contrato como assinado</li>
+                                <li>✅ Envia automaticamente todas as parcelas para o ASAAS</li>
+                                <li>✅ Gera os boletos/PIX para cobrança</li>
+                            </ul>
+                        </li>
+                        <li>Cores indicam urgência: 
+                            <span class="badge bg-success">0-3 dias</span>
+                            <span class="badge bg-warning">4-7 dias</span>
+                            <span class="badge bg-danger">+7 dias</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

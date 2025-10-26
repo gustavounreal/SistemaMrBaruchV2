@@ -1,0 +1,506 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Atendente - Sistema Mr. Baruch</title>
+    
+    <!-- Bootstrap 5.3.0 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(120deg, #eef2ff, #fdf2e9);
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-size: 0.97rem;
+  }
+
+  .main-content {
+    margin-left: 280px;
+    padding: 2rem 0;
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #f6f7fb;
+  }
+
+  .central-container {
+    width: 100%;
+    max-width: 1100px;
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(102, 126, 234, 0.08);
+    border: 1.5px solid #e3e6f0;
+    padding: 2.5rem 2rem 2rem 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .hero-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+  }
+
+  .hero-header h2 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .hero-header p {
+    margin: 0.5rem 0 0 0;
+    opacity: 0.95;
+  }
+
+  .hero-header .btn-light {
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    font-weight: 600;
+    padding: 0.6rem 1.5rem;
+    transition: all 0.3s;
+  }
+
+  .hero-header .btn-light:hover {
+    background: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .section-title {
+    font-size: 1.08rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 1.2rem 0 0.7rem 0;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid #667eea;
+    display: flex;
+    align-items: center;
+  }
+
+  .section-title i {
+    margin-right: 0.5rem;
+    color: #667eea;
+  }
+
+  .metric-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.1rem 1.1rem 1.1rem 1.3rem;
+    margin-bottom: 1.1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border-left: 4px solid;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+
+  .metric-card.primary { border-left-color: #667eea; }
+  .metric-card.success { border-left-color: #28a745; }
+  .metric-card.warning { border-left-color: #ffc107; }
+  .metric-card.danger { border-left-color: #dc3545; }
+  .metric-card.info { border-left-color: #17a2b8; }
+
+  .metric-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.2;
+    color: #2d3748;
+  }
+
+  .metric-label {
+    font-size: 0.78rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.4rem;
+    font-weight: 600;
+  }
+
+  .metric-icon {
+    font-size: 1.7rem;
+    opacity: 0.13;
+    position: absolute;
+    right: 1.1rem;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .alert-commission {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  .alert-commission .icon {
+    font-size: 2rem;
+    margin-right: 1rem;
+  }
+
+  .table-leads {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .table-leads thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .table-leads th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.5px;
+    padding: 0.7rem;
+    border: none;
+  }
+
+  .table-leads td {
+    padding: 0.7rem;
+    vertical-align: middle;
+    border-color: #f0f0f0;
+    font-size: 0.97em;
+  }
+
+  .table-leads tbody tr {
+    transition: background 0.2s;
+  }
+
+  .table-leads tbody tr:hover {
+    background: #f8f9ff;
+  }
+
+  .badge-status {
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: inline-block;
+  }
+
+  .badge-pago { background: #d4edda; color: #155724; }
+  .badge-pendente { background: #fff3cd; color: #856404; }
+
+  .alert-info {
+    background: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 8px;
+    color: #004085;
+  }
+
+  @media (max-width: 768px) {
+    .main-content {
+      margin-left: 0;
+      padding: 1rem;
+    }
+
+    .hero-header h2 {
+      font-size: 1.5rem;
+    }
+
+    .metric-value {
+      font-size: 2rem;
+    }
+
+    .section-title {
+      font-size: 1.2rem;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Include Sidebar -->
+{% include 'atendimento/sidebar_atendente.html' %}
+
+<!-- Main Content -->
+<div class="main-content">
+  <div class="central-container">
+    <!-- Hero Header -->
+    <div class="hero-header">
+      <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+          <h2><i class="bi bi-headset me-2"></i>Painel do Atendente</h2>
+          <p class="mb-0">
+            <i class="bi bi-person-circle me-2"></i>{{ user.get_full_name|default:user.email }}
+          </p>
+          <p class="mb-0 mt-1"><i class="bi bi-calendar3 me-2"></i>Último acesso: {{ user.last_login|date:"d/m/Y H:i" }}</p>
+        </div>
+        <div class="mt-3 mt-md-0">
+         
+        </div>
+      </div>
+    </div>
+
+    <!-- Métricas Principais - Row 1: Leads e Levantamentos -->
+    <div class="section-title">
+      <i class="bi bi-person-lines-fill"></i>Gestão de Leads
+    </div>
+    <div class="row">
+      <div class="col-md-3 col-sm-6">
+        <div class="metric-card primary position-relative">
+          <i class="bi bi-people metric-icon"></i>
+          <div class="metric-value">{{ total_leads }}</div>
+          <div class="metric-label">Total de Leads</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="metric-card success position-relative">
+          <i class="bi bi-person-check metric-icon"></i>
+          <div class="metric-value">{{ leads_mes }}</div>
+          <div class="metric-label">Leads Este Mês</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="metric-card info position-relative">
+          <i class="bi bi-credit-card metric-icon"></i>
+          <div class="metric-value">{{ levantamentos_total }}</div>
+          <div class="metric-label">Levantamentos Pagos (Total)</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="metric-card success position-relative">
+          <i class="bi bi-cash-coin metric-icon"></i>
+          <div class="metric-value">{{ levantamentos_mes }}</div>
+          <div class="metric-label">Levantamentos Pagos (Mês)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Métricas Principais - Row 2: Comissões -->
+    <div class="section-title">
+      <i class="bi bi-wallet2"></i>Minhas Comissões
+    </div>
+    
+    <!-- Alert de Comissão -->
+    <div class="alert-commission">
+      <div class="row align-items-center">
+        <div class="col-md-6">
+          <h4 class="mb-2"><i class="bi bi-info-circle me-2"></i>Regra de Comissão</h4>
+          <div style="font-size: 2rem; font-weight: 700; line-height: 1;">R$ 0,50</div>
+          <small>Por cada levantamento PIX confirmado</small>
+        </div>
+        <div class="col-md-6 text-md-end">
+          <h5 class="mb-2"><i class="bi bi-calendar-event me-2"></i>Próximo Recebimento</h5>
+          <p class="mb-0">Todo 5º dia útil do mês vigente</p>
+          <small>Referente aos levantamentos pagos no mês anterior</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-4 col-sm-6">
+        <div class="metric-card success position-relative">
+          <i class="bi bi-check2-circle metric-icon"></i>
+          <div class="metric-value">R$ {{ comissoes_recebidas|floatformat:2 }}</div>
+          <div class="metric-label">Total Recebido</div>
+          <small class="text-muted d-block mt-2">Comissões pagas</small>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6">
+        <div class="metric-card warning position-relative">
+          <i class="bi bi-hourglass-split metric-icon"></i>
+          <div class="metric-value">R$ {{ comissoes_a_receber|floatformat:2 }}</div>
+          <div class="metric-label">À Receber</div>
+          <small class="text-muted d-block mt-2">Comissões pendentes</small>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6">
+        <div class="metric-card primary position-relative">
+          <i class="bi bi-cash-stack metric-icon"></i>
+          <div class="metric-value">R$ {% widthratio comissoes_recebidas 1 1 as total_recebido %}{% widthratio comissoes_a_receber 1 1 as total_a_receber %}{{ total_recebido|add:total_a_receber|floatformat:2 }}</div>
+          <div class="metric-label">Total Geral</div>
+          <small class="text-muted d-block mt-2">Recebido + A receber</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela de Histórico de Levantamentos -->
+    <div class="section-title mt-5">
+      <i class="bi bi-clock-history"></i>Últimos Levantamentos
+    </div>
+
+    <div class="table-responsive table-leads">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Serviço</th>
+            <th>Data</th>
+            <th>Status</th>
+            <th>Valor</th>
+            <th>Comissão</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for consulta in historico_consultas %}
+          <tr>
+            <td>
+              <strong>{{ consulta.nome_completo }}</strong>
+            </td>
+            <td>
+              <span class="badge bg-secondary">Consulta de CPF</span>
+            </td>
+            <td>
+              <i class="bi bi-calendar3 me-1"></i>{{ consulta.data_cadastro|date:"d/m/Y" }}
+            </td>
+            <td>
+              {% if consulta.status == 'PAGO' %}
+              <span class="badge-status badge-pago">Pago</span>
+              {% else %}
+              <span class="badge-status badge-pendente">{{ consulta.status }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <strong class="text-success">R$ 50,00</strong>
+            </td>
+            <td>
+              {% if consulta.status == 'PAGO' %}
+              <strong class="text-success">R$ 0,50</strong>
+              {% else %}
+              <span class="text-muted">-</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center py-5">
+              <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.3;"></i>
+              <p class="text-muted mt-3">Nenhum levantamento recente</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Informações Adicionais -->
+    <div class="row mt-4 mb-4">
+      <div class="col-12">
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Informações sobre comissões:</strong> 
+          <ul class="mb-0 mt-2">
+            <li>Você recebe <strong>R$ 0,50</strong> por cada levantamento PIX confirmado</li>
+            <li>A comissão é gerada automaticamente quando o cliente paga o PIX de levantamento</li>
+            <li>Os pagamentos são realizados todo <strong>5º dia útil do mês vigente</strong></li>
+            <li>O valor pago refere-se aos levantamentos confirmados no mês anterior</li>
+          </ul>
+          <small class="d-block mt-2">
+            <strong>Como funciona:</strong> Quando um lead paga o PIX de R$ 50,00 para levantamento de dados, 
+            sua comissão de R$ 0,50 é automaticamente registrada no sistema e será paga no próximo ciclo de pagamento.
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // Função para formatar valores em moeda brasileira (R$)
+  function formatarMoeda(valor) {
+    const numero = typeof valor === 'string' ? parseFloat(valor.replace(/[^\d,.-]/g, '').replace(',', '.')) : valor;
+    
+    if (isNaN(numero)) return 'R$ 0,00';
+    
+    return numero.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  // Aplicar formatação quando a página carregar
+  document.addEventListener('DOMContentLoaded', function() {
+    // Formatar todos os valores monetários
+    document.querySelectorAll('.metric-value').forEach(function(element) {
+      const texto = element.textContent.trim();
+      
+      if (texto.includes('R$')) {
+        const valorLimpo = texto.replace('R$', '').trim();
+        element.textContent = formatarMoeda(valorLimpo);
+      }
+    });
+
+    // Formatar valores small (subtotais)
+    document.querySelectorAll('small.text-muted').forEach(function(element) {
+      const texto = element.textContent.trim();
+      
+      if (texto.includes('R$')) {
+        const valorLimpo = texto.replace('R$', '').trim();
+        element.textContent = formatarMoeda(valorLimpo);
+      }
+    });
+
+    // Formatar valores na tabela
+    document.querySelectorAll('td strong.text-success').forEach(function(element) {
+      const texto = element.textContent.trim();
+      
+      if (texto.includes('R$')) {
+        const valorLimpo = texto.replace('R$', '').trim();
+        element.textContent = formatarMoeda(valorLimpo);
+      }
+    });
+
+    // Animação de entrada dos cards
+    const cards = document.querySelectorAll('.metric-card');
+    cards.forEach((card, index) => {
+      setTimeout(() => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'all 0.5s ease';
+        
+        setTimeout(() => {
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, 50);
+      }, index * 50);
+    });
+  });
+</script>
+
+</body>
+</html>
+

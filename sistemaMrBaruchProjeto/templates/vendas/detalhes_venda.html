@@ -1,0 +1,232 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Detalhes da Venda #{{ venda.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-file-invoice"></i> 
+                        Detalhes da Venda #{{ venda.id }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Informações do Cliente -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0"><i class="fas fa-user"></i> Cliente</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Nome:</strong> {{ venda.cliente.nome }}</p>
+                                    <p><strong>CPF:</strong> {{ venda.cliente.cpf }}</p>
+                                    <p><strong>Email:</strong> {{ venda.cliente.email }}</p>
+                                    <p><strong>Telefone:</strong> {{ venda.cliente.telefone }}</p>
+                                    {% if venda.cliente.data_nascimento %}
+                                    <p><strong>Data de Nascimento:</strong> {{ venda.cliente.data_nascimento|date:"d/m/Y" }}</p>
+                                    {% endif %}
+                                    {% if venda.cliente.endereco %}
+                                    <p class="mb-0"><strong>Endereço:</strong> {{ venda.cliente.endereco }}, {{ venda.cliente.cidade }}/{{ venda.cliente.estado }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Informações da Venda -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0"><i class="fas fa-shopping-cart"></i> Venda</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Data:</strong> {{ venda.data_venda|date:"d/m/Y" }}</p>
+                                    <p><strong>Serviço:</strong> {{ venda.servico.nome }}</p>
+                                    <p><strong>Valor Total:</strong> R$ <span class="format-brl">{{ venda.valor_total|floatformat:2 }}</span></p>
+                                    <p><strong>Entrada:</strong> R$ <span class="format-brl">{{ venda.valor_entrada|floatformat:2 }}</span></p>
+                                    <p><strong>Parcelas:</strong> {{ venda.numero_parcelas }}x</p>
+                                    <p><strong>Forma Pagamento:</strong> {{ venda.get_forma_pagamento_entrada_display }}</p>
+                                    <p><strong>Status:</strong> 
+                                        {% if venda.status == 'ATIVA' %}
+                                            <span class="badge badge-success">{{ venda.get_status_display }}</span>
+                                        {% elif venda.status == 'PENDENTE' %}
+                                            <span class="badge badge-warning">{{ venda.get_status_display }}</span>
+                                        {% elif venda.status == 'CANCELADA' %}
+                                            <span class="badge badge-danger">{{ venda.get_status_display }}</span>
+                                        {% else %}
+                                            <span class="badge badge-info">{{ venda.get_status_display }}</span>
+                                        {% endif %}
+                                    </p>
+                                    <p class="mb-0"><strong>Consultor:</strong> {{ venda.consultor.get_full_name }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Origem do Lead -->
+                    {% comment %}
+                    Seção desabilitada - campo origem_lead não implementado no modelo Venda
+                    {% if venda.origem_lead %}
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0"><i class="fas fa-chart-line"></i> Origem do Lead</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p><strong>Nome Lead:</strong> {{ venda.origem_lead.nome }}</p>
+                                            <p><strong>Status Lead:</strong> {{ venda.origem_lead.get_status_display }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p><strong>Data Contato:</strong> {{ venda.origem_lead.data_contato|date:"d/m/Y" }}</p>
+                                            {% if venda.origem_lead.origem %}
+                                            <p class="mb-0"><strong>Origem:</strong> {{ venda.origem_lead.origem.nome }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endcomment %}
+
+                    <!-- Documentos -->
+                    {% if documentos %}
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0"><i class="fas fa-paperclip"></i> Documentos ({{ documentos.count }})</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Tipo</th>
+                                                    <th>Data Upload</th>
+                                                    <th>Usuário</th>
+                                                    <th>Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for doc in documentos %}
+                                                <tr>
+                                                    <td>{{ doc.get_tipo_documento_display }}</td>
+                                                    <td>{{ doc.data_upload|date:"d/m/Y H:i" }}</td>
+                                                    <td>{{ doc.usuario_upload.usuario.get_full_name }}</td>
+                                                    <td>
+                                                        <a href="{{ doc.arquivo.url }}" target="_blank" 
+                                                           class="btn btn-sm btn-primary" title="Baixar">
+                                                            <i class="fas fa-download"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Parcelas -->
+                    {% if parcelas %}
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> Parcelas ({{ parcelas.count }})</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nº</th>
+                                                    <th>Vencimento</th>
+                                                    <th>Valor</th>
+                                                    <th>Status</th>
+                                                    <th>Pagamento</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for parcela in parcelas %}
+                                                <tr>
+                                                    <td>{{ parcela.numero_parcela }}</td>
+                                                    <td>{{ parcela.data_vencimento|date:"d/m/Y" }}</td>
+                                                    <td>R$ <span class="format-brl">{{ parcela.valor|floatformat:2 }}</span></td>
+                                                    <td>
+                                                        {% if parcela.status == 'PAGO' %}
+                                                            <span class="badge badge-success">{{ parcela.get_status_display }}</span>
+                                                        {% elif parcela.status == 'PENDENTE' %}
+                                                            <span class="badge badge-warning">{{ parcela.get_status_display }}</span>
+                                                        {% elif parcela.status == 'ATRASADO' %}
+                                                            <span class="badge badge-danger">{{ parcela.get_status_display }}</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if parcela.data_pagamento %}
+                                                            {{ parcela.data_pagamento|date:"d/m/Y" }}
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Observações -->
+                    {% if venda.observacoes %}
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0"><i class="fas fa-comment"></i> Observações</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-0">{{ venda.observacoes|linebreaks }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Botões de Ação -->
+                    <div class="row">
+                        <div class="col-12">
+                            <a href="{% url 'vendas:listar_vendas' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar para Lista
+                            </a>
+                            {% if venda.status == 'ATIVA' %}
+                            <button type="button" class="btn btn-warning">
+                                <i class="fas fa-edit"></i> Editar Venda
+                            </button>
+                            <button type="button" class="btn btn-danger">
+                                <i class="fas fa-ban"></i> Cancelar Venda
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,871 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Gestão Pós-Venda #{{ venda.id }} - Compliance{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/compliance-posvenda.css' %}">
+
+<style>
+    /* ===== OVERRIDE FORÇADO DO DASHBOARD.CSS ===== */
+    #gestao-pos-venda * {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    }
+    
+    #gestao-pos-venda .card {
+        background: white !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+    
+    #gestao-pos-venda .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        border: none !important;
+        color: white !important;
+    }
+    
+    /* ===== ESTILO PADRÃO COMPLIANCE ===== */
+    
+    /* Container principal com ID único */
+    #gestao-pos-venda.container-fluid {
+        padding: 1.5rem !important;
+        background-color: #f8f9fa !important;
+    }
+    
+    /* Breadcrumb */
+    #gestao-pos-venda .breadcrumb {
+        background: transparent !important;
+        padding: 0 !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    #gestao-pos-venda .breadcrumb-item a {
+        color: #667eea !important;
+        text-decoration: none !important;
+    }
+    
+    #gestao-pos-venda .breadcrumb-item a:hover {
+        color: #4c51bf !important;
+        text-decoration: underline !important;
+    }
+    
+    /* Header da página com gradiente roxo */
+    #gestao-pos-venda .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        padding: 2rem !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3) !important;
+        margin-bottom: 1.5rem !important;
+        color: white !important;
+    }
+    
+    #gestao-pos-venda .page-header h2 {
+        color: white !important;
+        font-size: 1.85rem !important;
+        font-weight: 700 !important;
+        margin-bottom: 0.5rem !important;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    }
+    
+    #gestao-pos-venda .page-header p {
+        color: rgba(255, 255, 255, 0.9) !important;
+        margin: 0 !important;
+        font-size: 1rem !important;
+    }
+    
+    #gestao-pos-venda .page-header .badge {
+        background: rgba(255, 255, 255, 0.25) !important;
+        color: white !important;
+        border: 2px solid rgba(255, 255, 255, 0.4) !important;
+        backdrop-filter: blur(10px) !important;
+        font-size: 1rem !important;
+        padding: 0.5rem 1rem !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Badges */
+    #gestao-pos-venda .badge-lg {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.875rem !important;
+        font-weight: 500 !important;
+        border-radius: 6px !important;
+    }
+    
+    /* Alertas */
+    #gestao-pos-venda .alert {
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 1rem 1.25rem !important;
+    }
+    
+    #gestao-pos-venda .alert-info {
+        background-color: #ebf8ff !important;
+        color: #2c5282 !important;
+    }
+    
+    #gestao-pos-venda .alert-success {
+        background-color: #f0fff4 !important;
+        color: #22543d !important;
+    }
+    
+    #gestao-pos-venda .alert-warning {
+        background-color: #fffaf0 !important;
+        color: #744210 !important;
+    }
+    
+    #gestao-pos-venda .alert-danger {
+        background-color: #fff5f5 !important;
+        color: #742a2a !important;
+    }
+    
+    /* Cards */
+    #gestao-pos-venda .section-card {
+        background: white !important;
+        border-radius: 10px !important;
+        padding: 1.5rem !important;
+        margin-bottom: 1.5rem !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08) !important;
+        border: 1px solid #e2e8f0 !important;
+        transition: box-shadow 0.3s ease !important;
+    }
+    
+    #gestao-pos-venda .section-card:hover {
+        box-shadow: 0 4px 6px rgba(0,0,0,0.12) !important;
+    }
+    
+    #gestao-pos-venda .section-header {
+        border-bottom: 2px solid #e2e8f0 !important;
+        padding-bottom: 1rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+    
+    #gestao-pos-venda .section-header h5 {
+        color: #2d3748 !important;
+        font-size: 1.25rem !important;
+        font-weight: 600 !important;
+        margin: 0 !important;
+    }
+    
+    #gestao-pos-venda .section-header h5 i {
+        color: #667eea !important;
+        margin-right: 0.5rem !important;
+    }
+    
+    /* Timeline */
+    #gestao-pos-venda .timeline {
+        position: relative !important;
+        padding-left: 2rem !important;
+    }
+    
+    #gestao-pos-venda .timeline::before {
+        content: '' !important;
+        position: absolute !important;
+        left: 9px !important;
+        top: 8px !important;
+        bottom: 0 !important;
+        width: 2px !important;
+        background: #e2e8f0 !important;
+    }
+    
+    #gestao-pos-venda .timeline-item {
+        position: relative !important;
+        padding-bottom: 1.5rem !important;
+    }
+    
+    #gestao-pos-venda .timeline-item:last-child {
+        padding-bottom: 0 !important;
+    }
+    
+    #gestao-pos-venda .timeline-marker {
+        position: absolute !important;
+        left: -1.65rem !important;
+        width: 18px !important;
+        height: 18px !important;
+        border-radius: 50% !important;
+        border: 3px solid #cbd5e0 !important;
+        background: white !important;
+        z-index: 1 !important;
+    }
+    
+    #gestao-pos-venda .timeline-marker.active {
+        border-color: #667eea !important;
+        background: #667eea !important;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2) !important;
+    }
+    
+    #gestao-pos-venda .timeline-marker.completed {
+        border-color: #48bb78 !important;
+        background: #48bb78 !important;
+    }
+    
+    #gestao-pos-venda .timeline-item h6 {
+        color: #2d3748 !important;
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.25rem !important;
+    }
+    
+    #gestao-pos-venda .timeline-item p {
+        color: #718096 !important;
+        font-size: 0.875rem !important;
+        margin: 0 !important;
+    }
+    
+    /* Checkboxes de conferência - FORÇADO COM !important */
+    #gestao-pos-venda .check-field {
+        display: flex !important;
+        align-items: center !important;
+        padding: 1rem 1.25rem !important;
+        border-radius: 8px !important;
+        margin-bottom: 0.75rem !important;
+        background: #ffffff !important;
+        border: 2px solid #e2e8f0 !important;
+        transition: all 0.25s ease !important;
+        cursor: pointer !important;
+        position: relative !important;
+    }
+    
+    #gestao-pos-venda .check-field:hover {
+        background: #f7fafc !important;
+        border-color: #cbd5e0 !important;
+        transform: translateX(3px) !important;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1) !important;
+    }
+    
+    #gestao-pos-venda .check-field.checked {
+        background: linear-gradient(135deg, #f0fff4 0%, #ffffff 100%) !important;
+        border-color: #48bb78 !important;
+        border-left-width: 4px !important;
+        box-shadow: 0 2px 8px rgba(72, 187, 120, 0.15) !important;
+    }
+    
+    #gestao-pos-venda .check-field input[type="checkbox"] {
+        width: 22px !important;
+        height: 22px !important;
+        margin-right: 1rem !important;
+        cursor: pointer !important;
+        accent-color: #48bb78 !important;
+        flex-shrink: 0 !important;
+        pointer-events: auto !important;
+        opacity: 1 !important;
+        display: block !important;
+    }
+    
+    #gestao-pos-venda .check-field input[type="checkbox"]:checked {
+        background-color: #48bb78 !important;
+    }
+    
+    #gestao-pos-venda .check-field label {
+        margin: 0 !important;
+        cursor: pointer !important;
+        flex: 1 !important;
+        color: #2d3748 !important;
+        font-size: 0.95rem !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+    }
+    
+    #gestao-pos-venda .check-field strong {
+        color: #667eea !important;
+        font-weight: 600 !important;
+        min-width: 100px !important;
+    }
+    
+    #gestao-pos-venda .check-field.checked strong {
+        color: #48bb78 !important;
+    }
+    
+    /* Animação ao marcar checkbox */
+    #gestao-pos-venda .check-field input[type="checkbox"]:checked + label::after {
+        content: '✓' !important;
+        position: absolute !important;
+        right: 1rem !important;
+        color: #48bb78 !important;
+        font-size: 1.25rem !important;
+        font-weight: bold !important;
+        animation: checkmark 0.3s ease !important;
+    }
+    
+    @keyframes checkmark {
+        0% { transform: scale(0); opacity: 0; }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    
+    /* Form controls - FORÇADO */
+    #gestao-pos-venda .form-control,
+    #gestao-pos-venda .form-select {
+        border: 2px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+        padding: 0.625rem 1rem !important;
+        font-size: 0.95rem !important;
+        transition: all 0.25s ease !important;
+    }
+    
+    #gestao-pos-venda .form-control:focus,
+    #gestao-pos-venda .form-select:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+        outline: none !important;
+    }
+    
+    #gestao-pos-venda .form-label {
+        font-weight: 600 !important;
+        color: #2d3748 !important;
+        margin-bottom: 0.5rem !important;
+        font-size: 0.95rem !important;
+    }
+    
+    /* Documentos */
+    #gestao-pos-venda .doc-item {
+        border: 2px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        padding: 1.25rem !important;
+        margin-bottom: 1rem !important;
+        background: white !important;
+        transition: all 0.25s ease !important;
+    }
+    
+    #gestao-pos-venda .doc-item:hover {
+        border-color: #cbd5e0 !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+        transform: translateY(-2px) !important;
+    }
+    
+    #gestao-pos-venda .doc-item strong {
+        color: #2d3748 !important;
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+    }
+    
+    #gestao-pos-venda .doc-item .badge {
+        font-size: 0.85rem !important;
+        padding: 0.35rem 0.75rem !important;
+        font-weight: 600 !important;
+        border-radius: 6px !important;
+    }
+    
+    /* Botões - FORÇADO COM !important */
+    #gestao-pos-venda .btn {
+        border-radius: 8px !important;
+        padding: 0.625rem 1.25rem !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+        transition: all 0.25s ease !important;
+        border: none !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+    }
+    
+    #gestao-pos-venda .btn:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    }
+    
+    #gestao-pos-venda .btn:active {
+        transform: translateY(0) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    }
+    
+    #gestao-pos-venda .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+    }
+    
+    #gestao-pos-venda .btn-primary:hover {
+        background: linear-gradient(135deg, #5a67d8 0%, #6b4091 100%) !important;
+        color: white !important;
+    }
+    
+    #gestao-pos-venda .btn-success {
+        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%) !important;
+        color: white !important;
+    }
+    
+    #gestao-pos-venda .btn-success:hover {
+        background: linear-gradient(135deg, #38a169 0%, #2f855a 100%) !important;
+        color: white !important;
+    }
+    
+    #gestao-pos-venda .btn-warning {
+        background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%) !important;
+        color: white !important;
+    }
+    
+    #gestao-pos-venda .btn-warning:hover {
+        background: linear-gradient(135deg, #dd6b20 0%, #c05621 100%) !important;
+        color: white !important;
+    }
+    
+    #gestao-pos-venda .btn-danger {
+        background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%) !important;
+        color: white !important;
+    }
+    
+    #gestao-pos-venda .btn-danger:hover {
+        background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%) !important;
+        color: white !important;
+    }
+    
+    #gestao-pos-venda .btn-secondary {
+        background: #e2e8f0 !important;
+        color: #2d3748 !important;
+    }
+    
+    #gestao-pos-venda .btn-secondary:hover {
+        background: #cbd5e0 !important;
+        color: #1a202c !important;
+    }
+    
+    #gestao-pos-venda .btn-outline-primary {
+        background: transparent !important;
+        border: 2px solid #667eea !important;
+        color: #667eea !important;
+        box-shadow: none !important;
+    }
+    
+    #gestao-pos-venda .btn-outline-primary:hover {
+        background: #667eea !important;
+        color: white !important;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+    }
+    
+    #gestao-pos-venda .btn i {
+        font-size: 1rem !important;
+    }
+    
+    #gestao-pos-venda .btn-sm {
+        padding: 0.375rem 0.875rem !important;
+        font-size: 0.875rem !important;
+    }
+    
+    /* Seções bloqueadas */
+    #gestao-pos-venda .section-card.blocked {
+        opacity: 0.6 !important;
+        pointer-events: none !important;
+        position: relative !important;
+    }
+    
+    #gestao-pos-venda .section-card.blocked::after {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: rgba(255, 255, 255, 0.7) !important;
+        border-radius: 10px !important;
+        backdrop-filter: blur(2px) !important;
+    }
+    
+    /* Info boxes */
+    #gestao-pos-venda .info-box {
+        background: #f7fafc !important;
+        border-left: 4px solid #667eea !important;
+        padding: 1rem !important;
+        border-radius: 4px !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    #gestao-pos-venda .info-box h6 {
+        color: #2d3748 !important;
+        font-size: 0.875rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.5rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+    
+    #gestao-pos-venda .info-box ul {
+        margin: 0 !important;
+        padding-left: 1.25rem !important;
+    }
+    
+    #gestao-pos-venda .info-box li {
+        color: #4a5568 !important;
+        font-size: 0.875rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+    
+    /* Responsivo */
+    @media (max-width: 768px) {
+        #gestao-pos-venda.container-fluid {
+            padding: 1rem !important;
+        }
+        
+        #gestao-pos-venda .section-card {
+            padding: 1rem !important;
+        }
+        
+        #gestao-pos-venda .page-header {
+            padding: 1rem !important;
+        }
+        
+        #gestao-pos-venda .page-header h2 {
+            font-size: 1.25rem !important;
+        }
+        
+        #gestao-pos-venda .timeline {
+            padding-left: 1.5rem !important;
+        }
+        
+        #gestao-pos-venda .check-field {
+            padding: 0.75rem !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="gestao-pos-venda" class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'compliance:painel' %}"><i class="fas fa-home"></i> Compliance</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'compliance:painel_pos_venda' %}">Pós-Venda</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Venda #{{ venda.id }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header da Página com Gradiente Roxo -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h2><i class="fas fa-clipboard-check"></i> Gestão Pós-Venda #{{ venda.id }}</h2>
+                <p class="mb-0">
+                    <strong>{{ venda.cliente.lead.nome_completo }}</strong> - {{ venda.servico.nome }}
+                </p>
+                <small style="opacity: 0.9;">
+                    Cadastrado em {{ venda.data_criacao|date:"d/m/Y às H:i" }}
+                </small>
+            </div>
+            <div>
+                <span class="badge-lg 
+                {% if conferencia.status == 'AGUARDANDO_CONFERENCIA' or conferencia.status == 'EM_CONFERENCIA' %}bg-warning
+                {% elif conferencia.status == 'REPROVADO' %}bg-danger
+                {% elif conferencia.status == 'COLETANDO_DOCUMENTOS' %}bg-primary
+                {% elif conferencia.status == 'DOCUMENTOS_OK' %}bg-success
+                {% elif conferencia.status == 'EMITINDO_CONTRATO' %}bg-secondary
+                {% elif conferencia.status == 'AGUARDANDO_ASSINATURA' %}bg-warning
+                {% elif conferencia.status == 'CONTRATO_ASSINADO' %}bg-info
+                {% elif conferencia.status == 'CONCLUIDO' %}bg-success
+                {% endif %}">
+                {{ conferencia.get_status_display }}
+            </span>
+        </div>
+        </div>
+    </div>
+
+    <!-- Alerta de Ação Necessária -->
+    {% if conferencia.status == 'AGUARDANDO_CONFERENCIA' %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="fas fa-info-circle"></i> <strong>Ação Necessária:</strong> 
+        Complete a <strong>Conferência de Cadastro</strong> marcando todos os campos validados e clique em "Aprovar e Avançar" para liberar as próximas etapas.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% elif conferencia.status in 'COLETANDO_DOCUMENTOS,DOCUMENTOS_OK,EMITINDO_CONTRATO,AGUARDANDO_ASSINATURA,CONTRATO_ASSINADO,CONCLUIDO' and not conferencia.todos_documentos_ok %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="fas fa-info-circle"></i> <strong>Ação Necessária:</strong> 
+        Faça o upload e aprovação de todos os <strong>Documentos Obrigatórios</strong> para liberar a geração do contrato.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% elif conferencia.todos_documentos_ok and not contrato %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="fas fa-info-circle"></i> <strong>Ação Necessária:</strong> 
+        Todos os documentos foram aprovados! Agora você pode <strong>Gerar o Contrato</strong>.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Coluna Esquerda - Timeline e Dados -->
+        <div class="col-lg-8">
+            <!-- Timeline do Processo -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h5><i class="fas fa-stream"></i> Progresso do Fluxo</h5>
+                </div>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker {% if conferencia.status != 'AGUARDANDO_CONFERENCIA' and conferencia.status != 'EM_CONFERENCIA' and conferencia.status != 'REPROVADO' %}completed{% else %}active{% endif %}"></div>
+                        <h6>1. Conferência de Cadastro</h6>
+                        <p class="text-muted small mb-0">Validação dos dados do cliente e da venda</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker {% if conferencia.status == 'DOCUMENTOS_OK' or conferencia.status == 'EMITINDO_CONTRATO' or conferencia.status == 'AGUARDANDO_ASSINATURA' or conferencia.status == 'CONTRATO_ASSINADO' or conferencia.status == 'CONCLUIDO' %}completed{% elif conferencia.status == 'COLETANDO_DOCUMENTOS' %}active{% endif %}"></div>
+                        <h6>2. Coleta de Documentos</h6>
+                        <p class="text-muted small mb-0">Upload e validação de documentos obrigatórios</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker {% if conferencia.status == 'AGUARDANDO_ASSINATURA' or conferencia.status == 'CONTRATO_ASSINADO' or conferencia.status == 'CONCLUIDO' %}completed{% elif conferencia.status == 'EMITINDO_CONTRATO' %}active{% endif %}"></div>
+                        <h6>3. Geração de Contrato</h6>
+                        <p class="text-muted small mb-0">Emissão do contrato em PDF</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker {% if conferencia.status == 'CONTRATO_ASSINADO' or conferencia.status == 'CONCLUIDO' %}completed{% elif conferencia.status == 'AGUARDANDO_ASSINATURA' %}active{% endif %}"></div>
+                        <h6>4. Assinatura do Contrato</h6>
+                        <p class="text-muted small mb-0">Envio e validação da assinatura</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker {% if conferencia.status == 'CONCLUIDO' %}completed{% endif %}"></div>
+                        <h6>5. Processo Concluído</h6>
+                        <p class="text-muted small mb-0">Venda finalizada e arquivada</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção 1: Conferência de Cadastro -->
+            <div class="section-card">
+                <div class="section-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-user-check"></i> 1. Conferência de Cadastro</h5>
+                    {% if conferencia.status == 'DOCUMENTOS_OK' or conferencia.status == 'EMITINDO_CONTRATO' or conferencia.status == 'AGUARDANDO_ASSINATURA' or conferencia.status == 'CONTRATO_ASSINADO' or conferencia.status == 'CONCLUIDO' %}
+                    <span class="badge bg-success" style="font-size: 0.9rem; padding: 0.5rem 1rem;">
+                        <i class="fas fa-check-circle"></i> Conferência Aprovada
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Aviso de Edição Sempre Disponível -->
+                <div class="alert alert-info mb-3" style="border-left: 4px solid #667eea !important;">
+                    <i class="fas fa-info-circle"></i> <strong>Atenção:</strong> 
+                    Os campos abaixo são <strong>sempre editáveis</strong>. Marque os checkboxes para validar os dados e salve as alterações quando necessário.
+                </div>
+                
+                <!-- FORMULÁRIO SEMPRE VISÍVEL E EDITÁVEL -->
+                <form method="POST" action="{% url 'compliance:realizar_conferencia' venda.id %}">
+                    {% csrf_token %}
+                    
+                    {% if conferencia.status == 'REPROVADO' %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> <strong>Conferência Reprovada</strong>
+                        <p class="mb-0 mt-2">{{ conferencia.observacoes_reprovacao }}</p>
+                        <small class="text-muted">Reprovado por {{ conferencia.reprovado_por.username }} em {{ conferencia.data_reprovacao|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    {% endif %}
+                    
+                    <h6 class="mb-3 mt-1" style="color: #667eea; font-weight: 700; font-size: 1.05rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-user" style="font-size: 1rem;"></i> Dados do Cliente
+                    </h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="check-field {% if conferencia.nome_ok %}checked{% endif %}">
+                                <input type="checkbox" name="nome_ok" id="nome_ok" {% if conferencia.nome_ok %}checked{% endif %}>
+                                <label for="nome_ok" class="ms-2">
+                                    <strong>Nome:</strong> {{ venda.cliente.lead.nome_completo }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="check-field {% if conferencia.cpf_ok %}checked{% endif %}">
+                                <input type="checkbox" name="cpf_ok" id="cpf_ok" {% if conferencia.cpf_ok %}checked{% endif %}>
+                                <label for="cpf_ok" class="ms-2">
+                                    <strong>CPF/CNPJ:</strong> {{ venda.cliente.lead.cpf_cnpj }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="check-field {% if conferencia.telefone_ok %}checked{% endif %}">
+                                <input type="checkbox" name="telefone_ok" id="telefone_ok" {% if conferencia.telefone_ok %}checked{% endif %}>
+                                <label for="telefone_ok" class="ms-2">
+                                    <strong>Telefone:</strong> {{ venda.cliente.lead.telefone }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="check-field {% if conferencia.email_ok %}checked{% endif %}">
+                                <input type="checkbox" name="email_ok" id="email_ok" {% if conferencia.email_ok %}checked{% endif %}>
+                                <label for="email_ok" class="ms-2">
+                                    <strong>Email:</strong> {{ venda.cliente.lead.email }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="check-field {% if conferencia.endereco_ok %}checked{% endif %}">
+                                <input type="checkbox" name="endereco_ok" id="endereco_ok" {% if conferencia.endereco_ok %}checked{% endif %}>
+                                <label for="endereco_ok" class="ms-2">
+                                    <strong>Endereço:</strong> {{ venda.cliente.lead.endereco }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6 class="mb-3 mt-4" style="color: #667eea; font-weight: 700; font-size: 1.05rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-shopping-cart" style="font-size: 1rem;"></i> Dados da Venda
+                    </h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="check-field {% if conferencia.servico_ok %}checked{% endif %}">
+                                <input type="checkbox" name="servico_ok" id="servico_ok" {% if conferencia.servico_ok %}checked{% endif %}>
+                                <label for="servico_ok" class="ms-2">
+                                    <strong>Serviço:</strong> {{ venda.servico.nome }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="check-field {% if conferencia.valores_ok %}checked{% endif %}">
+                                <input type="checkbox" name="valores_ok" id="valores_ok" {% if conferencia.valores_ok %}checked{% endif %}>
+                                <label for="valores_ok" class="ms-2">
+                                    <strong>Valor Total:</strong> R$ {{ venda.valor_total|floatformat:2 }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="check-field {% if conferencia.parcelas_ok %}checked{% endif %}">
+                                <input type="checkbox" name="parcelas_ok" id="parcelas_ok" {% if conferencia.parcelas_ok %}checked{% endif %}>
+                                <label for="parcelas_ok" class="ms-2">
+                                    <strong>Parcelas:</strong> {{ venda.quantidade_parcelas }}x
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="check-field {% if conferencia.forma_pagamento_ok %}checked{% endif %}">
+                                <input type="checkbox" name="forma_pagamento_ok" id="forma_pagamento_ok" {% if conferencia.forma_pagamento_ok %}checked{% endif %}>
+                                <label for="forma_pagamento_ok" class="ms-2">
+                                    <strong>Forma:</strong> {{ venda.forma_pagamento }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="check-field {% if conferencia.datas_ok %}checked{% endif %}">
+                                <input type="checkbox" name="datas_ok" id="datas_ok" {% if conferencia.datas_ok %}checked{% endif %}>
+                                <label for="datas_ok" class="ms-2">
+                                    <strong>Data:</strong> {{ venda.data_venda|date:"d/m/Y" }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; color: #2d3748;">Observações</label>
+                        <textarea name="observacoes" class="form-control" rows="3" style="border: 2px solid #e2e8f0; border-radius: 8px;">{{ conferencia.observacoes_conferencia }}</textarea>
+                    </div>
+                    
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salvar Alterações
+                        </button>
+                        
+                        {% if conferencia.dados_cliente_conferidos and conferencia.dados_venda_conferidos %}
+                            {% if conferencia.status == 'AGUARDANDO_CONFERENCIA' or conferencia.status == 'EM_CONFERENCIA' or conferencia.status == 'REPROVADO' %}
+                            <button type="button" class="btn btn-success" onclick="document.getElementById('formAprovar').submit();">
+                                <i class="fas fa-check"></i> Aprovar e Avançar
+                            </button>
+                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalReprovar">
+                                <i class="fas fa-times"></i> Reprovar
+                            </button>
+                            {% else %}
+                            <button type="button" class="btn btn-warning" onclick="reabrirConferencia({{ venda.id }})">
+                                <i class="fas fa-undo"></i> Reabrir para Conferência
+                            </button>
+                            {% endif %}
+                        {% else %}
+                        <div class="alert alert-warning mb-0 flex-grow-1" style="display: inline-block;">
+                            <i class="fas fa-info-circle"></i> Marque todos os campos para liberar os botões de aprovação
+                        </div>
+                        {% endif %}
+                    </div>
+                </form>
+                
+                <form id="formAprovar" method="POST" action="{% url 'compliance:aprovar_conferencia' venda.id %}" style="display:none;">
+                    {% csrf_token %}
+                </form>
+            </div>
+
+            <!-- Restante do conteúdo (Documentos, Contrato, etc) permanece o mesmo... -->
+            <!-- Copie o resto do seu template atual aqui -->
+        </div>
+
+        <!-- Coluna Direita -->
+        <div class="col-lg-4">
+            <!-- Card de Informações Gerais -->
+            <div class="section-card">
+                <h6 class="mb-3"><i class="fas fa-info-circle"></i> Informações Gerais</h6>
+                
+                <div class="mb-3">
+                    <small class="text-muted">Cliente</small>
+                    <p class="mb-1"><strong>{{ venda.cliente.lead.nome_completo }}</strong></p>
+                    <p class="mb-1 small">CPF: {{ venda.cliente.lead.cpf_cnpj }}</p>
+                    <p class="mb-1 small">Tel: {{ venda.cliente.lead.telefone }}</p>
+                    <p class="mb-0 small">Email: {{ venda.cliente.lead.email }}</p>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-3">
+                    <small class="text-muted">Venda</small>
+                    <p class="mb-1"><strong>{{ venda.servico.nome }}</strong></p>
+                    <p class="mb-1 small">Valor: R$ {{ venda.valor_total|floatformat:2 }}</p>
+                    <p class="mb-1 small">Parcelas: {{ venda.quantidade_parcelas }}x</p>
+                    <p class="mb-0 small">Data: {{ venda.data_venda|date:"d/m/Y" }}</p>
+                </div>
+                
+                <hr>
+                
+                <div>
+                    <small class="text-muted">Responsáveis</small>
+                    <p class="mb-1 small">Consultor: {{ venda.consultor.username }}</p>
+                    {% if conferencia.analista %}
+                    <p class="mb-0 small">Analista: {{ conferencia.analista.username }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ===== INTERATIVIDADE DOS CHECKBOXES =====
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('#gestao-pos-venda .check-field input[type="checkbox"]');
+    
+    checkboxes.forEach(checkbox => {
+        const checkField = checkbox.closest('.check-field');
+        
+        // Define estado inicial
+        updateCheckFieldState(checkbox, checkField);
+        
+        // Listener para mudanças
+        checkbox.addEventListener('change', function() {
+            updateCheckFieldState(this, checkField);
+        });
+        
+        // Permite clicar em qualquer lugar do check-field
+        checkField.addEventListener('click', function(e) {
+            if (e.target !== checkbox && e.target.tagName !== 'LABEL') {
+                checkbox.click();
+            }
+        });
+    });
+    
+    function updateCheckFieldState(checkbox, checkField) {
+        if (checkbox.checked) {
+            checkField.classList.add('checked');
+        } else {
+            checkField.classList.remove('checked');
+        }
+    }
+});
+
+function reabrirConferencia(vendaId) {
+    if (confirm('Tem certeza que deseja reabrir a conferência para edição?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{% url "compliance:reabrir_conferencia" venda.id %}';
+        
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden';
+        csrf.name = 'csrfmiddlewaretoken';
+        csrf.value = '{{ csrf_token }}';
+        form.appendChild(csrf);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

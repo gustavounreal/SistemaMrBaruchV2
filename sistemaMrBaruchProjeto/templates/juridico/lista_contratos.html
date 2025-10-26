@@ -1,0 +1,169 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Lista de Contratos{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-files me-2"></i>Todos os Contratos</h2>
+                    <p class="text-muted mb-0">Gerencie e acompanhe todos os contratos</p>
+                </div>
+                <div>
+                    <a href="{% url 'juridico:dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros e busca -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Buscar</label>
+                            <input type="text" name="busca" class="form-control" 
+                                   placeholder="Nome do cliente, CPF ou número do contrato..." 
+                                   value="{{ busca }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                <option value="">Todos os status</option>
+                                {% for value, label in status_choices %}
+                                <option value="{{ value }}" {% if status_filtro == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search me-2"></i>Filtrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de contratos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    {% if contratos %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Número</th>
+                                        <th>Cliente</th>
+                                        <th>Venda</th>
+                                        <th>Status</th>
+                                        <th>Data Geração</th>
+                                        <th>Usuário</th>
+                                        <th class="text-center">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for contrato in contratos %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ contrato.numero_contrato|default:"Não gerado" }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-2">
+                                                    <i class="bi bi-person text-primary"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold">{{ contrato.cliente.lead.nome_completo }}</div>
+                                                    <small class="text-muted">
+                                                        {% if contrato.cliente and contrato.cliente.lead and contrato.cliente.lead.cpf_cnpj %}
+                                                            {{ contrato.cliente.lead.cpf_cnpj }}
+                                                        {% else %}
+                                                            Sem CPF
+                                                        {% endif %}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">ID: {{ contrato.venda.id }}</span><br>
+                                            <small class="text-muted">R$ {{ contrato.venda.valor_total }}</small>
+                                        </td>
+                                        <td>
+                                            {% if contrato.status == 'AGUARDANDO_GERACAO' %}
+                                                <span class="badge bg-warning">{{ contrato.get_status_display }}</span>
+                                            {% elif contrato.status == 'GERADO' %}
+                                                <span class="badge bg-info">{{ contrato.get_status_display }}</span>
+                                            {% elif contrato.status == 'ENVIADO' %}
+                                                <span class="badge bg-primary">{{ contrato.get_status_display }}</span>
+                                            {% elif contrato.status == 'ASSINADO' %}
+                                                <span class="badge bg-success">{{ contrato.get_status_display }}</span>
+                                            {% elif contrato.status == 'CANCELADO' %}
+                                                <span class="badge bg-danger">{{ contrato.get_status_display }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ contrato.get_status_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if contrato.data_geracao %}
+                                                {{ contrato.data_geracao|date:"d/m/Y H:i" }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if contrato.usuario_geracao %}
+                                                <small>{{ contrato.usuario_geracao.get_full_name|default:contrato.usuario_geracao.username }}</small>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'juridico:detalhes_contrato' contrato.id %}" 
+                                                   class="btn btn-outline-primary" title="Ver detalhes">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                {% if contrato.status == 'AGUARDANDO_GERACAO' %}
+                                                <a href="{% url 'juridico:gerar_contrato' contrato.venda.id %}" 
+                                                   class="btn btn-outline-success" title="Gerar contrato">
+                                                    <i class="bi bi-file-earmark-plus"></i>
+                                                </a>
+                                                {% elif contrato.arquivo_contrato %}
+                                                <a href="{{ contrato.arquivo_contrato.url }}" 
+                                                   class="btn btn-outline-info" target="_blank" title="Baixar PDF">
+                                                    <i class="bi bi-download"></i>
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                            <h5>Nenhum contrato encontrado</h5>
+                            <p>Tente ajustar os filtros de busca</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

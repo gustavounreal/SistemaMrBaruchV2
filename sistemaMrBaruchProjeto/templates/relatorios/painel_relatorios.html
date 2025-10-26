@@ -1,0 +1,271 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Relatórios - Mr. Baruch{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  
+  <!-- Cabeçalho -->
+  <div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+      <h2 class="fw-bold text-dark mb-1">
+        <i class="bi bi-graph-up-arrow me-2 text-danger"></i>Central de Relatórios
+      </h2>
+      <p class="text-muted mb-0">Análises e indicadores gerenciais do sistema Mr. Baruch</p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+      <a href="/accounts/dashboard/" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar ao Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Cards de Estatísticas Gerais -->
+  <div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted mb-2">Total de Leads</h6>
+              <h3 class="fw-bold mb-0">{{ total_leads }}</h3>
+              <small class="text-success">
+                <i class="bi bi-arrow-up"></i> {{ leads_periodo }} nos últimos 30 dias
+              </small>
+            </div>
+            <div class="text-primary" style="font-size: 2.5rem;">
+              <i class="bi bi-people-fill opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted mb-2">Taxa de Conversão</h6>
+              <h3 class="fw-bold mb-0">{{ taxa_conversao }}%</h3>
+              <small class="text-muted">
+                {{ leads_pagos }} de {{ total_leads }} pagos
+              </small>
+            </div>
+            <div class="text-success" style="font-size: 2.5rem;">
+              <i class="bi bi-check-circle-fill opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted mb-2">Comissões Totais</h6>
+              <h3 class="fw-bold mb-0">R$ {{ total_comissoes|floatformat:2 }}</h3>
+              <small class="text-warning">
+                <i class="bi bi-clock"></i> R$ {{ comissoes_pendentes|floatformat:2 }} pendentes
+              </small>
+            </div>
+            <div class="text-warning" style="font-size: 2.5rem;">
+              <i class="bi bi-trophy-fill opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted mb-2">Comissões Pagas</h6>
+              <h3 class="fw-bold mb-0">R$ {{ comissoes_pagas|floatformat:2 }}</h3>
+              <small class="text-success">
+                <i class="bi bi-check2"></i> Pagas em dia
+              </small>
+            </div>
+            <div class="text-success" style="font-size: 2.5rem;">
+              <i class="bi bi-cash-stack opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Atendentes -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title fw-bold mb-3">
+            <i class="bi bi-star-fill text-warning me-2"></i>Top 5 Atendentes do Período
+          </h5>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Atendente</th>
+                  <th class="text-end">Comissões</th>
+                  <th class="text-end">Valor Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for atendente in top_atendentes %}
+                <tr>
+                  <td class="fw-bold">{{ forloop.counter }}</td>
+                  <td>
+                    <i class="bi bi-person-circle text-primary me-2"></i>
+                    {{ atendente.atendente__first_name }} {{ atendente.atendente__last_name }}
+                  </td>
+                  <td class="text-end">
+                    <span class="badge bg-info">{{ atendente.quantidade }}</span>
+                  </td>
+                  <td class="text-end fw-bold text-success">
+                    R$ {{ atendente.total|floatformat:2 }}
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                    Nenhum dado disponível no período
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Módulos de Relatórios -->
+  <div class="row">
+    <div class="col-12 mb-3">
+      <h4 class="fw-bold text-dark">
+        <i class="bi bi-folder2-open me-2 text-primary"></i>Relatórios Disponíveis
+      </h4>
+    </div>
+
+    <!-- Dashboard de Gráficos - NOVO! -->
+    <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+      <div class="card h-100 border-0 shadow-sm module-card" style="border: 3px solid #667eea !important;">
+        <div class="card-body text-center p-4">
+          <div class="mb-3">
+            <i class="bi bi-graph-up-arrow text-danger" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="fw-bold mb-2">
+            Dashboard de Gráficos
+            <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">NOVO</span>
+          </h5>
+          <p class="text-muted small mb-3">
+            12 gráficos interativos com todas as métricas do sistema
+          </p>
+          <a href="{% url 'relatorios:dashboard_graficos' %}" class="btn btn-danger w-100 btn-lg">
+            <i class="bi bi-bar-chart-line-fill me-1"></i> Visualizar Gráficos
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Relatório de Leads -->
+    <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+      <div class="card h-100 border-0 shadow-sm module-card">
+        <div class="card-body text-center p-4">
+          <div class="mb-3">
+            <i class="bi bi-people-fill text-primary" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="fw-bold mb-2">Relatório de Leads</h5>
+          <p class="text-muted small mb-3">
+            Análise completa de leads com filtros por período, status e atendente
+          </p>
+          <a href="{% url 'relatorios:relatorio_leads' %}" class="btn btn-primary w-100">
+            <i class="bi bi-file-earmark-bar-graph me-1"></i> Visualizar
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Relatório de Comissões -->
+    <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+      <div class="card h-100 border-0 shadow-sm module-card">
+        <div class="card-body text-center p-4">
+          <div class="mb-3">
+            <i class="bi bi-trophy-fill text-warning" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="fw-bold mb-2">Relatório de Comissões</h5>
+          <p class="text-muted small mb-3">
+            Análise financeira de comissões pagas e pendentes por atendente
+          </p>
+          <a href="{% url 'relatorios:relatorio_comissoes' %}" class="btn btn-warning w-100">
+            <i class="bi bi-file-earmark-bar-graph me-1"></i> Visualizar
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Relatório de Vendas -->
+    <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+      <div class="card h-100 border-0 shadow-sm module-card" style="opacity: 0.7;">
+        <div class="card-body text-center p-4">
+          <div class="mb-3">
+            <i class="bi bi-cart-check-fill text-success" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="fw-bold mb-2">Relatório de Vendas</h5>
+          <p class="text-muted small mb-3">
+            Análise de vendas, propostas e contratos comerciais
+          </p>
+          <a href="{% url 'relatorios:relatorio_vendas' %}" class="btn btn-outline-secondary w-100">
+            <i class="bi bi-hourglass-split me-1"></i> Em Breve
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Relatório Financeiro -->
+    <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+      <div class="card h-100 border-0 shadow-sm module-card" style="opacity: 0.7;">
+        <div class="card-body text-center p-4">
+          <div class="mb-3">
+            <i class="bi bi-cash-stack text-info" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="fw-bold mb-2">Relatório Financeiro</h5>
+          <p class="text-muted small mb-3">
+            Contas a pagar/receber, fluxo de caixa e demonstrativos
+          </p>
+          <a href="{% url 'relatorios:relatorio_financeiro' %}" class="btn btn-outline-secondary w-100">
+            <i class="bi bi-hourglass-split me-1"></i> Em Breve
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<style>
+.module-card {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.module-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+}
+
+.card {
+  border-radius: 12px;
+}
+</style>
+{% endblock %}

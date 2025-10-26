@@ -1,0 +1,727 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Configurações do Sistema - Mr. Baruch{% endblock %}
+
+{% block extra_css %}
+<!-- Select2 para busca avançada de usuários -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+<main class="dashboard-premium py-4">
+  <div class="container-fluid px-4">
+
+    
+    <div class="row align-items-center mb-4">
+      <div class="col-lg-8 col-md-7 col-12">
+        <h2 class="fw-semibold text-dark mb-0">
+          <i class="bi bi-sliders me-2 text-primary"></i>Configurações do Sistema
+        </h2>
+        <p class="text-muted small mb-0">Gerencie parâmetros, regras internas e grupos de usuários da plataforma Mr. Baruch</p>
+      </div>
+      <div class="col-lg-4 col-md-5 col-12 mt-3 mt-md-0 d-flex justify-content-lg-end justify-content-md-end justify-content-start">
+        <a href="{% url 'admin:core_configuracaosistema_changelist' %}" class="btn btn-outline-primary rounded-pill px-3 shadow-sm w-100 w-md-auto">
+          <i class="bi bi-wrench-adjustable me-1"></i> Admin Avançado
+        </a>
+      </div>
+    </div>
+
+    <!-- Mensagens de feedback -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} border-0 shadow-sm rounded-3 d-flex align-items-center p-3 mb-3 alert-dismissible fade show">
+          <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill text-success{% elif message.tags == 'error' %}bi-exclamation-triangle-fill text-danger{% else %}bi-info-circle-fill text-info{% endif %} me-2 fs-5"></i>
+          <div class="flex-fill">{{ message }}</div>
+          <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+        {% if 'asaas_diag' in message.message %}
+          {% with diag=message.message|safe %}
+            <div id="asaasDiagData" data-json='{{ diag|escape }}'></div>
+          {% endwith %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+    <!-- Abas de navegação -->
+    <ul class="nav nav-tabs nav-fill mb-4 border-0" id="configTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active rounded-top-3 fw-semibold" id="config-geral-tab" data-bs-toggle="tab" data-bs-target="#config-geral" type="button" role="tab" aria-controls="config-geral" aria-selected="true">
+          <i class="bi bi-gear-wide-connected me-2"></i>Configurações Gerais
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link rounded-top-3 fw-semibold" id="config-grupos-tab" data-bs-toggle="tab" data-bs-target="#config-grupos" type="button" role="tab" aria-controls="config-grupos" aria-selected="false">
+          <i class="bi bi-people me-2"></i>Configuração de Grupos
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="configTabsContent">
+      <!-- TAB 1: Configurações Gerais -->
+      <div class="tab-pane fade show active" id="config-geral" role="tabpanel" aria-labelledby="config-geral-tab">
+        <div class="card border-0 shadow-lg rounded-4 bg-light-glass">
+          <div class="card-body p-4">
+            <div class="row align-items-center mb-3">
+              <div class="col">
+                <h4 class="fw-bold mb-0"><i class="bi bi-person-plus me-2 text-primary"></i>Jornada: Lead</h4>
+                <p class="text-muted small mb-0">Separe as configurações por etapa da jornada</p>
+              </div>
+              <div class="col-auto">
+                <form method="post" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="acao" value="testar_asaas">
+                  <button type="submit" class="btn btn-outline-dark btn-sm rounded-pill">
+                    <i class="bi bi-plug"></i> Testar integração ASAAS
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <div class="accordion" id="accordionLead">
+              {% for categoria, configs_forms in configs_forms_por_categoria.items %}
+                <div class="accordion-item mb-3 border-0 shadow-sm rounded-4">
+                  <h2 class="accordion-header" id="head-{{ categoria }}">
+                    <button class="accordion-button collapsed fw-semibold py-3" type="button" data-bs-toggle="collapse" data-bs-target="#col-{{ categoria }}" aria-expanded="false" aria-controls="col-{{ categoria }}">
+                      {% if categoria == 'lead_captura' %}
+                        <i class="bi bi-clipboard2-check me-2 text-primary"></i>Etapa: Captura & Cadastro
+                      {% elif categoria == 'lead_pix' %}
+                        <i class="bi bi-qr-code me-2 text-success"></i>Etapa: PIX & Cobrança
+                      {% elif categoria == 'lead_pagamento' %}
+                        <i class="bi bi-cash-coin me-2 text-warning"></i>Etapa: Pagamento & Status
+                      {% elif categoria == 'lead_comissao' %}
+                        <i class="bi bi-trophy me-2 text-success"></i>Etapa: Comissionamento
+                      {% elif categoria == 'lead_acompanhamento' %}
+                        <i class="bi bi-headset me-2 text-info"></i>Etapa: Acompanhamento Comercial
+                      {% elif categoria == 'auditoria_logs' %}
+                        <i class="bi bi-clipboard-data me-2 text-secondary"></i>Monitoramento & Auditoria
+                      {% else %}
+                        <i class="bi bi-gear-wide-connected me-2 text-secondary"></i>{{ categoria|title }}
+                      {% endif %}
+                    </button>
+                  </h2>
+                  <div id="col-{{ categoria }}" class="accordion-collapse collapse" aria-labelledby="head-{{ categoria }}" data-bs-parent="#accordionLead">
+                    <div class="accordion-body bg-light">
+                      <div class="row g-3">
+                        {% for config, form in configs_forms %}
+                          <div class="col-xl-6 col-lg-6 col-md-12">
+                            <div class="card shadow-sm border-0 rounded-4">
+                              <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                  <div>
+                                    <h6 class="fw-semibold text-dark mb-1">{{ config.descricao }}</h6>
+                                    <p class="text-muted small mb-2">Chave: <code>{{ config.chave }}</code></p>
+                                  </div>
+                                  <span class="badge text-bg-light">{{ config.tipo }}</span>
+                                </div>
+                                <form method="post" class="mt-2">
+                                  {% csrf_token %}
+                                  <input type="hidden" name="config_chave" value="{{ config.chave }}">
+                                  <div class="form-content mb-2">
+                                    {{ form.as_p }}
+                                  </div>
+                                  <div class="d-flex align-items-center gap-3">
+                                    <button type="submit" class="btn btn-save-solid btn-sm px-3 rounded-pill">
+                                      <i class="bi bi-save me-1"></i> Salvar
+                                    </button>
+                                    <small class="text-muted">Atualizado em {{ config.ultima_atualizacao|date:"d/m/Y H:i" }}</small>
+                                  </div>
+                                </form>
+                              </div>
+                            </div>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: Configuração de Grupos -->
+      <div class="tab-pane fade" id="config-grupos" role="tabpanel" aria-labelledby="config-grupos-tab">
+        <div class="card border-0 shadow-lg rounded-4 bg-light-glass">
+          <div class="card-body p-4">
+            <h4 class="fw-bold mb-3"><i class="bi bi-people me-2 text-primary"></i>Gestão de Grupos de Usuários</h4>
+            <p class="text-muted small mb-4">Adicione ou remova usuários dos grupos de permissões. Pesquise por email, nome ou username.</p>
+
+            <div class="row g-4">
+              <!-- Adicionar Usuário a Grupo -->
+              <div class="col-lg-6">
+                <div class="card shadow-sm border-0 rounded-4">
+                  <div class="card-header bg-primary text-white rounded-top-4">
+                    <h5 class="mb-0"><i class="bi bi-person-plus-fill me-2"></i>Adicionar Usuário a Grupo</h5>
+                  </div>
+                  <div class="card-body">
+                    <form method="post" action="{% url 'core:adicionar_usuario_grupo' %}" id="formAdicionarGrupo">
+                      {% csrf_token %}
+                      <div class="mb-3">
+                        <label for="usuario_add" class="form-label fw-semibold">Usuário</label>
+                        <select name="usuario" id="usuario_add" class="form-select select2-usuario" style="width: 100%;">
+                          <option value="">Selecione um usuário...</option>
+                          {% for usuario in usuarios %}
+                            <option value="{{ usuario.id }}" 
+                                    data-email="{{ usuario.email }}"
+                                    data-groups="{% for g in usuario.groups.all %}{{ g.name }}{% if not forloop.last %},{% endif %}{% endfor %}" 
+                                    {% if selected_user_id and selected_user_id == usuario.id %}selected{% endif %}>
+                              {{ usuario.get_full_name|default:usuario.username }} ({{ usuario.email }})
+                            </option>
+                          {% endfor %}
+                        </select>
+                        <div class="form-text">Grupos atuais: <span id="current_groups_add" class="fw-semibold">—</span></div>
+                      </div>
+                      <div class="mb-3">
+                        <label for="grupo_add" class="form-label fw-semibold">Grupo</label>
+                        <select name="grupo" id="grupo_add" class="form-select">
+                          <option value="">Selecione um grupo...</option>
+                          {% for grupo in grupos %}
+                            {% if not grupo.nao_existe %}
+                            <option value="{{ grupo.name }}" data-icone="{{ grupo.icone }}" data-cor="{{ grupo.cor }}">
+                              {{ grupo.display_name }} - {{ grupo.descricao }}
+                            </option>
+                            {% endif %}
+                          {% endfor %}
+                        </select>
+                        <div class="form-text">Total de grupos disponíveis: {{ grupos|length }}</div>
+                      </div>
+                      <button type="submit" class="btn btn-primary w-100 rounded-pill">
+                        <i class="bi bi-plus-circle me-1"></i> Adicionar ao Grupo
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Remover Usuário de Grupo -->
+              <div class="col-lg-6">
+                <div class="card shadow-sm border-0 rounded-4">
+                  <div class="card-header bg-danger text-white rounded-top-4">
+                    <h5 class="mb-0"><i class="bi bi-person-dash-fill me-2"></i>Remover Usuário de Grupo</h5>
+                  </div>
+                  <div class="card-body">
+                    <div class="mb-3">
+                      <label for="usuario_remover" class="form-label fw-semibold">Usuário</label>
+                      <select name="usuario_remover" id="usuario_remover" class="form-select select2-usuario" style="width: 100%;">
+                        <option value="">Selecione um usuário...</option>
+                        {% for usuario in usuarios %}
+                          <option value="{{ usuario.id }}" 
+                                  data-email="{{ usuario.email }}"
+                                  data-groups="{% for g in usuario.groups.all %}{{ g.name }}{% if not forloop.last %},{% endif %}{% endfor %}" 
+                                  {% if selected_user_id and selected_user_id == usuario.id %}selected{% endif %}>
+                            {{ usuario.get_full_name|default:usuario.username }} ({{ usuario.email }})
+                          </option>
+                        {% endfor %}
+                      </select>
+                      <div class="form-text">Grupos atuais: <span id="current_groups_rem" class="fw-semibold">—</span></div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="grupo_remover" class="form-label fw-semibold">Grupo</label>
+                      <select name="grupo_remover" id="grupo_remover" class="form-select">
+                        <option value="">Selecione o grupo para remover...</option>
+                      </select>
+                    </div>
+                    <button id="btn_remover" class="btn btn-danger w-100 rounded-pill">
+                      <i class="bi bi-dash-circle me-1"></i> Remover do Grupo
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botão Voltar para Painel de Controle -->
+    <div class="row mt-5">
+      <div class="col-12 d-flex justify-content-center">
+        <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary rounded-pill px-4 py-2 shadow-sm">
+          <i class="bi bi-arrow-left-circle me-1"></i> Voltar para Painel de Controle
+        </a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<style>
+.dashboard-premium {
+  background: linear-gradient(180deg, #f9fafc 0%, #eef1f6 100%);
+  min-height: 100vh;
+}
+
+.bg-light-glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+}
+
+.btn-save-solid {
+  background: #2563eb;
+  color: #fff;
+  border: 1px solid #1d4ed8;
+  transition: box-shadow .2s, transform .2s;
+}
+.btn-save-solid:hover, .btn-save-solid:focus {
+  background: #1d4ed8;
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(29, 78, 216, 0.25);
+  transform: translateY(-1px);
+}
+
+.hover-lift:hover {
+  transform: translateY(-3px);
+  transition: 0.3s;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08) !important;
+}
+
+.accordion-button:not(.collapsed) {
+  color: #fff;
+  background-color: #0d6efd;
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,.125);
+}
+.accordion-button:not(.collapsed) i {
+  color: #fff !important;
+}
+
+.nav-tabs .nav-link {
+  border: none;
+  background: transparent;
+  color: #6c757d;
+  transition: all 0.3s;
+}
+.nav-tabs .nav-link:hover {
+  color: #0d6efd;
+  background: rgba(13, 110, 253, 0.1);
+}
+.nav-tabs .nav-link.active {
+  color: #0d6efd;
+  background: #fff;
+  border-bottom: 3px solid #0d6efd;
+  font-weight: 600;
+}
+
+/* Select2 customization */
+.select2-container--bootstrap-5 .select2-selection {
+  min-height: 40px;
+  border-radius: 0.5rem;
+}
+
+@media (max-width: 991.98px) {
+  .dashboard-premium .row.align-items-center > .col-lg-4 {
+    margin-top: 1rem;
+    justify-content: flex-start !important;
+  }
+}
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- jQuery (necessário para Select2) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+  // Mapa de grupos com metadados
+  const gruposInfo = {
+    {% for g in grupos %}
+    "{{ g.name|escapejs }}": {
+      name: "{{ g.name|escapejs }}",
+      display_name: "{{ g.display_name|escapejs }}",
+      descricao: "{{ g.descricao|escapejs }}",
+      icone: "{{ g.icone|escapejs }}",
+      cor: "{{ g.cor|escapejs }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  };
+
+  // Função AJAX para carregar grupos do usuário em tempo real
+  function carregarGruposUsuario(usuarioId, isRemover = false) {
+    console.log('carregarGruposUsuario chamada:', {usuarioId, isRemover});
+    
+    if (!usuarioId) {
+      // Limpar displays se nenhum usuário selecionado
+      if (isRemover) {
+        document.getElementById('current_groups_rem').innerHTML = '<span class="text-muted">(nenhum)</span>';
+        document.getElementById('grupo_remover').innerHTML = '<option value="">(nenhum)</option>';
+      } else {
+        document.getElementById('current_groups_add').innerHTML = '<span class="text-muted">(nenhum)</span>';
+      }
+      return;
+    }
+
+    // Mostrar loading
+    const loadingHtml = '<span class="spinner-border spinner-border-sm me-1"></span>Carregando...';
+    if (isRemover) {
+      document.getElementById('current_groups_rem').innerHTML = loadingHtml;
+    } else {
+      document.getElementById('current_groups_add').innerHTML = loadingHtml;
+    }
+
+    // Fazer requisição AJAX
+    const url = `/core/painel_configuracoes/grupos/usuario/${usuarioId}/`;
+    console.log('Fazendo requisição para:', url);
+    
+    fetch(url)
+      .then(response => {
+        console.log('Resposta recebida:', response.status);
+        return response.json();
+      })
+      .then(data => {
+        console.log('Dados recebidos:', data);
+        if (data.success) {
+          const gruposAtuais = data.grupos_atuais || [];
+          const gruposDisponiveis = data.grupos_disponiveis || [];
+
+          // Atualizar display de grupos atuais
+          const displayId = isRemover ? 'current_groups_rem' : 'current_groups_add';
+          const displayEl = document.getElementById(displayId);
+          
+          if (gruposAtuais.length === 0) {
+            displayEl.innerHTML = '<span class="text-muted">(nenhum grupo)</span>';
+          } else {
+            displayEl.innerHTML = gruposAtuais.map(g => {
+              const cor = g.cor || 'secondary';
+              const icone = g.icone || 'bi-people';
+              const displayName = g.display_name || g.name;
+              return `<span class="badge bg-${cor} me-1 mb-1"><i class="${icone} me-1"></i>${displayName}</span>`;
+            }).join('');
+          }
+
+          if (isRemover) {
+            // Preencher select de remoção com grupos atuais
+            const removerSelect = document.getElementById('grupo_remover');
+            removerSelect.innerHTML = '';
+            
+            if (gruposAtuais.length === 0) {
+              const o = document.createElement('option');
+              o.value = '';
+              o.text = '(nenhum grupo para remover)';
+              removerSelect.appendChild(o);
+              document.getElementById('btn_remover').disabled = true;
+            } else {
+              document.getElementById('btn_remover').disabled = false;
+              const opt = document.createElement('option');
+              opt.value = '';
+              opt.text = 'Selecione o grupo para remover...';
+              removerSelect.appendChild(opt);
+              
+              gruposAtuais.forEach(g => {
+                const o = document.createElement('option');
+                o.value = g.name;
+                o.text = g.display_name || g.name;
+                o.dataset.icone = g.icone;
+                o.dataset.cor = g.cor;
+                removerSelect.appendChild(o);
+              });
+            }
+          } else {
+            // Atualizar select de adição com grupos disponíveis
+            const adicionarSelect = document.getElementById('grupo_add');
+            const valorAtual = adicionarSelect.value;
+            adicionarSelect.innerHTML = '';
+            
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.text = 'Selecione um grupo...';
+            adicionarSelect.appendChild(opt);
+            
+            gruposDisponiveis.forEach(g => {
+              const o = document.createElement('option');
+              o.value = g.name;
+              o.text = `${g.display_name} - ${g.descricao}`;
+              o.dataset.icone = g.icone;
+              o.dataset.cor = g.cor;
+              adicionarSelect.appendChild(o);
+            });
+            
+            // Restaurar valor se ainda estiver disponível
+            if (valorAtual && gruposDisponiveis.find(g => g.name === valorAtual)) {
+              adicionarSelect.value = valorAtual;
+            }
+          }
+        } else {
+          console.error('Erro ao carregar grupos:', data.message);
+          const displayId = isRemover ? 'current_groups_rem' : 'current_groups_add';
+          document.getElementById(displayId).innerHTML = '<span class="text-danger">Erro ao carregar</span>';
+        }
+      })
+      .catch(error => {
+        console.error('Erro na requisição:', error);
+        const displayId = isRemover ? 'current_groups_rem' : 'current_groups_add';
+        document.getElementById(displayId).innerHTML = '<span class="text-danger">Erro na conexão</span>';
+      });
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    console.log('DOMContentLoaded disparado - Iniciando configuração de grupos');
+    
+    // Inicializar Select2 com busca
+    $('.select2-usuario').select2({
+      theme: 'bootstrap-5',
+      placeholder: 'Pesquise por email, nome ou username...',
+      allowClear: true,
+      width: '100%'
+    });
+
+    const usuarioAdd = document.getElementById('usuario_add');
+    const usuarioRem = document.getElementById('usuario_remover');
+
+    // Carregar grupos do usuário pré-selecionado (se houver)
+    {% if selected_user_id %}
+    if (usuarioAdd && usuarioAdd.value == '{{ selected_user_id }}') {
+      carregarGruposUsuario('{{ selected_user_id }}', false);
+    }
+    if (usuarioRem && usuarioRem.value == '{{ selected_user_id }}') {
+      carregarGruposUsuario('{{ selected_user_id }}', true);
+    }
+    {% endif %}
+
+    // Eventos de mudança com AJAX
+    if (usuarioAdd) {
+      console.log('Adicionando evento change ao usuario_add');
+      $('#usuario_add').on('change', function(){
+        console.log('Evento change disparado em usuario_add, valor:', this.value);
+        carregarGruposUsuario(this.value, false);
+      });
+    }
+
+    if (usuarioRem) {
+      console.log('Adicionando evento change ao usuario_remover');
+      $('#usuario_remover').on('change', function(){
+        console.log('Evento change disparado em usuario_remover, valor:', this.value);
+        carregarGruposUsuario(this.value, true);
+      });
+    }
+
+    // Form de adicionar via AJAX com reload de grupos
+    const formAdd = document.getElementById('formAdicionarGrupo');
+    if (formAdd) {
+      formAdd.addEventListener('submit', function(e){
+        e.preventDefault();
+        const formData = new FormData(formAdd);
+        const usuarioId = formData.get('usuario');
+        const grupoName = formData.get('grupo');
+        
+        if (!usuarioId) {
+          alert('Selecione um usuário');
+          return;
+        }
+        if (!grupoName) {
+          alert('Selecione um grupo');
+          return;
+        }
+
+        fetch(formAdd.action, {
+          method: 'POST',
+          headers: {'X-Requested-With': 'XMLHttpRequest'},
+          body: formData
+        }).then(r => r.json()).then(data => {
+          if (data.success) {
+            // Mostrar mensagem de sucesso
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+            alertDiv.innerHTML = `
+              <i class="bi bi-check-circle-fill me-2"></i>${data.message}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            formAdd.parentElement.insertBefore(alertDiv, formAdd);
+            
+            // Recarregar grupos em tempo real
+            carregarGruposUsuario(usuarioId, false);
+            
+            // Se o mesmo usuário estiver selecionado no form de remover, atualizar também
+            if (usuarioRem && usuarioRem.value === usuarioId) {
+              carregarGruposUsuario(usuarioId, true);
+            }
+
+            // Auto-dismiss alert
+            setTimeout(() => alertDiv.remove(), 5000);
+          } else {
+            alert('Erro: ' + (data.message || 'não foi possível adicionar'));
+          }
+        }).catch(err => {
+          console.error(err);
+          alert('Erro na requisição');
+        });
+      });
+    }
+
+    // Botão de remover com AJAX e reload de grupos
+    const btnRemover = document.getElementById('btn_remover');
+    if (btnRemover) {
+      btnRemover.addEventListener('click', function(e){
+        e.preventDefault();
+        const usuarioId = document.getElementById('usuario_remover').value;
+        const grupoName = document.getElementById('grupo_remover').value;
+        
+        if (!usuarioId) {
+          alert('Selecione um usuário');
+          return;
+        }
+        if (!grupoName) {
+          alert('Selecione um grupo para remover');
+          return;
+        }
+        if (!confirm('Confirma remover o usuário deste grupo?')) return;
+
+        const fd = new FormData();
+        fd.append('usuario_remover', usuarioId);
+        fd.append('grupo_remover', grupoName);
+        fd.append('csrfmiddlewaretoken', document.querySelector('input[name=csrfmiddlewaretoken]').value);
+
+        fetch("{% url 'core:remover_usuario_grupo' %}", {
+          method: 'POST',
+          headers: {'X-Requested-With': 'XMLHttpRequest'},
+          body: fd
+        }).then(r => r.json()).then(data => {
+          if (data.success) {
+            // Mostrar mensagem
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+            alertDiv.innerHTML = `
+              <i class="bi bi-check-circle-fill me-2"></i>${data.message}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            btnRemover.parentElement.insertBefore(alertDiv, btnRemover.parentElement.firstChild);
+            
+            // Recarregar grupos em tempo real
+            carregarGruposUsuario(usuarioId, true);
+            
+            // Se o mesmo usuário estiver selecionado no form de adicionar, atualizar também
+            if (usuarioAdd && usuarioAdd.value === usuarioId) {
+              carregarGruposUsuario(usuarioId, false);
+            }
+
+            setTimeout(() => alertDiv.remove(), 5000);
+          } else {
+            alert('Erro: ' + (data.message || 'não foi possível remover'));
+          }
+        }).catch(err => {
+          console.error(err);
+          alert('Erro na requisição');
+        });
+      });
+    }
+
+    // Diagnóstico ASAAS Modal
+    const holder = document.getElementById('asaasDiagData');
+    if (holder) {
+      try {
+        const raw = holder.getAttribute('data-json');
+        const data = JSON.parse(raw);
+        if (!data || data.tipo !== 'asaas_diag') return;
+
+        const ok = !!data.ok;
+        const checks = data.checks || [];
+        const cfg = data.config || {};
+
+        const modalHtml = `
+        <div class="modal fade" id="asaasDiagModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content shadow-lg rounded-4">
+              <div class="modal-header ${ok ? 'bg-success text-white' : 'bg-danger text-white'}">
+                <h5 class="modal-title"><i class="bi bi-plug me-2"></i>Diagnóstico da Integração ASAAS</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <p class="mb-1"><strong>Resultado:</strong> ${ok ? 'OK' : 'Falhou'} — ${data.executado_em || ''}</p>
+                  <p class="mb-0 small text-muted">Base URL: <code>${cfg.base_url || ''}</code> | Timeout: ${cfg.timeout || 0}s | Retries: ${cfg.max_retries || 0} | Token configurado: ${cfg.token_configurado ? 'Sim' : 'Não'}</p>
+                </div>
+                <div class="card">
+                  <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                      <thead>
+                        <tr><th>Check</th><th>Status</th><th>Detalhe</th></tr>
+                      </thead>
+                      <tbody>
+                        ${checks.map(c => `
+                          <tr>
+                            <td>${c.nome || ''}</td>
+                            <td>${c.status ? '<span class="badge bg-success">OK</span>' : '<span class="badge bg-danger">Falha</span>'}</td>
+                            <td class="small">${c.detalhe || ''}</td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+
+        const container = document.createElement('div');
+        container.innerHTML = modalHtml;
+        document.body.appendChild(container);
+        const modalEl = document.getElementById('asaasDiagModal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      } catch (e) {
+        console.error('Erro ao exibir diagnóstico ASAAS:', e);
+      }
+    }
+  });
+</script>
+
+
+      const modalHtml = `
+      <div class="modal fade" id="asaasDiagModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+          <div class="modal-content shadow-lg rounded-4">
+            <div class="modal-header ${ok ? 'bg-success text-white' : 'bg-danger text-white'}">
+              <h5 class="modal-title"><i class="bi bi-plug me-2"></i>Diagnóstico da Integração ASAAS</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <p class="mb-1"><strong>Resultado:</strong> ${ok ? 'OK' : 'Falhou'} — ${data.executado_em || ''}</p>
+                <p class="mb-0 small text-muted">Base URL: <code>${cfg.base_url || ''}</code> | Timeout: ${cfg.timeout || 0}s | Retries: ${cfg.max_retries || 0} | Token configurado: ${cfg.token_configurado ? 'Sim' : 'Não'}</p>
+              </div>
+              <div class="card">
+                <div class="card-body p-0">
+                  <table class="table table-sm mb-0">
+                    <thead>
+                      <tr><th>Check</th><th>Status</th><th>Detalhe</th></tr>
+                    </thead>
+                    <tbody>
+                      ${checks.map(c => `
+                        <tr>
+                          <td>${c.nome || ''}</td>
+                          <td>${c.status ? '<span class="badge bg-success">OK</span>' : '<span class="badge bg-danger">Falha</span>'}</td>
+                          <td class="small">${c.detalhe || ''}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+      const container = document.createElement('div');
+      container.innerHTML = modalHtml;
+      document.body.appendChild(container);
+      const modalEl = document.getElementById('asaasDiagModal');
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    } catch (e) {
+      console.error('Erro ao exibir diagnóstico ASAAS:', e);
+    }
+  });
+</script>
+{% endblock %}

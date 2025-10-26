@@ -1,0 +1,106 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Área de Trabalho - Sistema Mr. Baruch{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<style>
+.module-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+    padding: 1.5rem;
+}
+
+.module-card .card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.module-card i {
+    margin-bottom: 1rem;
+}
+
+.module-card h5 {
+    margin-bottom: 0.5rem;
+}
+
+.module-card p {
+    margin-bottom: 1.5rem;
+}
+
+.module-card a {
+    margin-top: auto;
+    width: 100%;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-5">
+    <!-- Cabeçalho -->
+    <div class="row mb-4">
+        <div class="col-12 text-center text-md-start">
+            <h1 class="fw-bold text-dark mb-1">Área de Trabalho</h1>
+            <p class="text-muted">Bem-vindo à sua Área de Trabalho! Aqui você encontra acesso rápido às ferramentas essenciais para facilitar o seu dia a dia e otimizar o atendimento aos seus clientes.</p>
+        </div>
+    </div>
+
+    <!-- Módulos da Área de Trabalho -->
+    
+    <div class="row">   
+      <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+            <div class="card module-card h-100 text-center">
+                <div class="card-body p-4">
+                    <i class="bi bi-plus-circle text-warning fs-1 mb-3"></i>
+                    <h5 class="fw-bold mb-2">Novo Atendimento</h5>
+                    <p class="text-muted small">Inicie um novo atendimento para seus clientes.</p>
+                    <a href="{% url 'atendimento:novo_atendimento' %}" class="btn btn-outline-warning">Acessar</a>
+                </div>
+            </div>
+        </div>
+
+    
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+            <div class="card module-card h-100 text-center">
+                <div class="card-body p-4">
+                    <i class="bi bi-person-lines-fill text-primary fs-1 mb-3"></i>
+                    <h5 class="fw-bold mb-2">Leads PIX</h5>
+                    <p class="text-muted small">Gerencie os leads recebidos via PIX.</p>
+                    <a href="{% url 'atendimento:lista_leads_pix' %}" class="btn btn-outline-primary">Acessar</a>
+                </div>
+            </div>
+        </div>        
+        
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+            <div class="card module-card h-100 text-center">
+                <div class="card-body p-4">
+                    <i class="bi bi-speedometer2 text-success fs-1 mb-3"></i>
+                    <h5 class="fw-bold mb-2">Painel do Atendente</h5>
+                    <p class="text-muted small">Visualize estatísticas e informações do seu trabalho.</p>
+                    <a href="{% url 'atendimento:painel_atendente' %}" class="btn btn-outline-success">Acessar</a>
+                </div>
+            </div>
+        </div>
+
+       <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+            <div class="card module-card h-100 text-center">
+                <div class="card-body p-4">
+                    <i class="bi bi-person-circle text-secondary fs-1 mb-3"></i>
+                    <h5 class="fw-bold mb-2">Perfil do Atendente</h5>
+                    <p class="text-muted small">Atualize suas informações pessoais e profissionais.</p>
+                    <a href="{% url 'accounts:perfil_atendente' %}" class="btn btn-outline-secondary">Acessar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Lateral do Atendente -->
+    {% include 'atendimento/sidebar_atendente.html' %}
+</div>
+{% endblock %}

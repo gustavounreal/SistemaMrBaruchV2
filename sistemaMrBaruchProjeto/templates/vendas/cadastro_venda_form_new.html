@@ -1,0 +1,873 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Venda - {{ pre_venda.lead.nome_completo }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/novo_atendimento.css' %}">
+    <style>
+        /* === CPF/CNPJ Consulta Buttons === */
+        .cpf-cnpj-links {
+            display: flex;
+            gap: 10px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+        .cpf-cnpj-links a {
+            font-size: 0.97rem;
+            font-weight: 600;
+            border-radius: 8px !important;
+            padding: 8px 18px !important;
+            box-shadow: 0 2px 8px rgba(59,130,246,0.08);
+            transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+            border-width: 2px !important;
+            letter-spacing: 0.01em;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .cpf-cnpj-links a.btn-outline-primary {
+            background: linear-gradient(90deg, #e3f0ff 0%, #f8fafc 100%);
+            color: #2563eb !important;
+            border-color: #2563eb !important;
+        }
+        .cpf-cnpj-links a.btn-outline-primary:hover {
+            background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+            color: #fff !important;
+            box-shadow: 0 4px 16px rgba(59,130,246,0.15);
+            transform: translateY(-2px);
+        }
+        .cpf-cnpj-links a.btn-outline-secondary {
+            background: linear-gradient(90deg, #f3f4f6 0%, #f8fafc 100%);
+            color: #374151 !important;
+            border-color: #374151 !important;
+        }
+        .cpf-cnpj-links a.btn-outline-secondary:hover {
+            background: linear-gradient(90deg, #374151 0%, #6b7280 100%);
+            color: #fff !important;
+            box-shadow: 0 4px 16px rgba(55,65,81,0.13);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+            <h5>Processando...</h5>
+            <p class="text-muted">Aguarde enquanto salvamos a venda</p>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <div class="form-header text-center">
+            <h4 class="mb-1">Cadastro Completo de Venda</h4>
+            <small class="opacity-75">{{ pre_venda.lead.nome_completo }}</small>
+        </div>
+
+        <div class="form-body">
+            <!-- Indicador de etapas -->
+            <div class="step-indicator">
+                <div class="step active" id="step1">1</div>
+                <div class="step-line" id="line1"></div>
+                <div class="step" id="step2">2</div>
+                <div class="step-line" id="line2"></div>
+                <div class="step" id="step3">3</div>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <form id="vendaForm" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- ETAPA 1: Dados do Cliente -->
+                <div class="form-step active" id="step1Content">
+                    <h5 class="text-primary text-center mb-4">
+                        <i class="bi bi-person-circle me-2"></i>1. Dados do Cliente
+                    </h5>
+                    
+                    <div class="mb-3">
+                        <label class="form-label required" for="nome">Nome Completo</label>
+                        <input type="text" class="form-control" name="nome" id="nome" 
+                               value="{{ dados_iniciais.nome|default:'' }}" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required" for="cpf">CPF</label>
+                            <input type="text" class="form-control" name="cpf" id="cpf" 
+                                   value="{{ dados_iniciais.cpf_cnpj|default:'' }}"
+                                   placeholder="000.000.000-00" required>
+                                <!-- Links para consulta de CPF/CNPJ -->
+                                <div class="mt-2 cpf-cnpj-links">
+                                    <a href="https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/consultapublica.asp" target="_blank" class="btn btn-outline-primary btn-sm mb-1">
+                                        Consultar Situação do CPF na Receita Federal
+                                    </a>
+                                    <a href="https://solucoes.receita.fazenda.gov.br/servicos/cnpjreva/cnpjreva_solicitacao.asp" target="_blank" class="btn btn-outline-secondary btn-sm mb-1 ms-2">
+                                        Consultar Situação do CNPJ na Receita Federal
+                                    </a>
+                                </div>
+                                <small class="form-text d-block mt-1">Use os links acima para validar a titularidade e situação do CPF ou CNPJ informado.</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required" for="telefone">Telefone</label>
+                            <input type="text" class="form-control" name="telefone" id="telefone" 
+                                   value="{{ dados_iniciais.telefone|default:'' }}" placeholder="(00) 00000-0000" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="email">E-mail</label>
+                            <input type="email" class="form-control" name="email" id="email" 
+                                   value="{{ dados_iniciais.email|default:'' }}" placeholder="email@exemplo.com">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required" for="data_nascimento">Data de Nascimento</label>
+                            <input type="date" class="form-control" name="data_nascimento" id="data_nascimento" required>
+                        </div>
+                    </div>
+
+                    <!-- Novos campos: Profissão, Nacionalidade e Estado Civil -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label" for="profissao">Profissão</label>
+                            <input type="text" class="form-control" name="profissao" id="profissao" 
+                                   placeholder="Ex: Advogado, Médico, etc">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label" for="nacionalidade">Nacionalidade</label>
+                            <input type="text" class="form-control" name="nacionalidade" id="nacionalidade" 
+                                   value="Brasileiro(a)" placeholder="Ex: Brasileiro(a)">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label" for="estado_civil">Estado Civil</label>
+                            <select class="form-select" name="estado_civil" id="estado_civil">
+                                <option value="">Selecione...</option>
+                                <option value="solteiro">Solteiro(a)</option>
+                                <option value="casado">Casado(a)</option>
+                                <option value="divorciado">Divorciado(a)</option>
+                                <option value="viuvo">Viúvo(a)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Campo RG -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="rg">RG (Documento de Identidade)</label>
+                            <input type="text" class="form-control" name="rg" id="rg" 
+                                   placeholder="Ex: 12.345.678-9" maxlength="20">
+                        </div>
+                    </div>
+
+                    <!-- Endereço com busca por CEP -->
+                    <h6 class="text-secondary mt-4 mb-3">
+                        <i class="bi bi-geo-alt me-2"></i>Endereço
+                    </h6>
+
+                    <div class="mb-3">
+                        <label class="form-label required" for="cep">CEP</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="cep" id="cep" 
+                                   placeholder="00000-000" required maxlength="9">
+                            <button type="button" class="btn btn-outline-primary" onclick="buscarCep()">
+                                <i class="bi bi-search"></i> Buscar CEP
+                            </button>
+                        </div>
+                        <small id="cepInfo" class="form-text text-muted d-block mt-1"></small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label required" for="rua">Rua/Logradouro</label>
+                            <input type="text" class="form-control" name="rua" id="rua" 
+                                   placeholder="Nome da rua" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label required" for="numero">Número</label>
+                            <input type="text" class="form-control" name="numero" id="numero" 
+                                   placeholder="Nº" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required" for="bairro">Bairro</label>
+                            <input type="text" class="form-control" name="bairro" id="bairro" 
+                                   placeholder="Nome do bairro" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label required" for="cidade">Cidade</label>
+                            <input type="text" class="form-control" name="cidade" id="cidade" 
+                                   placeholder="Cidade" required>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label required" for="estado">UF</label>
+                            <input type="text" class="form-control" name="estado" id="estado" 
+                                   placeholder="UF" required maxlength="2" style="text-transform: uppercase;">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="complemento">Complemento</label>
+                        <input type="text" class="form-control" name="complemento" id="complemento" 
+                               placeholder="Apartamento, bloco, etc (opcional)">
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-4">
+                        <button type="button" class="btn btn-success btn-step" onclick="nextStep(2)">
+                            Próxima Etapa <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ETAPA 2: Dados da Venda -->
+                <div class="form-step" id="step2Content">
+                    <h5 class="text-primary text-center mb-4">
+                        <i class="bi bi-cart-check me-2"></i>2. Dados da Venda
+                    </h5>
+
+                    <!-- Informações da Pré-Venda -->
+                    <div class="alert alert-info mb-4">
+                        <h6><i class="bi bi-info-circle me-2"></i>Informações da Pré-Venda</h6>
+                        <p class="mb-1"><strong>Serviço:</strong> {{ pre_venda.get_servico_interesse_display }}</p>
+                        <p class="mb-1"><strong>Valor Total:</strong> R$ {{ pre_venda.valor_total|default:pre_venda.valor_proposto|floatformat:2 }}</p>
+                        {% if pre_venda.quantidade_parcelas and pre_venda.valor_parcela %}
+                        <p class="mb-0"><strong>Parcelamento:</strong> {{ pre_venda.quantidade_parcelas }}x de R$ {{ pre_venda.valor_parcela|floatformat:2 }} <span class="text-muted">({{ pre_venda.get_frequencia_pagamento_display|default:"Mensal" }})</span></p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Bloco de Resumo Financeiro -->
+                    <div class="card shadow-sm mb-4 border-primary">
+                        <div class="card-header bg-primary text-white py-2 px-3">
+                            <i class="bi bi-calculator me-2"></i>Resumo Financeiro da Venda
+                        </div>
+                        <div class="card-body py-3 px-3">
+                            <div class="row g-2">
+                                <div class="col-md-4 col-6">
+                                    <div class="small text-muted">Valor Total</div>
+                                    <div class="fw-bold">R$ <span id="resumoValorTotal">{{ dados_iniciais.valor_total|default:'0,00' }}</span></div>
+                                </div>
+                                <div class="col-md-4 col-6">
+                                    <div class="small text-muted">Valor de Entrada</div>
+                                    <div class="fw-bold">R$ <span id="resumoValorEntrada">{{ dados_iniciais.valor_entrada|default:'0,00' }}</span></div>
+                                </div>
+                                <div class="col-md-4 col-6">
+                                    <div class="small text-muted">Qtd. Parcelas</div>
+                                    <div class="fw-bold"><span id="resumoQtdParcelas">{{ dados_iniciais.quantidade_parcelas|default:'1' }}</span></div>
+                                </div>
+                                <div class="col-md-4 col-6">
+                                    <div class="small text-muted">Valor da Parcela</div>
+                                    <div class="fw-bold">R$ <span id="resumoValorParcela">{{ dados_iniciais.valor_parcela|default:'0,00' }}</span></div>
+                                </div>
+                                <div class="col-md-4 col-6">
+                                    <div class="small text-muted">Frequência</div>
+                                    <div class="fw-bold"><span id="resumoFrequencia">{{ dados_iniciais.frequencia_pagamento|default:'Mensal' }}</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Campo Captador -->
+                    <div class="mb-3">
+                        <label class="form-label required" for="captador">Captador</label>
+                        {% if pre_venda.lead.captador %}
+                            <input type="text" class="form-control" 
+                                   value="{{ pre_venda.lead.captador.get_full_name|default:pre_venda.lead.captador.username }}" readonly>
+                            <input type="hidden" name="captador_id" value="{{ pre_venda.lead.captador.id }}">
+                        {% else %}
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="captador_id" id="captador_id" 
+                                       placeholder="Informe o ID do captador" required>
+                                <button type="button" class="btn btn-outline-primary" onclick="pesquisarCaptador()">
+                                    <i class="bi bi-search"></i> Pesquisar
+                                </button>
+                            </div>
+                            <small id="captadorInfo" class="form-text text-muted d-block mt-1"></small>
+                        {% endif %}
+                    </div>
+
+                    <!-- Consultor fixo (usuário logado) -->
+                    <div class="mb-3">
+                        <label class="form-label" for="consultor">Consultor (Vendedor)</label>
+                        <input type="text" class="form-control" 
+                               value="{{ request.user.get_full_name|default:request.user.username }}" readonly>
+                        <small class="form-text text-muted">Automaticamente definido como você (usuário logado)</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required" for="valor_total">Valor Total</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="text" class="form-control valor-input" name="valor_total_display" 
+                                       id="valor_total_display" required>
+                                <input type="hidden" name="valor_total" id="valor_total">
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="valor_entrada">Valor de Entrada</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="text" class="form-control valor-input" name="valor_entrada_display" 
+                                       id="valor_entrada_display">
+                                <input type="hidden" name="valor_entrada" id="valor_entrada" value="0">
+                            </div>
+                            <div class="form-check mt-2">
+                                <input type="checkbox" class="form-check-input" name="sem_entrada" id="sem_entrada">
+                                <label class="form-check-label" for="sem_entrada">Sem entrada</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label required" for="quantidade_parcelas">Qtd. Parcelas</label>
+                            <input type="number" class="form-control" name="quantidade_parcelas" 
+                                   id="quantidade_parcelas" min="1" value="1" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label required" for="valor_parcela">Valor da Parcela</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="text" class="form-control valor-input" name="valor_parcela_display" 
+                                       id="valor_parcela_display" readonly>
+                                <input type="hidden" name="valor_parcela" id="valor_parcela">
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label required" for="frequencia_pagamento">Frequência</label>
+                            <select class="form-select" name="frequencia_pagamento" id="frequencia_pagamento" required>
+                                <option value="MENSAL">Mensal</option>
+                                <option value="QUINZENAL">Quinzenal</option>
+                                <option value="SEMANAL">Semanal</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="button" class="btn btn-outline-secondary btn-step" onclick="prevStep(1)">
+                            <i class="bi bi-arrow-left me-2"></i>Voltar
+                        </button>
+                        <button type="button" class="btn btn-success btn-step" onclick="nextStep(3)">
+                            Próxima Etapa <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ETAPA 3: Pagamento e Serviços -->
+                <div class="form-step" id="step3Content">
+                    <h5 class="text-primary text-center mb-4">
+                        <i class="bi bi-credit-card me-2"></i>3. Pagamento e Serviços
+                    </h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required" for="forma_entrada">Forma de Pag. da Entrada</label>
+                            <select class="form-select" name="forma_entrada" id="forma_entrada" required>
+                                <option value="PIX">PIX</option>
+                                <option value="BOLETO">Boleto</option>
+                                <option value="DINHEIRO">Dinheiro</option>
+                                <option value="CARTAO">Cartão</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required" for="forma_pagamento">Forma de Pag. das Parcelas</label>
+                            <select class="form-select" name="forma_pagamento" id="forma_pagamento" required>
+                                <option value="BOLETO">Boleto</option>
+                                <option value="PIX">PIX</option>
+                                <option value="DINHEIRO">Dinheiro</option>
+                                <option value="CARTAO">Cartão</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label required" for="data_vencimento_primeira">Vencimento da 1ª Parcela</label>
+                        <input type="date" class="form-control" name="data_vencimento_primeira" 
+                               id="data_vencimento_primeira" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Serviços Contratados</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" name="limpa_nome" id="limpa_nome">
+                            <label class="form-check-label" for="limpa_nome">Limpa Nome</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" name="retirada_travas" id="retirada_travas">
+                            <label class="form-check-label" for="retirada_travas">Retirada de Travas</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" name="recuperacao_score" id="recuperacao_score">
+                            <label class="form-check-label" for="recuperacao_score">Recuperação de Score</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="prazo_pagamento_total">
+                            <i class="fas fa-clock"></i> Prazo de Pagamento Total do Serviço
+                        </label>
+                        <input type="text" class="form-control" name="prazo_pagamento_total" 
+                               id="prazo_pagamento_total" readonly 
+                               placeholder="Calculado automaticamente">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label required" for="data_inicio_servico">
+                            <i class="fas fa-calendar-day"></i> Data de Início do Serviço
+                        </label>
+                        <input type="date" class="form-control" name="data_inicio_servico" 
+                               id="data_inicio_servico" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label required" for="dias_conclusao">
+                            <i class="fas fa-calendar-alt"></i> Dias para Conclusão
+                        </label>
+                        <select class="form-select" name="dias_conclusao" id="dias_conclusao" required>
+                            <option value="">Selecione o prazo...</option>
+                            <option value="0">00 dias (Imediato)</option>
+                            <option value="30">30 dias</option>
+                            <option value="60">60 dias</option>
+                            <option value="90">90 dias</option>
+                            <option value="120" selected>120 dias</option>
+                            <option value="150">150 dias</option>
+                            <option value="180">180 dias</option>
+                            <option value="210">210 dias</option>
+                            <option value="240">240 dias</option>
+                            <option value="270">270 dias</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="data_conclusao_prevista">
+                            <i class="fas fa-calendar-check"></i> Data Para a Conclusão do Serviço
+                        </label>
+                        <input type="date" class="form-control" name="data_conclusao_prevista" 
+                               id="data_conclusao_prevista" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="observacoes">Observações</label>
+                        <textarea class="form-control" name="observacoes" id="observacoes" rows="3"></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="button" class="btn btn-outline-secondary btn-step" onclick="prevStep(2)">
+                            <i class="bi bi-arrow-left me-2"></i>Voltar
+                        </button>
+                        <button type="submit" class="btn btn-success btn-step">
+                            <i class="bi bi-check-circle me-2"></i>Finalizar Venda
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Botão Voltar -->
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-center">
+                    <a href="{% url 'vendas:painel_leads_pagos' %}" class="btn btn-outline-secondary rounded-pill px-4 py-2">
+                        <i class="bi bi-arrow-left-circle me-1"></i> Voltar para Painel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentStep = 1;
+
+        function showStep(step) {
+            // Oculta todas as etapas
+            document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+            // Mostra a etapa atual
+            document.getElementById(`step${step}Content`).classList.add('active');
+            
+            // Atualiza o indicador de progresso
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active', 'completed'));
+            document.querySelectorAll('.step-line').forEach(l => l.classList.remove('active'));
+
+            if (step >= 1) document.getElementById('step1').classList.add('active');
+            if (step >= 2) {
+                document.getElementById('step1').classList.add('completed');
+                document.getElementById('line1').classList.add('active');
+                document.getElementById('step2').classList.add('active');
+            }
+            if (step >= 3) {
+                document.getElementById('step2').classList.add('completed');
+                document.getElementById('line2').classList.add('active');
+                document.getElementById('step3').classList.add('active');
+            }
+            
+            currentStep = step;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function nextStep(step) {
+            // Valida campos da etapa atual antes de avançar
+            const currentStepContent = document.getElementById(`step${currentStep}Content`);
+            const inputs = currentStepContent.querySelectorAll('[required]');
+            let valid = true;
+
+            inputs.forEach(input => {
+                if (!input.value.trim()) {
+                    input.classList.add('is-invalid');
+                    valid = false;
+                } else {
+                    input.classList.remove('is-invalid');
+                }
+            });
+
+            if (valid) {
+                showStep(step);
+            } else {
+                alert('Por favor, preencha todos os campos obrigatórios.');
+            }
+        }
+
+        function prevStep(step) {
+            showStep(step);
+        }
+
+        function pesquisarCaptador() {
+            const captadorId = document.getElementById('captador_id').value.trim();
+            const captadorInfo = document.getElementById('captadorInfo');
+            
+            if (!captadorId) {
+                captadorInfo.textContent = 'Informe o ID do captador.';
+                captadorInfo.className = 'form-text text-danger d-block mt-1';
+                return;
+            }
+
+            fetch(`/accounts/api/buscar-captador/${captadorId}/`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        let nome = data.nome_completo || data.username;
+                        captadorInfo.textContent = `✓ Captador: ${nome} (${data.email})`;
+                        captadorInfo.className = 'form-text text-success d-block mt-1';
+                    } else {
+                        captadorInfo.textContent = data.message || 'Captador não encontrado.';
+                        captadorInfo.className = 'form-text text-danger d-block mt-1';
+                    }
+                })
+                .catch(() => {
+                    captadorInfo.textContent = 'Erro ao buscar captador.';
+                    captadorInfo.className = 'form-text text-danger d-block mt-1';
+                });
+        }
+
+        function buscarCep() {
+            const cep = document.getElementById('cep').value.replace(/\D/g, '');
+            const cepInfo = document.getElementById('cepInfo');
+            
+            if (cep.length !== 8) {
+                cepInfo.textContent = 'CEP deve ter 8 dígitos.';
+                cepInfo.className = 'form-text text-danger d-block mt-1';
+                return;
+            }
+
+            cepInfo.textContent = 'Buscando CEP...';
+            cepInfo.className = 'form-text text-info d-block mt-1';
+
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.erro) {
+                        cepInfo.textContent = 'CEP não encontrado.';
+                        cepInfo.className = 'form-text text-danger d-block mt-1';
+                        return;
+                    }
+
+                    // Preenche os campos
+                    document.getElementById('rua').value = data.logradouro || '';
+                    document.getElementById('bairro').value = data.bairro || '';
+                    document.getElementById('cidade').value = data.localidade || '';
+                    document.getElementById('estado').value = data.uf || '';
+
+                    // Foco no número
+                    document.getElementById('numero').focus();
+
+                    cepInfo.textContent = `✓ Endereço encontrado: ${data.logradouro}, ${data.bairro} - ${data.localidade}/${data.uf}`;
+                    cepInfo.className = 'form-text text-success d-block mt-1';
+                })
+                .catch(() => {
+                    cepInfo.textContent = 'Erro ao buscar CEP. Verifique sua conexão.';
+                    cepInfo.className = 'form-text text-danger d-block mt-1';
+                });
+        }
+
+        // ===== FORMATAÇÃO DE VALORES =====
+        function formatarMoeda(valor) {
+            // Converte número para formato BR: 1234.56 -> 1.234,56
+            if (typeof valor === 'string') {
+                valor = parseFloat(valor) || 0;
+            }
+            return valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function desformatarMoeda(valor) {
+            // Remove formatação: 1.234,56 -> 1234.56
+            if (typeof valor === 'number') return valor;
+            if (!valor) return 0;
+            // Remove pontos (separador de milhares) e substitui vírgula por ponto
+            return parseFloat(valor.toString().replace(/\./g, '').replace(',', '.')) || 0;
+        }
+
+        function aplicarMascaraMoeda(inputDisplay, inputHidden) {
+            let digitando = false;
+            
+            // Permite digitação livre (apenas números, vírgula e ponto)
+            inputDisplay.addEventListener('input', function(e) {
+                digitando = true;
+                // Permite apenas números, vírgula e ponto
+                let valor = e.target.value.replace(/[^\d,\.]/g, '');
+                // Limita a apenas uma vírgula ou ponto
+                let partes = valor.split(/[,\.]/);
+                if (partes.length > 2) {
+                    valor = partes[0] + ',' + partes.slice(1).join('');
+                }
+                e.target.value = valor;
+            });
+
+            // Formata ao sair do campo
+            inputDisplay.addEventListener('blur', function(e) {
+                digitando = false;
+                let valor = desformatarMoeda(e.target.value);
+                e.target.value = formatarMoeda(valor);
+                inputHidden.value = valor.toFixed(2);
+                // Dispara evento para recalcular parcela
+                inputHidden.dispatchEvent(new Event('change'));
+            });
+
+            // Ao focar, remove formatação para facilitar edição
+            inputDisplay.addEventListener('focus', function(e) {
+                digitando = true;
+                let valor = desformatarMoeda(e.target.value);
+                if (valor === 0) {
+                    e.target.value = '';
+                } else {
+                    // Mostra apenas o número com vírgula
+                    e.target.value = valor.toFixed(2).replace('.', ',');
+                }
+                e.target.select(); // Seleciona todo o texto
+            });
+        }
+
+        // Aplica máscara nos campos de valor
+        const valorTotalDisplay = document.getElementById('valor_total_display');
+        const valorTotalHidden = document.getElementById('valor_total');
+        aplicarMascaraMoeda(valorTotalDisplay, valorTotalHidden);
+
+        const valorEntradaDisplay = document.getElementById('valor_entrada_display');
+        const valorEntradaHidden = document.getElementById('valor_entrada');
+        aplicarMascaraMoeda(valorEntradaDisplay, valorEntradaHidden);
+
+        const valorParcelaDisplay = document.getElementById('valor_parcela_display');
+        const valorParcelaHidden = document.getElementById('valor_parcela');
+        // Parcela é readonly, só precisa formatar
+        valorParcelaDisplay.addEventListener('focus', function(e) {
+            e.target.blur(); // Não permite editar
+        });
+
+        // Inicializa valor total com valor da pré-venda
+        const valorInicialTotal = parseFloat('{{ pre_venda.valor_total|default:pre_venda.valor_proposto }}');
+        const valorInicialEntrada = parseFloat('{{ pre_venda.valor_entrada|default:"0" }}');
+        const qtdInicialParcelas = parseInt('{{ pre_venda.quantidade_parcelas|default:"1" }}');
+        
+        valorTotalDisplay.value = formatarMoeda(valorInicialTotal);
+        valorTotalHidden.value = valorInicialTotal.toFixed(2);
+
+        // Inicializa valor entrada com valor da pré-venda (ou 0)
+        valorEntradaDisplay.value = formatarMoeda(valorInicialEntrada);
+        valorEntradaHidden.value = valorInicialEntrada.toFixed(2);
+        
+        // Inicializa quantidade de parcelas
+        document.getElementById('quantidade_parcelas').value = qtdInicialParcelas;
+
+        // Calcular valor da parcela automaticamente
+        valorTotalHidden.addEventListener('change', calcularParcela);
+        valorEntradaHidden.addEventListener('change', calcularParcela);
+        document.getElementById('quantidade_parcelas').addEventListener('input', calcularParcela);
+        
+        document.getElementById('sem_entrada').addEventListener('change', function() {
+            const entradaDisplay = document.getElementById('valor_entrada_display');
+            const entradaHidden = document.getElementById('valor_entrada');
+            entradaDisplay.disabled = this.checked;
+            if (this.checked) {
+                entradaDisplay.value = formatarMoeda(0);
+                entradaHidden.value = '0.00';
+            }
+            calcularParcela();
+        });
+
+        function calcularParcela() {
+            const total = parseFloat(valorTotalHidden.value) || 0;
+            const entrada = parseFloat(valorEntradaHidden.value) || 0;
+            const qtdParcelas = parseInt(document.getElementById('quantidade_parcelas').value) || 1;
+            
+            // Se a entrada for maior que o total, ajusta para o total
+            let entradaAjustada = entrada;
+            if (entradaAjustada > total) {
+                entradaAjustada = total;
+                // Atualiza campos visuais
+                valorEntradaHidden.value = entradaAjustada.toFixed(2);
+                valorEntradaDisplay.value = formatarMoeda(entradaAjustada);
+                // Mensagem simples ao usuário
+                alert('Valor de entrada não pode ser maior que o valor total. Foi ajustado automaticamente.');
+            }
+
+            const saldo = Math.max(0, total - entradaAjustada);
+            const parcelas = Math.max(1, qtdParcelas);
+            const valorParcela = saldo / parcelas;
+
+            valorParcelaHidden.value = valorParcela.toFixed(2);
+            valorParcelaDisplay.value = formatarMoeda(valorParcela);
+        }
+
+        // Validação ao alterar valor de entrada (display)
+        document.getElementById('valor_entrada_display').addEventListener('change', function() {
+            // Força recalcular e ajustar
+            calcularParcela();
+        });
+
+        // Validação final no submit para garantir integridade
+        document.getElementById('vendaForm').addEventListener('submit', function(event) {
+            const total = parseFloat(valorTotalHidden.value) || 0;
+            const entrada = parseFloat(valorEntradaHidden.value) || 0;
+            const parcela = parseFloat(document.getElementById('valor_parcela').value) || 0;
+
+            if (entrada > total) {
+                event.preventDefault();
+                alert('O valor de entrada não pode ser maior que o valor total. Ajuste o valor antes de submeter.');
+                return false;
+            }
+
+            if (parcela > total) {
+                event.preventDefault();
+                alert('O valor da parcela não pode ser maior que o valor total. Ajuste os valores antes de submeter.');
+                return false;
+            }
+
+            // Normal submit
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        });
+
+        // Máscaras de input
+        document.getElementById('cpf').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            e.target.value = value;
+        });
+
+        document.getElementById('telefone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+            value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+            e.target.value = value;
+        });
+
+        document.getElementById('cep').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            value = value.replace(/^(\d{5})(\d)/, '$1-$2');
+            e.target.value = value;
+        });
+
+        // Enter no CEP dispara busca
+        document.getElementById('cep').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                buscarCep();
+            }
+        });
+
+        // Converte estado para maiúscula automaticamente
+        document.getElementById('estado').addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+
+        // ========== CÁLCULO DE PRAZOS E DATAS ==========
+        
+        // Função para adicionar dias a uma data (considera apenas dias corridos)
+        function adicionarDias(data, dias) {
+            const resultado = new Date(data);
+            resultado.setDate(resultado.getDate() + parseInt(dias));
+            return resultado;
+        }
+
+        // Função para formatar data para input type="date" (YYYY-MM-DD)
+        function formatarDataInput(data) {
+            const ano = data.getFullYear();
+            const mes = String(data.getMonth() + 1).padStart(2, '0');
+            const dia = String(data.getDate()).padStart(2, '0');
+            return `${ano}-${mes}-${dia}`;
+        }
+
+        // Calcular data de conclusão quando data_inicio ou dias_conclusao mudar
+        function calcularDataConclusao() {
+            const dataInicio = document.getElementById('data_inicio_servico').value;
+            const diasConclusao = document.getElementById('dias_conclusao').value;
+            
+            if (dataInicio && diasConclusao) {
+                const dataInicioParsed = new Date(dataInicio + 'T00:00:00');
+                const dataConclusao = adicionarDias(dataInicioParsed, diasConclusao);
+                document.getElementById('data_conclusao_prevista').value = formatarDataInput(dataConclusao);
+            }
+        }
+
+        // Calcular prazo total de pagamento
+        function calcularPrazoPagamento() {
+            const qtdParcelas = parseInt(document.getElementById('quantidade_parcelas').value) || 1;
+            const frequencia = document.getElementById('frequencia_pagamento').value || 'MENSAL';
+            
+            let diasEntreParcelas = 30; // Padrão mensal
+            if (frequencia === 'SEMANAL') diasEntreParcelas = 7;
+            else if (frequencia === 'QUINZENAL') diasEntreParcelas = 15;
+            else if (frequencia === 'MENSAL') diasEntreParcelas = 30;
+            
+            const prazoTotal = qtdParcelas * diasEntreParcelas;
+            
+            // Arredondar para os valores permitidos
+            const valoresPermitidos = [30, 60, 90, 120, 150, 180, 210, 240, 270];
+            const prazoArredondado = valoresPermitidos.reduce((prev, curr) => 
+                Math.abs(curr - prazoTotal) < Math.abs(prev - prazoTotal) ? curr : prev
+            );
+            
+            document.getElementById('prazo_pagamento_total').value = `${prazoArredondado} dias`;
+        }
+
+        // Event listeners para os campos de prazo
+        document.getElementById('data_inicio_servico').addEventListener('change', calcularDataConclusao);
+        document.getElementById('dias_conclusao').addEventListener('change', calcularDataConclusao);
+        
+        document.getElementById('quantidade_parcelas').addEventListener('input', calcularPrazoPagamento);
+        document.getElementById('frequencia_pagamento').addEventListener('change', calcularPrazoPagamento);
+
+        // Inicializar prazo de pagamento
+        calcularPrazoPagamento();
+
+        // ========== FIM CÁLCULO DE PRAZOS ==========
+
+        // Mostrar loading ao submeter
+        document.getElementById('vendaForm').addEventListener('submit', function() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        });
+
+        // Inicializa na etapa 1
+        showStep(1);
+        
+        // Calcula parcela inicial
+        calcularParcela();
+    </script>
+</body>
+</html>

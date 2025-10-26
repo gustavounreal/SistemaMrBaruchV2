@@ -1,0 +1,290 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Registrar Aceite - {{ pre_venda.lead.nome_completo }}{% endblock %}
+
+{% block content %}
+<style>
+    .aceite-header {
+        background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+        color: #ffffff !important;
+        padding: 2rem;
+        border-radius: 12px 12px 0 0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .aceite-header h4 {
+        color: #ffffff !important;
+        font-weight: 700;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        margin: 0;
+    }
+    
+    .aceite-header i {
+        color: #ffffff !important;
+        filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12 col-lg-8 offset-lg-2">
+            <div class="card border-0 shadow-lg">
+                <div class="aceite-header">
+                    <h4>
+                        <i class="fas fa-check-circle"></i> 
+                        Aceite do Cliente - {{ pre_venda.lead.nome_completo }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Resumo da Proposta -->
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-file-invoice-dollar"></i> Resumo da Proposta</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-2"><strong>Serviço:</strong> {{ pre_venda.get_servico_interesse_display }}</p>
+                                <p class="mb-2"><strong>Perfil:</strong> {{ pre_venda.get_prazo_risco_display }}</p>
+                                <p class="mb-2"><strong>Motivo:</strong> {{ pre_venda.motivo_principal.texto|default:"Não informado" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-2"><strong>Valor Total:</strong> R$ {{ pre_venda.valor_total|default:pre_venda.valor_proposto|floatformat:2 }}</p>
+                                {% if pre_venda.valor_entrada %}
+                                <p class="mb-2"><strong>Entrada:</strong> R$ {{ pre_venda.valor_entrada|floatformat:2 }}</p>
+                                {% endif %}
+                                {% if pre_venda.quantidade_parcelas and pre_venda.valor_parcela %}
+                                <p class="mb-2">
+                                    <strong>Parcelamento:</strong> 
+                                    {{ pre_venda.quantidade_parcelas }}x de R$ {{ pre_venda.valor_parcela|floatformat:2 }}
+                                    <span class="text-muted">({{ pre_venda.get_frequencia_pagamento_display|default:"Mensal" }})</span>
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if pre_venda.observacoes_levantamento %}
+                        <hr>
+                        <p class="mb-0"><strong>Observações:</strong><br>{{ pre_venda.observacoes_levantamento|linebreaks }}</p>
+                        {% endif %}
+                    </div>
+
+                    <form method="post" id="aceiteForm">
+                        {% csrf_token %}
+
+                        <div class="text-center my-4">
+                            <h5>O cliente aceitou a proposta?</h5>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-success cursor-pointer aceite-option" data-aceite="sim">
+                                    <div class="card-body text-center py-4">
+                                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                        <h5 class="card-title">SIM, ACEITOU</h5>
+                                        <p class="card-text text-muted">Cliente concordou com a proposta</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-danger cursor-pointer aceite-option" data-aceite="nao">
+                                    <div class="card-body text-center py-4">
+                                        <i class="fas fa-times-circle fa-3x text-danger mb-3"></i>
+                                        <h5 class="card-title">NÃO, RECUSOU</h5>
+                                        <p class="card-text text-muted">Cliente não aceitou a proposta</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="aceite" id="aceite" required>
+
+                        <!-- Campo de motivo de recusa (oculto inicialmente) -->
+                        <div id="motivoRecusaDiv" class="card border-warning" style="display: none;">
+                            <div class="card-header bg-warning text-white">
+                                <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Registro de Motivo para Não Fechamento</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group mb-3">
+                                    <label for="motivo_recusa_categoria">
+                                        Selecione o principal motivo da recusa:
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <select name="motivo_recusa_categoria" id="motivo_recusa_categoria" class="form-control form-select">
+                                        <option value="">Selecione o motivo...</option>
+                                        {% for motivo in motivos_recusa %}
+                                            <option value="{{ motivo.id }}" style="color: {{ motivo.cor }};">
+                                                {{ motivo.nome }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-info-circle"></i> 
+                                        Escolha o motivo que melhor representa a recusa do cliente
+                                    </small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="motivo_recusa_detalhes">
+                                        Observações adicionais (opcional):
+                                    </label>
+                                    <textarea name="motivo_recusa" id="motivo_recusa_detalhes" class="form-control" rows="3" 
+                                              placeholder="Adicione mais detalhes sobre o motivo da recusa..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-4 text-center">
+                            <button type="submit" class="btn btn-primary btn-lg" id="btnSubmit" disabled>
+                                <i class="fas fa-save"></i> Confirmar Resposta
+                            </button>
+                            <a href="{% url 'vendas:detalhes_pre_venda' pre_venda.id %}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.cursor-pointer {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.aceite-option {
+    border: 2px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.aceite-option:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.aceite-option.selected {
+    border-width: 3px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    transform: translateY(-8px);
+}
+
+/* Estilo quando SIM é selecionado */
+.aceite-option[data-aceite="sim"].selected {
+    border-color: #28a745 !important;
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+}
+
+.aceite-option[data-aceite="sim"].selected .card-body {
+    background: transparent;
+}
+
+.aceite-option[data-aceite="sim"].selected .card-title {
+    color: #155724;
+    font-weight: 700;
+}
+
+.aceite-option[data-aceite="sim"].selected i {
+    transform: scale(1.2);
+    color: #28a745 !important;
+}
+
+/* Estilo quando NÃO é selecionado */
+.aceite-option[data-aceite="nao"].selected {
+    border-color: #dc3545 !important;
+    background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+}
+
+.aceite-option[data-aceite="nao"].selected .card-body {
+    background: transparent;
+}
+
+.aceite-option[data-aceite="nao"].selected .card-title {
+    color: #721c24;
+    font-weight: 700;
+}
+
+.aceite-option[data-aceite="nao"].selected i {
+    transform: scale(1.2);
+    color: #dc3545 !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const aceiteOptions = document.querySelectorAll('.aceite-option');
+    const aceiteInput = document.getElementById('aceite');
+    const btnSubmit = document.getElementById('btnSubmit');
+    const motivoRecusaDiv = document.getElementById('motivoRecusaDiv');
+    const motivoRecusaCategoriaSelect = document.getElementById('motivo_recusa_categoria');
+    const form = document.getElementById('aceiteForm');
+
+    aceiteOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            // Remove seleção anterior
+            aceiteOptions.forEach(opt => opt.classList.remove('selected'));
+            
+            // Marca como selecionada
+            this.classList.add('selected');
+            
+            // Define valor
+            const aceite = this.dataset.aceite;
+            aceiteInput.value = aceite;
+            
+            // Mostra/esconde campo de motivo de recusa
+            if (aceite === 'nao') {
+                motivoRecusaDiv.style.display = 'block';
+                motivoRecusaCategoriaSelect.setAttribute('required', 'required');
+                
+                // Scroll suave até o campo de motivo
+                setTimeout(() => {
+                    motivoRecusaDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 300);
+            } else {
+                motivoRecusaDiv.style.display = 'none';
+                motivoRecusaCategoriaSelect.removeAttribute('required');
+                motivoRecusaCategoriaSelect.value = '';
+            }
+            
+            // Habilita botão
+            btnSubmit.disabled = false;
+        });
+    });
+
+    // Validação do formulário
+    form.addEventListener('submit', function(event) {
+        if (!aceiteInput.value) {
+            event.preventDefault();
+            alert('Por favor, selecione se o cliente aceitou ou recusou a proposta.');
+            return false;
+        }
+
+        if (aceiteInput.value === 'nao' && !motivoRecusaCategoriaSelect.value) {
+            event.preventDefault();
+            alert('Por favor, selecione o motivo da recusa.');
+            motivoRecusaCategoriaSelect.focus();
+            return false;
+        }
+
+        return true;
+    });
+
+    /* Formatação BRL para elementos com classe .format-brl
+       Converte um número com ponto decimal (ex: 3500.00 ou "3500.00") para o formato pt-BR: 3.500,00
+    */
+    function formatToBRL(value) {
+        if (value === null || value === undefined) return '';
+        // Normaliza string
+        let str = String(value).trim();
+        // Substitui vírgula por ponto caso o backend tenha enviado com vírgula
+        str = str.replace(/,/g, '.');
+        let num = parseFloat(str);
+        if (isNaN(num)) return value;
+        return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    document.querySelectorAll('.format-brl').forEach(el => {
+        el.textContent = formatToBRL(el.textContent);
+    });
+});
+</script>
+{% endblock %}

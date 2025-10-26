@@ -1,0 +1,273 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Relatório de Comissões - Mr. Baruch{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  
+  <!-- Cabeçalho -->
+  <div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+      <h2 class="fw-bold text-dark mb-1">
+        <i class="bi bi-trophy-fill me-2 text-warning"></i>Relatório de Comissões
+      </h2>
+      <p class="text-muted mb-0">Análise financeira detalhada de comissões</p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+      <a href="{% url 'relatorios:painel_relatorios' %}" class="btn btn-outline-secondary me-2">
+        <i class="bi bi-arrow-left"></i> Voltar
+      </a>
+      <a href="{% url 'relatorios:exportar_relatorio' 'comissoes' %}?{{ request.GET.urlencode }}" class="btn btn-success">
+        <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
+      </a>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title fw-bold mb-3">
+        <i class="bi bi-funnel-fill text-warning me-2"></i>Filtros
+      </h5>
+      <form method="get" class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Período</label>
+          <select name="periodo" class="form-select">
+            <option value="7" {% if periodo_selecionado == '7' %}selected{% endif %}>Últimos 7 dias</option>
+            <option value="30" {% if periodo_selecionado == '30' %}selected{% endif %}>Últimos 30 dias</option>
+            <option value="60" {% if periodo_selecionado == '60' %}selected{% endif %}>Últimos 60 dias</option>
+            <option value="90" {% if periodo_selecionado == '90' %}selected{% endif %}>Últimos 90 dias</option>
+            <option value="365" {% if periodo_selecionado == '365' %}selected{% endif %}>Último ano</option>
+            <option value="todos" {% if periodo_selecionado == 'todos' %}selected{% endif %}>Todos</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Status de Pagamento</label>
+          <select name="pago" class="form-select">
+            <option value="todos" {% if pago_selecionado == 'todos' %}selected{% endif %}>Todos</option>
+            <option value="pago" {% if pago_selecionado == 'pago' %}selected{% endif %}>Pago</option>
+            <option value="pendente" {% if pago_selecionado == 'pendente' %}selected{% endif %}>Pendente</option>
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Atendente</label>
+          <select name="atendente" class="form-select">
+            <option value="">Todos os atendentes</option>
+            {% for atendente in atendentes %}
+            <option value="{{ atendente.id }}" {% if atendente_selecionado == atendente.id|stringformat:"s" %}selected{% endif %}>
+              {{ atendente.get_full_name|default:atendente.username }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="submit" class="btn btn-warning w-100">
+            <i class="bi bi-search"></i> Filtrar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Estatísticas do Período -->
+  <div class="row g-4 mb-4">
+    <div class="col-xl-2 col-md-4">
+      <div class="card border-0 shadow-sm bg-warning text-white">
+        <div class="card-body">
+          <h6 class="text-white-50 mb-2 small">Total Comissões</h6>
+          <h4 class="fw-bold mb-0">{{ quantidade_total }}</h4>
+          <small class="text-white-50">R$ <span class="format-brl">{{ total_comissoes|floatformat:2 }}</span></small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4">
+      <div class="card border-0 shadow-sm bg-success text-white">
+        <div class="card-body">
+          <h6 class="text-white-50 mb-2 small">Pagas</h6>
+          <h4 class="fw-bold mb-0">{{ quantidade_pagas }}</h4>
+          <small class="text-white-50">R$ <span class="format-brl">{{ total_pagas|floatformat:2 }}</span></small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4">
+      <div class="card border-0 shadow-sm bg-danger text-white">
+        <div class="card-body">
+          <h6 class="text-white-50 mb-2 small">Pendentes</h6>
+          <h4 class="fw-bold mb-0">{{ quantidade_pendentes }}</h4>
+          <small class="text-white-50">R$ <span class="format-brl">{{ total_pendentes|floatformat:2 }}</span></small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm bg-info text-white">
+        <div class="card-body">
+          <h6 class="text-white-50 mb-2 small">Ticket Médio</h6>
+          <h4 class="fw-bold mb-0">
+            {% if quantidade_total > 0 %}
+            R$ {% widthratio total_comissoes quantidade_total 1 %}
+            {% else %}
+            R$ 0,00
+            {% endif %}
+          </h4>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm bg-primary text-white">
+        <div class="card-body">
+          <h6 class="text-white-50 mb-2 small">Taxa Pagamento</h6>
+          <h4 class="fw-bold mb-0">
+            {% if quantidade_total > 0 %}
+            {% widthratio quantidade_pagas quantidade_total 100 %}%
+            {% else %}
+            0%
+            {% endif %}
+          </h4>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ranking de Atendentes -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title fw-bold mb-3">
+            <i class="bi bi-star-fill text-warning me-2"></i>Ranking de Atendentes (Top 10)
+          </h5>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Posição</th>
+                  <th>Atendente</th>
+                  <th class="text-center">Total Comissões</th>
+                  <th class="text-center">Pagas</th>
+                  <th class="text-center">Pendentes</th>
+                  <th class="text-end">Valor Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for rank in ranking %}
+                <tr>
+                  <td>
+                    <span class="badge 
+                      {% if forloop.counter == 1 %}bg-warning
+                      {% elif forloop.counter == 2 %}bg-secondary
+                      {% elif forloop.counter == 3 %}bg-danger
+                      {% else %}bg-light text-dark{% endif %} 
+                      fs-6 px-3 py-2">
+                      #{{ forloop.counter }}
+                    </span>
+                  </td>
+                  <td>
+                    <i class="bi bi-person-circle text-primary me-2"></i>
+                    <strong>{{ rank.atendente__first_name }} {{ rank.atendente__last_name }}</strong>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge bg-info">{{ rank.quantidade }}</span>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge bg-success">{{ rank.pagas }}</span>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge bg-danger">{{ rank.pendentes }}</span>
+                  </td>
+                  <td class="text-end fw-bold text-success">
+                    R$ {{ rank.total_valor|floatformat:2 }}
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                    Nenhum dado disponível no período
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela de Comissões -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title fw-bold mb-3">
+        <i class="bi bi-table text-warning me-2"></i>Últimas 100 Comissões
+      </h5>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Atendente</th>
+              <th>Lead</th>
+              <th class="text-end">Valor</th>
+              <th class="text-center">Status</th>
+              <th>Data Criação</th>
+              <th>Data Pagamento</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for comissao in comissoes %}
+            <tr>
+              <td class="fw-bold">#{{ comissao.id }}</td>
+              <td>
+                <i class="bi bi-person-circle text-primary me-1"></i>
+                {{ comissao.atendente.get_full_name|default:comissao.atendente.username }}
+              </td>
+              <td>{{ comissao.lead.nome_completo }}</td>
+              <td class="text-end fw-bold text-success">
+                R$ {{ comissao.valor|floatformat:2 }}
+              </td>
+              <td class="text-center">
+                {% if comissao.pago %}
+                <span class="badge bg-success">
+                  <i class="bi bi-check-circle-fill me-1"></i>Pago
+                </span>
+                {% else %}
+                <span class="badge bg-warning text-dark">
+                  <i class="bi bi-clock-fill me-1"></i>Pendente
+                </span>
+                {% endif %}
+              </td>
+              <td>{{ comissao.data_criacao|date:"d/m/Y H:i" }}</td>
+              <td>
+                {% if comissao.data_pagamento %}
+                <span class="text-success fw-semibold">
+                  <i class="bi bi-calendar-check"></i> {{ comissao.data_pagamento|date:"d/m/Y" }}
+                </span>
+                {% else %}
+                <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center text-muted py-5">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                <p class="mb-0">Nenhuma comissão encontrada com os filtros aplicados</p>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

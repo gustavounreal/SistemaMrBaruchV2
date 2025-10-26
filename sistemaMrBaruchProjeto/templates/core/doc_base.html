@@ -1,0 +1,493 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ doc_title }} - Documentação{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Reset de estilos do dashboard */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    background: #f8f9fa;
+  }
+  
+  /* Estilos para documentação técnica */
+  .doc-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+  
+  .doc-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+  }
+  
+  .doc-meta {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    font-size: 0.95rem;
+  }
+  
+  .doc-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .doc-sidebar {
+    position: sticky;
+    top: 20px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  
+  .doc-sidebar h5 {
+    color: #667eea;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+  }
+  
+  .doc-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .doc-nav li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .doc-nav a {
+    color: #4a5568;
+    text-decoration: none;
+    display: block;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+  }
+  
+  .doc-nav a:hover {
+    background: #f7fafc;
+    color: #667eea;
+    transform: translateX(5px);
+  }
+  
+  .doc-nav a.active {
+    background: #667eea;
+    color: white;
+    font-weight: 600;
+  }
+  
+  .doc-content {
+    background: white;
+    border-radius: 12px;
+    padding: 2.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  
+  .doc-content h2 {
+    color: #2d3748;
+    font-weight: 700;
+    margin-top: 2.5rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 3px solid #e2e8f0;
+    scroll-margin-top: 100px;
+  }
+  
+  .doc-content h2:first-child {
+    margin-top: 0;
+  }
+  
+  .doc-content h3 {
+    color: #4a5568;
+    font-weight: 600;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    scroll-margin-top: 100px;
+  }
+  
+  .doc-content h4 {
+    color: #718096;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .doc-content p {
+    line-height: 1.8;
+    color: #4a5568;
+    margin-bottom: 1rem;
+  }
+  
+  .doc-content ul, .doc-content ol {
+    line-height: 1.8;
+    color: #4a5568;
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+  }
+  
+  .doc-content li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .doc-content pre {
+    background: #2d3748;
+    color: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    border-left: 4px solid #667eea;
+  }
+  
+  .doc-content code {
+    background: #edf2f7;
+    color: #d53f8c;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-family: 'Courier New', monospace;
+  }
+  
+  .doc-content pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+  }
+  
+  .doc-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .doc-content th {
+    background: #667eea;
+    color: white;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+  }
+  
+  .doc-content td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .doc-content tr:hover {
+    background: #f7fafc;
+  }
+  
+  .doc-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 0 0.25rem;
+  }
+  
+  .doc-badge-success {
+    background: #c6f6d5;
+    color: #22543d;
+  }
+  
+  .doc-badge-warning {
+    background: #feebc8;
+    color: #744210;
+  }
+  
+  .doc-badge-danger {
+    background: #fed7d7;
+    color: #742a2a;
+  }
+  
+  .doc-badge-info {
+    background: #bee3f8;
+    color: #2c5282;
+  }
+  
+  .doc-badge-primary {
+    background: #e6fffa;
+    color: #234e52;
+  }
+  
+  .doc-alert {
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    border-left: 4px solid;
+  }
+  
+  .doc-alert-info {
+    background: #ebf8ff;
+    border-color: #3182ce;
+    color: #2c5282;
+  }
+  
+  .doc-alert-success {
+    background: #f0fff4;
+    border-color: #38a169;
+    color: #22543d;
+  }
+  
+  .doc-alert-warning {
+    background: #fffaf0;
+    border-color: #dd6b20;
+    color: #744210;
+  }
+  
+  .doc-alert-danger {
+    background: #fff5f5;
+    border-color: #e53e3e;
+    color: #742a2a;
+  }
+  
+  .doc-card {
+    background: #f7fafc;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    border-left: 4px solid #667eea;
+  }
+  
+  .doc-link {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+    transition: border-color 0.2s;
+  }
+  
+  .doc-link:hover {
+    border-bottom-color: #667eea;
+  }
+  
+  .back-to-top {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: #667eea;
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+    z-index: 1000;
+  }
+  
+  .back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  .back-to-top:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  }
+  
+  /* Responsividade */
+  @media (max-width: 991px) {
+    .doc-sidebar {
+      position: relative;
+      top: 0;
+      margin-bottom: 2rem;
+    }
+  }
+  
+  /* Smooth scroll */
+  html {
+    scroll-behavior: smooth;
+  }
+</style>
+{% endblock %}
+
+{% block main_class %}{% endblock %}
+
+{% block content %}
+<div class="doc-container py-4">
+  
+  <!-- Header da Documentação -->
+  <div class="doc-header">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+      <div>
+        <h1 class="fw-bold mb-2">{{ doc_icon|safe }} {{ doc_title }}</h1>
+        <p class="mb-0 opacity-90">{{ doc_subtitle }}</p>
+      </div>
+      <div>
+        <a href="{% url 'core:central_documentacao' %}" class="btn btn-light">
+          <i class="bi bi-arrow-left me-2"></i>Voltar à Central
+        </a>
+      </div>
+    </div>
+    
+    <div class="doc-meta">
+      {% if doc_version %}
+      <div class="doc-meta-item">
+        <i class="bi bi-tag-fill"></i>
+        <span>Versão {{ doc_version }}</span>
+      </div>
+      {% endif %}
+      {% if doc_date %}
+      <div class="doc-meta-item">
+        <i class="bi bi-calendar-fill"></i>
+        <span>{{ doc_date }}</span>
+      </div>
+      {% endif %}
+      {% if doc_status %}
+      <div class="doc-meta-item">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>{{ doc_status }}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  
+  <!-- Layout: Sidebar + Conteúdo -->
+  <div class="row">
+    
+    <!-- Sidebar de Navegação -->
+    <div class="col-lg-3 col-md-4">
+      <div class="doc-sidebar">
+        <h5><i class="bi bi-list-ul me-2"></i>Navegação</h5>
+        <ul class="doc-nav" id="doc-navigation">
+          {% block doc_navigation %}
+          <!-- Será preenchido por JavaScript ou pelo template filho -->
+          {% endblock %}
+        </ul>
+      </div>
+    </div>
+    
+    <!-- Conteúdo Principal -->
+    <div class="col-lg-9 col-md-8">
+      <div class="doc-content">
+        {% block doc_content %}
+        <!-- Conteúdo específico de cada documentação -->
+        {% endblock %}
+      </div>
+    </div>
+    
+  </div>
+  
+</div>
+
+<!-- Botão Voltar ao Topo -->
+<div class="back-to-top" id="backToTop">
+  <i class="bi bi-arrow-up fs-5"></i>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  
+  // Gerar navegação automaticamente a partir dos H2 e H3
+  const content = document.querySelector('.doc-content');
+  const navigation = document.getElementById('doc-navigation');
+  
+  if (content && navigation) {
+    const headings = content.querySelectorAll('h2, h3');
+    
+    headings.forEach((heading, index) => {
+      // Adicionar ID ao heading se não tiver
+      if (!heading.id) {
+        heading.id = 'section-' + index;
+      }
+      
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '#' + heading.id;
+      a.textContent = heading.textContent;
+      
+      // Indent para H3
+      if (heading.tagName === 'H3') {
+        a.style.paddingLeft = '1.5rem';
+        a.style.fontSize = '0.85rem';
+      }
+      
+      li.appendChild(a);
+      navigation.appendChild(li);
+    });
+  }
+  
+  // Destacar seção ativa no scroll
+  const navLinks = document.querySelectorAll('.doc-nav a');
+  
+  function highlightActiveSection() {
+    let currentSection = '';
+    
+    const headings = document.querySelectorAll('.doc-content h2, .doc-content h3');
+    headings.forEach(heading => {
+      const rect = heading.getBoundingClientRect();
+      if (rect.top <= 150) {
+        currentSection = heading.id;
+      }
+    });
+    
+    navLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('href') === '#' + currentSection) {
+        link.classList.add('active');
+      }
+    });
+  }
+  
+  window.addEventListener('scroll', highlightActiveSection);
+  highlightActiveSection();
+  
+  // Botão "Voltar ao Topo"
+  const backToTop = document.getElementById('backToTop');
+  
+  window.addEventListener('scroll', function() {
+    if (window.scrollY > 300) {
+      backToTop.classList.add('visible');
+    } else {
+      backToTop.classList.remove('visible');
+    }
+  });
+  
+  backToTop.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  
+  // Smooth scroll para links internos
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+      e.preventDefault();
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+  
+});
+</script>
+{% endblock %}

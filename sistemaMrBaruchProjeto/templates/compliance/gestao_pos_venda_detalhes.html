@@ -1,0 +1,540 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Detalhes Pós-Venda - Compliance{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<style>
+    .compliance-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+    .info-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+    /* badges are styled centrally in static/css/dashboard.css */
+    
+    .workflow-steps {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+    .workflow-step {
+        flex: 1;
+        text-align: center;
+        position: relative;
+        padding: 1rem 0.5rem;
+    }
+    .workflow-step::before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        right: -50%;
+        height: 2px;
+        background-color: #dee2e6;
+        z-index: 0;
+    }
+    .workflow-step:last-child::before {
+        display: none;
+    }
+    .workflow-step.active::before {
+        background-color: #667eea;
+    }
+    .workflow-step.completed::before {
+        background-color: #28a745;
+    }
+    .workflow-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #dee2e6;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 0.5rem;
+        position: relative;
+        z-index: 1;
+    }
+    .workflow-step.active .workflow-icon {
+        background-color: #667eea;
+    }
+    .workflow-step.completed .workflow-icon {
+        background-color: #28a745;
+    }
+    .workflow-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    .workflow-step.active .workflow-label {
+        color: #667eea;
+        font-weight: bold;
+    }
+    .workflow-step.completed .workflow-label {
+        color: #28a745;
+    }
+    .action-card {
+        border: 2px solid #667eea;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .doc-item {
+        background-color: #f8f9fa;
+        padding: 0.75rem;
+        border-radius: 5px;
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="compliance-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-1">
+                    <i class="bi bi-file-earmark-check me-2"></i>
+                    Gestão Pós-Venda #{{ gestao.id }}
+                </h2>
+                <p class="mb-0">
+                    Lead: <strong>{{ lead.nome_completo }}</strong> - 
+                    <span class="badge badge-{{ gestao.status }}">{{ gestao.get_status_display }}</span>
+                </p>
+            </div>
+            <a href="{% url 'compliance:gestao_pos_venda_lista' %}" class="btn btn-light">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <!-- Workflow Visual -->
+    <div class="info-card">
+        <h5 class="mb-3"><i class="bi bi-diagram-3"></i> Fluxo do Processo</h5>
+        <div class="workflow-steps">
+            <div class="workflow-step {% if gestao.status == 'CONFERENCIA_CADASTRO' %}active{% endif %} {% if gestao.cadastro_conferido %}completed{% endif %}">
+                <div class="workflow-icon">
+                    <i class="bi bi-{% if gestao.cadastro_conferido %}check{% else %}1-circle{% endif %}"></i>
+                </div>
+                <div class="workflow-label">Conferência</div>
+            </div>
+            <div class="workflow-step {% if gestao.status == 'COLETA_DOCUMENTOS' %}active{% endif %} {% if gestao.documentos_coletados %}completed{% endif %}">
+                <div class="workflow-icon">
+                    <i class="bi bi-{% if gestao.documentos_coletados %}check{% else %}2-circle{% endif %}"></i>
+                </div>
+                <div class="workflow-label">Documentos</div>
+            </div>
+            <div class="workflow-step {% if gestao.status == 'EMISSAO_CONTRATO' %}active{% endif %} {% if gestao.contrato_emitido %}completed{% endif %}">
+                <div class="workflow-icon">
+                    <i class="bi bi-{% if gestao.contrato_emitido %}check{% else %}3-circle{% endif %}"></i>
+                </div>
+                <div class="workflow-label">Emissão</div>
+            </div>
+            <div class="workflow-step {% if gestao.status == 'ENVIO_CONTRATO' %}active{% endif %} {% if gestao.contrato_enviado %}completed{% endif %}">
+                <div class="workflow-icon">
+                    <i class="bi bi-{% if gestao.contrato_enviado %}check{% else %}4-circle{% endif %}"></i>
+                </div>
+                <div class="workflow-label">Envio</div>
+            </div>
+            <div class="workflow-step {% if gestao.status == 'AGUARDANDO_ASSINATURA' %}active{% endif %} {% if gestao.assinatura_confirmada %}completed{% endif %}">
+                <div class="workflow-icon">
+                    <i class="bi bi-{% if gestao.assinatura_confirmada %}check{% else %}5-circle{% endif %}"></i>
+                </div>
+                <div class="workflow-label">Assinatura</div>
+            </div>
+            <div class="workflow-step {% if gestao.status == 'CONCLUIDO' %}active completed{% endif %}">
+                <div class="workflow-icon">
+                    <i class="bi bi-{% if gestao.status == 'CONCLUIDO' %}check-circle{% else %}6-circle{% endif %}"></i>
+                </div>
+                <div class="workflow-label">Concluído</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Informações e Ações -->
+        <div class="col-md-8">
+            <!-- Informações do Lead -->
+            <div class="info-card">
+                <h5 class="mb-3"><i class="bi bi-person-circle"></i> Informações do Lead</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <label class="text-muted">Nome:</label>
+                        <p class="mb-0"><strong>{{ lead.nome_completo }}</strong></p>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label class="text-muted">CPF/CNPJ:</label>
+                        <p class="mb-0">{{ lead.cpf_cnpj }}</p>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label class="text-muted">Telefone:</label>
+                        <p class="mb-0">{{ lead.telefone }}</p>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <label class="text-muted">Email:</label>
+                        <p class="mb-0">{{ lead.email|default:"-" }}</p>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <label class="text-muted">Pré-Venda:</label>
+                        <p class="mb-0"><span class="badge bg-info">#{{ pre_venda.id }}</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ações Disponíveis -->
+            {% if gestao.status != 'CONCLUIDO' %}
+            <div class="action-card">
+                <h5 class="mb-3 text-primary">
+                    <i class="bi bi-lightning"></i> Ação Requerida: {{ gestao.get_status_display }}
+                </h5>
+
+                <!-- Conferência de Cadastro -->
+                {% if gestao.status == 'CONFERENCIA_CADASTRO' %}
+                <form id="formConferir">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Observações da Conferência</label>
+                        <textarea class="form-control" id="observacoes" rows="3" 
+                                  placeholder="Anote qualquer observação sobre o cadastro..."></textarea>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="conferirCadastro()">
+                        <i class="bi bi-check-circle"></i> Confirmar Conferência de Cadastro
+                    </button>
+                </form>
+                {% endif %}
+
+                <!-- Coleta de Documentos -->
+                {% if gestao.status == 'COLETA_DOCUMENTOS' %}
+                <div id="documentosArea">
+                    <p class="text-muted">Registre os documentos coletados do cliente:</p>
+                    <div id="listaDocumentos" class="mb-3">
+                        <div class="doc-item">
+                            <input type="text" class="form-control form-control-sm" placeholder="Nome do documento" data-doc-input>
+                            <button type="button" class="btn btn-sm btn-danger ms-2" onclick="this.parentElement.remove()">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="adicionarDocumento()">
+                        <i class="bi bi-plus-circle"></i> Adicionar Documento
+                    </button>
+                    <div>
+                        <button type="button" class="btn btn-primary" onclick="registrarDocumentos()">
+                            <i class="bi bi-file-earmark-check"></i> Registrar Documentos Coletados
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Emissão de Contrato -->
+                {% if gestao.status == 'EMISSAO_CONTRATO' %}
+                <p class="text-muted">Emita o contrato para o cliente.</p>
+                <button type="button" class="btn btn-warning" onclick="emitirContrato()">
+                    <i class="bi bi-file-earmark-text"></i> Emitir Contrato
+                </button>
+                {% endif %}
+
+                <!-- Envio de Contrato -->
+                {% if gestao.status == 'ENVIO_CONTRATO' %}
+                <p class="text-muted">Envie o contrato para o cliente assinar.</p>
+                <button type="button" class="btn btn-info" onclick="enviarContrato()">
+                    <i class="bi bi-send"></i> Enviar Contrato para Cliente
+                </button>
+                {% endif %}
+
+                <!-- Confirmação de Assinatura -->
+                {% if gestao.status == 'AGUARDANDO_ASSINATURA' %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-hourglass-split"></i>
+                    <strong>Aguardando assinatura do cliente.</strong>
+                    <p class="mb-0">Quando o cliente assinar, confirme abaixo.</p>
+                </div>
+                <button type="button" class="btn btn-success" onclick="confirmarAssinatura()">
+                    <i class="bi bi-check2-all"></i> Confirmar Assinatura Recebida
+                </button>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Status Concluído -->
+            {% if gestao.status == 'CONCLUIDO' %}
+            <div class="alert alert-success text-center">
+                <i class="bi bi-check-circle fs-1 d-block mb-3"></i>
+                <h5>Processo Concluído com Sucesso!</h5>
+                <p class="mb-0">Todos os documentos foram processados e o contrato foi assinado.</p>
+            </div>
+            {% endif %}
+
+            <!-- Documentos Coletados -->
+            {% if gestao.documentos_coletados and gestao.lista_documentos %}
+            <div class="info-card">
+                <h5 class="mb-3"><i class="bi bi-files"></i> Documentos Coletados</h5>
+                <ul class="list-group">
+                    {% for doc in gestao.lista_documentos %}
+                    <li class="list-group-item">
+                        <i class="bi bi-file-earmark-pdf text-danger"></i> {{ doc }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar - Informações da Gestão -->
+        <div class="col-md-4">
+            <div class="info-card">
+                <h5 class="mb-3"><i class="bi bi-info-circle"></i> Status da Gestão</h5>
+                
+                <div class="mb-3">
+                    <label class="text-muted">Status Atual:</label>
+                    <p><span class="badge badge-{{ gestao.status }}">{{ gestao.get_status_display }}</span></p>
+                </div>
+
+                <div class="mb-3">
+                    <label class="text-muted">Responsável:</label>
+                    <p class="mb-0">
+                        {% if gestao.responsavel %}
+                            <i class="bi bi-person-check"></i> {{ gestao.responsavel.username }}
+                        {% else %}
+                            <span class="text-muted">Não atribuído</span>
+                        {% endif %}
+                    </p>
+                </div>
+
+                <div class="mb-3">
+                    <label class="text-muted">Data de Criação:</label>
+                    <p class="mb-0">{{ gestao.data_criacao|date:"d/m/Y H:i" }}</p>
+                </div>
+
+                <div class="mb-3">
+                    <label class="text-muted">Última Atualização:</label>
+                    <p class="mb-0">{{ gestao.data_ultima_atualizacao|date:"d/m/Y H:i" }}</p>
+                </div>
+
+                {% if gestao.data_conferencia_cadastro %}
+                <div class="mb-3">
+                    <label class="text-muted">Conferência Realizada:</label>
+                    <p class="mb-0">{{ gestao.data_conferencia_cadastro|date:"d/m/Y H:i" }}</p>
+                </div>
+                {% endif %}
+
+                {% if gestao.data_coleta_documentos %}
+                <div class="mb-3">
+                    <label class="text-muted">Documentos Coletados:</label>
+                    <p class="mb-0">{{ gestao.data_coleta_documentos|date:"d/m/Y H:i" }}</p>
+                </div>
+                {% endif %}
+
+                {% if gestao.data_emissao_contrato %}
+                <div class="mb-3">
+                    <label class="text-muted">Contrato Emitido:</label>
+                    <p class="mb-0">{{ gestao.data_emissao_contrato|date:"d/m/Y H:i" }}</p>
+                </div>
+                {% endif %}
+
+                {% if gestao.data_envio_contrato %}
+                <div class="mb-3">
+                    <label class="text-muted">Contrato Enviado:</label>
+                    <p class="mb-0">{{ gestao.data_envio_contrato|date:"d/m/Y H:i" }}</p>
+                </div>
+                {% endif %}
+
+                {% if gestao.data_assinatura %}
+                <div class="mb-3">
+                    <label class="text-muted">Assinatura Confirmada:</label>
+                    <p class="mb-0">{{ gestao.data_assinatura|date:"d/m/Y H:i" }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Observações -->
+            {% if gestao.observacoes %}
+            <div class="info-card">
+                <h5 class="mb-3"><i class="bi bi-chat-square-text"></i> Observações</h5>
+                <p class="mb-0">{{ gestao.observacoes }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function conferirCadastro() {
+        const observacoes = document.getElementById('observacoes').value;
+
+        fetch(`/compliance/api/gestao-pos-venda/{{ gestao.id }}/acao/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                acao: 'conferir_cadastro',
+                observacoes: observacoes
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao conferir cadastro');
+        });
+    }
+
+    function adicionarDocumento() {
+        const html = `
+            <div class="doc-item">
+                <input type="text" class="form-control form-control-sm" placeholder="Nome do documento" data-doc-input>
+                <button type="button" class="btn btn-sm btn-danger ms-2" onclick="this.parentElement.remove()">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `;
+        document.getElementById('listaDocumentos').insertAdjacentHTML('beforeend', html);
+    }
+
+    function registrarDocumentos() {
+        const inputs = document.querySelectorAll('[data-doc-input]');
+        const documentos = Array.from(inputs)
+            .map(input => input.value.trim())
+            .filter(val => val !== '');
+
+        if (documentos.length === 0) {
+            alert('Por favor, adicione pelo menos um documento');
+            return;
+        }
+
+        fetch(`/compliance/api/gestao-pos-venda/{{ gestao.id }}/acao/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                acao: 'registrar_documentos',
+                documentos: documentos
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao registrar documentos');
+        });
+    }
+
+    function emitirContrato() {
+        if (!confirm('Deseja emitir o contrato para este cliente?')) return;
+
+        fetch(`/compliance/api/gestao-pos-venda/{{ gestao.id }}/acao/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                acao: 'emitir_contrato'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao emitir contrato');
+        });
+    }
+
+    function enviarContrato() {
+        if (!confirm('Deseja enviar o contrato para o cliente?')) return;
+
+        fetch(`/compliance/api/gestao-pos-venda/{{ gestao.id }}/acao/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                acao: 'enviar_contrato'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao enviar contrato');
+        });
+    }
+
+    function confirmarAssinatura() {
+        if (!confirm('Confirma que o cliente assinou o contrato?')) return;
+
+        fetch(`/compliance/api/gestao-pos-venda/{{ gestao.id }}/acao/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                acao: 'confirmar_assinatura'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao confirmar assinatura');
+        });
+    }
+</script>
+{% endblock %}

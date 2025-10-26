@@ -1,0 +1,663 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Pré-Venda - {{ lead.nome_completo }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        /* === Variáveis de tema === */
+        :root {
+            --azul-principal: #1e3a8a;
+            --azul-secundario: #3b82f6;
+            --laranja-principal: #f97316;
+            --verde-principal: #10b981;
+            --cinza-fundo: #f4f6fb;
+            --texto: #1f2937;
+            --texto-claro: #6b7280;
+            --sombra-card: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        /* === Base geral === */
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: linear-gradient(120deg, #eef2ff, #fdf2e9);
+            color: var(--texto);
+            min-height: 100vh;
+            padding: 2rem 0;
+            line-height: 1.6;
+        }
+
+        /* === Form Container === */
+        .form-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--sombra-card);
+            overflow: hidden;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .form-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        /* === Form Header === */
+        .form-header {
+            background: linear-gradient(135deg, var(--azul-principal), var(--azul-secundario));
+            color: #fff;
+            padding: 30px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-header h4 {
+            font-weight: 700;
+            margin: 0;
+            font-size: 1.75rem;
+        }
+
+        .form-header small {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        /* === Lead Info Card === */
+        .lead-info-card {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border-left: 4px solid var(--azul-secundario);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .lead-info-card .info-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .lead-info-card .info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .lead-info-card i {
+            color: var(--azul-secundario);
+            font-size: 1.2rem;
+            margin-right: 10px;
+            width: 24px;
+        }
+
+        .lead-info-card strong {
+            color: var(--azul-principal);
+            margin-right: 8px;
+        }
+
+        /* === Form Body === */
+        .form-body {
+            padding: 35px;
+        }
+
+        /* === Section Headers === */
+        .section-header {
+            background: linear-gradient(135deg, var(--azul-principal), var(--azul-secundario));
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.15);
+        }
+
+        .section-header:first-of-type {
+            margin-top: 0;
+        }
+
+        .section-header i {
+            font-size: 1.5rem;
+            margin-right: 12px;
+        }
+
+        .section-header h5 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        /* === Form Controls === */
+        .form-label {
+            font-weight: 600;
+            color: var(--texto);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .form-label.required::after {
+            content: ' *';
+            color: #ef4444;
+        }
+
+        .form-control,
+        .form-select {
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background-color: #f9fafb;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--azul-secundario);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background-color: white;
+        }
+
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        /* === Radio Buttons === */
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .radio-option {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .radio-option input[type="radio"] {
+            display: none;
+        }
+
+        .radio-option label {
+            display: block;
+            padding: 15px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: 500;
+            background: #f9fafb;
+        }
+
+        .radio-option label:hover {
+            border-color: var(--azul-secundario);
+            background: #eff6ff;
+            transform: translateY(-2px);
+        }
+
+        .radio-option input[type="radio"]:checked + label {
+            background: linear-gradient(135deg, var(--azul-principal), var(--azul-secundario));
+            color: white;
+            border-color: var(--azul-secundario);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        /* === Select Styling === */
+        select.form-control,
+        select.form-select {
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%233b82f6' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px 12px;
+            padding-right: 40px;
+        }
+
+        /* === Input Group === */
+        .input-group-text {
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            border: 2px solid #e5e7eb;
+            border-right: none;
+            color: var(--azul-principal);
+            font-weight: 600;
+            border-radius: 10px 0 0 10px;
+        }
+
+        .input-group .form-control {
+            border-left: none;
+            border-radius: 0 10px 10px 0;
+        }
+
+        /* === Buttons === */
+        .btn-group-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 35px;
+            padding-top: 25px;
+            border-top: 2px solid #f3f4f6;
+        }
+
+        .btn-lg {
+            padding: 14px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--verde-principal), #059669);
+            border: none;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            border: none;
+            box-shadow: 0 4px 12px rgba(107, 114, 128, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(107, 114, 128, 0.3);
+        }
+
+        /* === Alert Messages === */
+        .alert {
+            border-radius: 12px;
+            border: none;
+            padding: 16px 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            color: #1e40af;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #92400e;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+        }
+
+        /* === Helper Text === */
+        .form-text {
+            color: var(--texto-claro);
+            font-size: 0.85rem;
+            margin-top: 6px;
+        }
+
+        /* === Responsive === */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .form-container {
+                border-radius: 15px;
+            }
+
+            .form-body {
+                padding: 20px;
+            }
+
+            .form-header {
+                padding: 20px;
+            }
+
+            .form-header h4 {
+                font-size: 1.4rem;
+            }
+
+            .radio-group {
+                flex-direction: column;
+            }
+
+            .radio-option {
+                min-width: 100%;
+            }
+
+            .btn-group-actions {
+                flex-direction: column;
+            }
+
+            .btn-lg {
+                width: 100%;
+            }
+
+            .section-header {
+                padding: 12px 15px;
+            }
+
+            .section-header h5 {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <div class="form-header text-center">
+            <h4 class="mb-2"><i class="bi bi-cash-coin me-2"></i>Iniciar Pré-Venda</h4>
+            <small>Qualifique o lead e proponha o serviço ideal</small>
+        </div>
+
+        <div class="form-body">
+            <!-- Lead Info Card -->
+            <div class="lead-info-card">
+                <div class="info-item">
+                    <i class="bi bi-person-circle"></i>
+                    <div><strong>Nome:</strong> {{ lead.nome_completo }}</div>
+                </div>
+                <div class="info-item">
+                    <i class="bi bi-telephone"></i>
+                    <div><strong>Telefone:</strong> {{ lead.telefone }}</div>
+                </div>
+                {% if lead.email %}
+                <div class="info-item">
+                    <i class="bi bi-envelope"></i>
+                    <div><strong>E-mail:</strong> {{ lead.email }}</div>
+                </div>
+                {% endif %}
+                <div class="info-item">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <div><strong>Status:</strong> <span class="badge bg-success">{{ lead.get_status_display }}</span></div>
+                </div>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    <i class="bi bi-info-circle me-2"></i>{{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <!-- Seção 1: Perfil Prazo/Risco -->
+                <div class="section-header">
+                    <i class="bi bi-speedometer2"></i>
+                    <h5>1. Perfil de Prazo e Risco</h5>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label required" for="prazo_risco">Qual o perfil de prazo/risco do cliente?</label>
+                    <select name="prazo_risco" id="prazo_risco" class="form-select" required>
+                        <option value="">Selecione uma opção...</option>
+                        {% for value, label in prazo_risco_choices %}
+                            <option value="{{ value }}" {% if pre_venda.prazo_risco == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text">Ajuda a determinar o tipo de serviço mais adequado</small>
+                </div>
+
+                <!-- Seção 2: Motivo Principal -->
+                <div class="section-header">
+                    <i class="bi bi-bullseye"></i>
+                    <h5>2. Motivo Principal</h5>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label required" for="motivo_principal">Qual o principal motivo do cliente?</label>
+                    <select name="motivo_principal" id="motivo_principal" class="form-select" required>
+                        <option value="">Selecione uma opção...</option>
+                        {% for motivo in motivos %}
+                            <option value="{{ motivo.id }}" {% if pre_venda.motivo_principal_id == motivo.id %}selected{% endif %}>
+                                {{ motivo.texto }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text">Identifica a necessidade principal do cliente</small>
+                </div>
+
+                <!-- Seção 3: Perfil Emocional -->
+                <div class="section-header">
+                    <i class="bi bi-emoji-smile"></i>
+                    <h5>3. Perfil Emocional</h5>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label required" for="perfil_emocional">Como está o estado emocional do cliente?</label>
+                    <select name="perfil_emocional" id="perfil_emocional" class="form-select" required>
+                        <option value="">Selecione uma opção...</option>
+                        {% for perfil in perfis_emocionais %}
+                            <option value="{{ perfil.id }}" {% if pre_venda.perfil_emocional_id == perfil.id %}selected{% endif %}>
+                                {{ perfil.texto }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text">Importante para adaptar a abordagem de venda</small>
+                </div>
+
+                <!-- Seção 4: Serviço de Interesse -->
+                <div class="section-header">
+                    <i class="bi bi-box-seam"></i>
+                    <h5>4. Serviço de Interesse</h5>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label required" for="servico_interesse">Qual serviço interessa ao cliente?</label>
+                    <select name="servico_interesse" id="servico_interesse" class="form-select" required>
+                        <option value="">Selecione uma opção...</option>
+                        {% for value, label in servicos_choices %}
+                            <option value="{{ value }}" {% if pre_venda.servico_interesse == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text">Serviço que melhor atende às necessidades do cliente</small>
+                </div>
+
+                <!-- Seção 5: Valor e Observações -->
+                <div class="section-header">
+                    <i class="bi bi-currency-dollar"></i>
+                    <h5>5. Detalhes Financeiros</h5>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label required" for="valor_total">Valor Total do Serviço</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="number" step="0.01" name="valor_total" id="valor_total" 
+                                   class="form-control" value="{{ pre_venda.valor_total|default:'4500.00' }}" 
+                                   required min="0" placeholder="4.500,00">
+                        </div>
+                        <small class="form-text">Valor total do serviço oferecido</small>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label" for="valor_entrada">Valor de Entrada</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="number" step="0.01" name="valor_entrada" id="valor_entrada" 
+                                   class="form-control" value="{{ pre_venda.valor_entrada|default:'350.00' }}" 
+                                   min="0" placeholder="350,00">
+                        </div>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="sem_entrada" name="sem_entrada">
+                            <label class="form-check-label" for="sem_entrada">
+                                Sem entrada
+                            </label>
+                        </div>
+                        <small class="form-text">Valor pago à vista como entrada (deixe 0 se sem entrada)</small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <label class="form-label required" for="quantidade_parcelas">Quantidade de Parcelas</label>
+                        <input type="number" name="quantidade_parcelas" id="quantidade_parcelas" 
+                               class="form-control" value="{{ pre_venda.quantidade_parcelas|default:'20' }}" 
+                               required min="1" max="120" placeholder="20">
+                        <small class="form-text">Número total de parcelas</small>
+                    </div>
+
+                    <div class="col-md-4 mb-4">
+                        <label class="form-label required" for="valor_parcela">Valor da Parcela</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="number" step="0.01" name="valor_parcela" id="valor_parcela" 
+                                   class="form-control" value="{{ pre_venda.valor_parcela|default:'207.50' }}" 
+                                   required min="0" placeholder="207,50">
+                        </div>
+                        <small class="form-text">Valor de cada parcela</small>
+                    </div>
+
+                    <div class="col-md-4 mb-4">
+                        <label class="form-label required" for="frequencia_pagamento">Frequência</label>
+                        <select name="frequencia_pagamento" id="frequencia_pagamento" class="form-select" required>
+                            <option value="MENSAL" {% if pre_venda.frequencia_pagamento == 'MENSAL' or not pre_venda.frequencia_pagamento %}selected{% endif %}>Mensal</option>
+                            <option value="QUINZENAL" {% if pre_venda.frequencia_pagamento == 'QUINZENAL' %}selected{% endif %}>Quinzenal</option>
+                            <option value="SEMANAL" {% if pre_venda.frequencia_pagamento == 'SEMANAL' %}selected{% endif %}>Semanal</option>
+                        </select>
+                        <small class="form-text">Periodicidade do pagamento</small>
+                    </div>
+                </div>
+
+                
+
+                <div class="mb-4">
+                    <label class="form-label" for="observacoes_levantamento">Observações do Levantamento</label>
+                    <textarea name="observacoes_levantamento" id="observacoes_levantamento" class="form-control" rows="4" placeholder="Anote detalhes importantes da conversa com o cliente...">{{ pre_venda.observacoes_levantamento|default:'' }}</textarea>
+                    <small class="form-text">Informações relevantes encontradas durante o levantamento</small>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="btn-group-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-check-circle"></i> Salvar Pré-Venda
+                    </button>
+                    <a href="{% url 'vendas:painel_leads_pagos' %}" class="btn btn-secondary btn-lg">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ==========================================
+        // Cálculo automático dos valores financeiros
+        // ==========================================
+        (function() {
+            const valorTotal = document.getElementById('valor_total');
+            const valorEntrada = document.getElementById('valor_entrada');
+            const semEntrada = document.getElementById('sem_entrada');
+            const qtdParcelas = document.getElementById('quantidade_parcelas');
+            const valorParcela = document.getElementById('valor_parcela');
+
+            // Função para formatar números
+            function formatMoeda(valor) {
+                return parseFloat(valor).toFixed(2);
+            }
+
+            // Calcular valor da parcela automaticamente
+            function calcularParcela() {
+                const total = parseFloat(valorTotal.value) || 0;
+                const entrada = semEntrada.checked ? 0 : (parseFloat(valorEntrada.value) || 0);
+                const parcelas = parseInt(qtdParcelas.value) || 1;
+
+                const saldoParcelar = total - entrada;
+                const valorParcelaCalc = saldoParcelar / parcelas;
+
+                valorParcela.value = formatMoeda(valorParcelaCalc);
+            }
+
+            // Checkbox "Sem entrada"
+            semEntrada.addEventListener('change', function() {
+                if (this.checked) {
+                    valorEntrada.value = '0.00';
+                    valorEntrada.disabled = true;
+                } else {
+                    valorEntrada.disabled = false;
+                }
+                calcularParcela();
+            });
+
+            // Atualizar parcela quando campos mudarem
+            valorTotal.addEventListener('input', calcularParcela);
+            valorEntrada.addEventListener('input', calcularParcela);
+            qtdParcelas.addEventListener('input', calcularParcela);
+
+            // Validar quantidade de parcelas
+            qtdParcelas.addEventListener('input', function() {
+                const valor = parseInt(this.value);
+                if (valor < 1) this.value = 1;
+                if (valor > 120) this.value = 120;
+            });
+
+            // Validar valores negativos
+            [valorTotal, valorEntrada, valorParcela].forEach(campo => {
+                campo.addEventListener('input', function() {
+                    if (parseFloat(this.value) < 0) this.value = '0.00';
+                });
+            });
+
+            // Calcular inicialmente ao carregar
+            window.addEventListener('load', calcularParcela);
+        })();
+
+        // ==========================================
+        // Validação de formulário
+        // ==========================================
+        (function() {
+            'use strict';
+            
+            const form = document.querySelector('form');
+            
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    // Mostrar alerta
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-warning alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Por favor, preencha todos os campos obrigatórios.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    
+                    const formBody = document.querySelector('.form-body');
+                    formBody.insertBefore(alertDiv, form);
+                    
+                    // Scroll para o topo
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+                
+                form.classList.add('was-validated');
+            }, false);
+        })();
+    </script>
+</body>
+</html>

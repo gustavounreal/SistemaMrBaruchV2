@@ -1,0 +1,161 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Lista de Análises - Compliance{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="compliance-header">
+        <h2 class="mb-1"><i class="bi bi-list-check me-2"></i>Lista de Análises</h2>
+        <p class="mb-0">Gerenciamento de leads em análise</p>
+    </div>
+
+    <!-- Filtros -->
+    <div class="compliance-filters">
+        <form method="get" action="{% url 'compliance:lista_analises' %}" class="g-3" style="display:contents;">
+            <div>
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">Todos os status</option>
+                    {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if status_filtro == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Classificação</label>
+                <select name="classificacao" class="form-select">
+                    <option value="">Todas as classificações</option>
+                    {% for value, label in classificacao_choices %}
+                        <option value="{{ value }}" {% if classificacao_filtro == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Buscar por nome, CPF/CNPJ ou telefone</label>
+                <input type="text" name="busca" class="form-control" value="{{ busca }}" placeholder="Digite para buscar...">
+            </div>
+            <div class="col-actions">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabela de Análises -->
+    <div class="compliance-table-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">
+                <i class="bi bi-table"></i> 
+                Análises encontradas: <span class="badge bg-primary">{{ analises.count }}</span>
+            </h5>
+                <a href="{% url 'compliance:painel' %}" class="btn btn-outline-secondary btn-back">
+                <i class="bi bi-arrow-left"></i> Voltar ao Painel
+            </a>
+        </div>
+
+        {% if analises %}
+        <div class="table-responsive">
+            <table class="table table-hover compliance-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Lead</th>
+                        <th>CPF/CNPJ</th>
+                        <th>Telefone</th>
+                        <th>Status</th>
+                        <th>Classificação</th>
+                        <th>Consultor</th>
+                        <th>Analista</th>
+                        <th>Data Criação</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for analise in analises %}
+                    <tr data-href="{% url 'compliance:detalhes_lead' analise.lead.id %}" onclick="window.location.href=this.dataset.href">
+                        <td><strong>#{{ analise.id }}</strong></td>
+                        <td>
+                            <i class="bi bi-person-circle"></i> 
+                            {{ analise.lead.nome_completo|truncatechars:30 }}
+                        </td>
+                        <td>{{ analise.lead.cpf_cnpj }}</td>
+                        <td>
+                            <i class="bi bi-telephone"></i> 
+                            {{ analise.lead.telefone }}
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ analise.status }}">
+                                {{ analise.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if analise.classificacao %}
+                                <span class="badge badge-{{ analise.classificacao }}">
+                                    {{ analise.get_classificacao_display }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if analise.consultor_atribuido %}
+                                <i class="bi bi-person-check"></i> 
+                                {{ analise.consultor_atribuido.username }}
+                            {% else %}
+                                <span class="text-muted">Não atribuído</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if analise.analista_responsavel %}
+                                {{ analise.analista_responsavel.username }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ analise.data_criacao|date:"d/m/Y H:i" }}</small>
+                        </td>
+                        <td>
+                            <a href="{% url 'compliance:detalhes_lead' analise.lead.id %}" 
+                               class="btn btn-sm btn-outline-primary"
+                               onclick="event.stopPropagation();">
+                                <i class="bi bi-eye"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-analyses">
+            <i class="bi bi-info-circle"></i>
+            <h5>Nenhuma análise encontrada</h5>
+            <p class="mb-0">Tente ajustar os filtros ou aguarde novos leads.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-submit ao mudar os filtros
+    document.querySelectorAll('select[name="status"], select[name="classificacao"]').forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+</script>
+{% endblock %}

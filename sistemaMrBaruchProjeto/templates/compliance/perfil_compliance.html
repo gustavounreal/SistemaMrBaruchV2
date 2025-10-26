@@ -1,0 +1,170 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Perfil Compliance - Mr. Baruch{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5 mb-5 perfil-container">
+  <div class="card border-0 shadow-lg rounded-4 p-4 profile-card">
+    <!-- Header Section -->
+    <div class="profile-header">
+      <div class="header-content">
+        <h2 class="profile-title">
+          <i class="bi bi-shield-check text-primary me-2"></i>Gerenciar Perfil Compliance
+        </h2>
+        <p class="profile-subtitle">Atualize seus dados pessoais e profissionais abaixo</p>
+      </div>
+      <!-- Botão de logout -->
+      <div class="header-actions ms-auto">
+        <button id="logoutBtn" class="btn btn-outline-danger rounded-pill px-3 py-2">
+          <i class="bi bi-box-arrow-right me-1"></i>Sair
+        </button>
+      </div>
+    </div>
+
+    <form method="post" class="needs-validation" novalidate>
+      {% csrf_token %}
+
+      <!-- Seção: Dados Pessoais -->
+      <div class="form-section">
+        <div class="section-title">
+          <h5><i class="bi bi-person-vcard me-2 text-primary"></i>Dados Pessoais</h5>
+        </div>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">{{ user_form.nome_completo.label }}</label>
+            {{ user_form.nome_completo }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">{{ user_form.email.label }}</label>
+            {{ user_form.email }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">{{ user_form.telefone.label }}</label>
+            {{ user_form.telefone }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">{{ user_form.chave_pix.label }}</label>
+            {{ user_form.chave_pix }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label small-label" for="endereco_completo">Endereço Completo</label>
+            {{ user_form.endereco_completo }}
+          </div>          
+          <div class="col-md-6 mb-3">
+            <label class="form-label small-label" for="conta_bancaria">Conta Bancária</label>
+            {{ user_form.conta_bancaria }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Seção: Informações do Compliance -->
+      <div class="form-section">
+        <div class="section-title">
+          <h5><i class="bi bi-shield-check me-2 text-primary"></i>Informações do Compliance</h5>
+        </div>
+        <div class="row g-3">          
+          <div class="col-md-12 mb-3">
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle me-2"></i>
+              <strong>Área:</strong> Compliance - Análise e Gestão de Leads
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seção: Redefinir E-mail e Senha -->
+      <div class="form-section">
+        <div class="section-title">
+          <h5><i class="bi bi-key-fill me-2 text-primary"></i>Redefinir E-mail e Senha</h5>
+        </div>
+        <div class="row g-3">
+          <div class="col-12 mb-3">
+            <label class="form-label" for="current_email">E-mail Atual</label>
+            <input type="email" id="current_email" name="current_email" class="form-control" value="{{ user.email }}" readonly>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label small-label" for="new_email">Novo E-mail</label>
+            <input type="email" id="new_email" name="new_email" class="form-control" placeholder="Digite o novo e-mail">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label small-label" for="confirm_email">Confirmar Novo E-mail</label>
+            <input type="email" id="confirm_email" name="confirm_email" class="form-control" placeholder="Confirme o novo e-mail">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label small-label" for="new_password">Nova Senha</label>
+            <input type="password" id="new_password" name="new_password" class="form-control" placeholder="Digite a nova senha">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label small-label" for="confirm_password">Confirmar Nova Senha</label>
+            <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Confirme a nova senha">
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <div class="form-actions">
+        <button type="submit" class="btn btn-success btn-step"> 
+          <i class="bi bi-save me-2"></i>Salvar Alterações
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <div class="row mt-5">
+    <div class="col-12 d-flex justify-content-start justify-content-md-start justify-content-center">
+      <a href="{% url 'compliance:painel' %}" class="btn btn-outline-secondary rounded-pill px-4 py-2 shadow-sm">
+        <i class="bi bi-arrow-left-circle me-1"></i> Voltar ao Painel
+      </a>
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="{% static 'css/perfil_atendente.css' %}">
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (!logoutBtn) return;
+
+  logoutBtn.addEventListener('click', async function(e) {
+    e.preventDefault();
+    const refresh = localStorage.getItem('refresh_token');
+    try {
+      if (refresh) {
+        await fetch('/accounts/api/auth/logout/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': (function(){
+              const match = document.cookie.match(new RegExp('(^| )' + 'csrftoken' + '=([^;]+)'));
+              return match ? match[2] : '';
+            })()
+          },
+          body: JSON.stringify({ refresh_token: refresh })
+        });
+      }
+    } catch (err) {
+      console.warn('Logout API failed or not reachable', err);
+    }
+
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('token_expires');
+    localStorage.removeItem('user_data');
+
+    try {
+      const resp = await fetch('/accounts/logout-session/', { method: 'POST', headers: {
+        'X-CSRFToken': (function(){
+          const match = document.cookie.match(new RegExp('(^| )' + 'csrftoken' + '=([^;]+)'));
+          return match ? match[2] : '';
+        })()
+      }});
+    } catch {}
+
+    window.location.replace('{% url "accounts:login" %}');
+  });
+});
+</script>
+
+{% endblock %}

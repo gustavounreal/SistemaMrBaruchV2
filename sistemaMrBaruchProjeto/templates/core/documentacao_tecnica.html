@@ -1,0 +1,390 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Documentação Técnica do Sistema - Mr. Baruch{% endblock %}
+
+{% block extra_head %}
+<style>
+  .tech-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 3rem;
+  }
+  
+  .tech-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border: 1px solid #e2e8f0;
+  }
+  
+  .tech-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.2s;
+  }
+  
+  .tech-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+  }
+  
+  .tech-badge {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .tech-code {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 1rem;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    overflow-x: auto;
+  }
+  
+  .tech-list {
+    list-style: none;
+    padding-left: 0;
+  }
+  
+  .tech-list li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .tech-list li:last-child {
+    border-bottom: none;
+  }
+  
+  .tech-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    font-weight: bold;
+    color: white;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  
+  <!-- Header -->
+  <div class="tech-header">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+      <div>
+        <h1 class="fw-bold mb-2">Documentação Técnica do Sistema</h1>
+        <p class="mb-0 opacity-90">Informações técnicas sobre arquitetura, stack, deploy e manutenção do Sistema Mr. Baruch</p>
+      </div>
+      <a href="{% url 'core:central_documentacao' %}" class="btn btn-light">
+        Voltar à Central
+      </a>
+    </div>
+  </div>
+  
+  <!-- Stack Tecnológico -->
+  <div class="tech-section">
+    <h3 class="fw-bold mb-4">Stack Tecnológico</h3>
+    
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="tech-card">
+          <div class="d-flex align-items-center mb-3">
+            <div class="tech-icon bg-success">BE</div>
+            <h5 class="fw-bold mb-0">Backend</h5>
+          </div>
+          <span class="tech-badge bg-success text-white">Python 3.13.7</span>
+          <span class="tech-badge bg-success text-white">Django 4.2.7</span>
+          <span class="tech-badge bg-success text-white">Django REST Framework</span>
+          <p class="text-muted mt-3 mb-0">
+            Framework web robusto com ORM integrado, sistema de autenticação e admin panel
+          </p>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="tech-card">
+          <div class="d-flex align-items-center mb-3">
+            <div class="tech-icon bg-primary">FE</div>
+            <h5 class="fw-bold mb-0">Frontend</h5>
+          </div>
+          <span class="tech-badge bg-primary text-white">Bootstrap 5.3</span>
+          <span class="tech-badge bg-primary text-white">JavaScript ES6+</span>
+          <span class="tech-badge bg-primary text-white">Django Templates</span>
+          <p class="text-muted mt-3 mb-0">
+            Interface responsiva com componentes modernos e interatividade client-side
+          </p>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="tech-card">
+          <div class="d-flex align-items-center mb-3">
+            <div class="tech-icon bg-warning">DB</div>
+            <h5 class="fw-bold mb-0">Banco de Dados</h5>
+          </div>
+          <span class="tech-badge bg-warning text-dark">SQLite (Dev)</span>
+          <span class="tech-badge bg-warning text-dark">PostgreSQL (Prod)</span>
+          <p class="text-muted mt-3 mb-0">
+            SQLite para desenvolvimento, PostgreSQL recomendado para produção
+          </p>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="tech-card">
+          <div class="d-flex align-items-center mb-3">
+            <div class="tech-icon bg-danger">IN</div>
+            <h5 class="fw-bold mb-0">Integrações</h5>
+          </div>
+          <span class="tech-badge bg-danger text-white">Asaas API</span>
+          <span class="tech-badge bg-danger text-white">Webhooks</span>
+          <span class="tech-badge bg-danger text-white">Payment Gateway</span>
+          <p class="text-muted mt-3 mb-0">
+            Integração com gateway de pagamento Asaas para PIX e gestão de cobranças
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Arquitetura -->
+  <div class="tech-section">
+    <h3 class="fw-bold mb-4">Arquitetura do Sistema</h3>
+    
+    <div class="tech-card">
+      <h6 class="fw-bold mb-3">Estrutura de Aplicativos Django</h6>
+      <div class="row">
+        <div class="col-md-6">
+          <ul class="tech-list">
+            <li><strong>core</strong> - Configurações, webhooks, utils</li>
+            <li><strong>accounts</strong> - Autenticação e usuários</li>
+            <li><strong>atendimento</strong> - Gestão de leads e PIX</li>
+            <li><strong>comissoes</strong> - Sistema de comissionamento</li>
+            <li><strong>relatorios</strong> - Analytics e exportação</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <ul class="tech-list">
+            <li><strong>vendas</strong> - Propostas e contratos</li>
+            <li><strong>financeiro</strong> - Contas e fluxo de caixa</li>
+            <li><strong>juridico</strong> - Documentos legais</li>
+            <li><strong>marketing</strong> - Campanhas e automação</li>
+            <li><strong>pos_venda</strong> - Suporte e follow-up</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    
+    <div class="tech-card">
+      <h6 class="fw-bold mb-3">Padrão MVT (Model-View-Template)</h6>
+      <div class="row">
+        <div class="col-md-4">
+          <strong class="text-primary">Models</strong>
+          <p class="text-muted small">Estrutura de dados e regras de negócio</p>
+        </div>
+        <div class="col-md-4">
+          <strong class="text-success">Views</strong>
+          <p class="text-muted small">Lógica de processamento e controllers</p>
+        </div>
+        <div class="col-md-4">
+          <strong class="text-warning">Templates</strong>
+          <p class="text-muted small">Apresentação e interface do usuário</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Configurações -->
+  <div class="tech-section">
+    <h3 class="fw-bold mb-4">Configurações e Variáveis de Ambiente</h3>
+    
+    <div class="tech-card">
+      <h6 class="fw-bold mb-3">Arquivo .env (Não versionado)</h6>
+      <div class="tech-code">
+SECRET_KEY=your-secret-key-here<br>
+DEBUG=True<br>
+ALLOWED_HOSTS=localhost,127.0.0.1<br>
+<br>
+# Database<br>
+DATABASE_URL=sqlite:///db.sqlite3<br>
+<br>
+# Asaas Integration<br>
+ASAAS_API_KEY=your-asaas-key<br>
+ASAAS_API_URL=https://api.asaas.com/v3<br>
+ASAAS_WEBHOOK_TOKEN=your-webhook-token
+      </div>
+      <p class="text-muted small mt-3 mb-0">
+        <strong>Importante:</strong> Nunca versione o arquivo .env no Git. Use .env.example como template.
+      </p>
+    </div>
+    
+    <div class="tech-card">
+      <h6 class="fw-bold mb-3">ConfiguracaoSistema (Banco de Dados)</h6>
+      <p class="text-muted mb-3">
+        Configurações dinâmicas armazenadas no banco, editáveis pelo admin panel
+      </p>
+      <ul class="tech-list">
+        <li><code>PIX_VALOR_LEVANTAMENTO</code> - Valor da cobrança PIX</li>
+        <li><code>COMISSAO_PERCENTUAL</code> - Percentual de comissão</li>
+        <li><code>LEAD_STATUS_INICIAL</code> - Status padrão de novos leads</li>
+        <li><code>ASAAS_DIAS_VENCIMENTO</code> - Dias até vencimento PIX</li>
+      </ul>
+    </div>
+  </div>
+  
+  <!-- Deploy -->
+  <div class="tech-section">
+    <h3 class="fw-bold mb-4">Deploy e Infraestrutura</h3>
+    
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="tech-card">
+          <h6 class="fw-bold mb-2">1. Preparação</h6>
+          <div class="tech-code" style="font-size: 0.8rem;">
+pip install -r requirements.txt<br>
+python manage.py collectstatic<br>
+python manage.py migrate
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="tech-card">
+          <h6 class="fw-bold mb-2">2. Servidor WSGI</h6>
+          <div class="tech-code" style="font-size: 0.8rem;">
+gunicorn sistemaMrBaruchProjeto.wsgi:application<br>
+--bind 0.0.0.0:8000<br>
+--workers 4
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="tech-card">
+          <h6 class="fw-bold mb-2">3. Reverse Proxy</h6>
+          <div class="tech-code" style="font-size: 0.8rem;">
+# Nginx<br>
+location / {<br>
+  proxy_pass http://127.0.0.1:8000;<br>
+}
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="alert alert-warning border-0 mt-3">
+      <h6 class="fw-bold mb-2">Checklist de Produção</h6>
+      <ul class="mb-0">
+        <li>DEBUG=False no .env</li>
+        <li>SECRET_KEY única e segura</li>
+        <li>ALLOWED_HOSTS configurado</li>
+        <li>Banco PostgreSQL configurado</li>
+        <li>Arquivos estáticos coletados (collectstatic)</li>
+        <li>HTTPS configurado (Let's Encrypt)</li>
+        <li>Backup automático do banco</li>
+      </ul>
+    </div>
+  </div>
+  
+  <!-- Comandos Úteis -->
+  <div class="tech-section">
+    <h3 class="fw-bold mb-4">Comandos Úteis</h3>
+    
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="tech-card">
+          <h6 class="fw-bold mb-3">Desenvolvimento</h6>
+          <div class="tech-code" style="font-size: 0.85rem;">
+# Rodar servidor de desenvolvimento<br>
+python manage.py runserver<br>
+<br>
+# Criar migrações<br>
+python manage.py makemigrations<br>
+<br>
+# Aplicar migrações<br>
+python manage.py migrate<br>
+<br>
+# Criar superusuário<br>
+python manage.py createsuperuser
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="tech-card">
+          <h6 class="fw-bold mb-3">Manutenção</h6>
+          <div class="tech-code" style="font-size: 0.85rem;">
+# Validar sistema<br>
+python manage.py check<br>
+<br>
+# Shell interativo<br>
+python manage.py shell<br>
+<br>
+# Dump do banco<br>
+python manage.py dumpdata > backup.json<br>
+<br>
+# Restaurar banco<br>
+python manage.py loaddata backup.json
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Contatos e Suporte -->
+  <div class="tech-section">
+    <h3 class="fw-bold mb-4">Suporte Técnico</h3>
+    
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="tech-card text-center">
+          <h6 class="fw-bold mb-2">Documentação</h6>
+          <p class="text-muted small mb-3">Consulte a documentação de cada módulo</p>
+          <a href="{% url 'core:documentacao_modulos' %}" class="btn btn-sm btn-primary">
+            Ver Módulos
+          </a>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="tech-card text-center">
+          <h6 class="fw-bold mb-2">Guias de Desenvolvimento</h6>
+          <p class="text-muted small mb-3">Instruções para desenvolvedores</p>
+          <a href="/GUIA_ADICIONAR_DOCUMENTACAO.md" class="btn btn-sm btn-secondary" target="_blank">
+            Ver Guias
+          </a>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="tech-card text-center">
+          <h6 class="fw-bold mb-2">Repositório</h6>
+          <p class="text-muted small mb-3">Código fonte e controle de versão</p>
+          <button class="btn btn-sm btn-dark" disabled>
+            GitHub (Em breve)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+</div>
+{% endblock %}
