@@ -19,4 +19,8 @@ urlpatterns = [
    
    # Webhook ASAAS
    path('webhook/asaas/', views.webhook_asaas, name='webhook_asaas'),
+   
+   # Logs de Webhooks
+   path('webhook/logs/', views.webhook_logs, name='webhook_logs'),
+   path('webhook/logs/<int:log_id>/', views.webhook_log_detalhe, name='webhook_log_detalhe'),
 ]

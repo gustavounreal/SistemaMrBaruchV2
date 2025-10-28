@@ -1,0 +1,185 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Webhook #{{ log.id }} - Mr. Baruch{% endblock %}
+
+{% block content %}
+<main class="dashboard-premium py-4">
+  <div class="container-fluid px-4">
+    
+    <!-- Cabeçalho -->
+    <div class="row align-items-center mb-4">
+      <div class="col-lg-8">
+        <h2 class="fw-semibold text-dark mb-0">
+          <i class="bi bi-file-earmark-text me-2 text-primary"></i>Webhook #{{ log.id }}
+        </h2>
+        <p class="text-muted small mb-0">Detalhes completos do webhook recebido</p>
+      </div>
+      <div class="col-lg-4 text-end">
+        <a href="{% url 'core:webhook_logs' %}" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+      </div>
+    </div>
+
+    <!-- Informações Básicas -->
+    <div class="row mb-4">
+      <div class="col-md-6 mb-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title mb-3">
+              <i class="bi bi-info-circle text-primary"></i> Informações Básicas
+            </h5>
+            <table class="table table-sm table-borderless">
+              <tr>
+                <td class="text-muted" width="40%">ID:</td>
+                <td class="fw-semibold">#{{ log.id }}</td>
+              </tr>
+              <tr>
+                <td class="text-muted">Tipo:</td>
+                <td><span class="badge bg-info">{{ log.tipo }}</span></td>
+              </tr>
+              <tr>
+                <td class="text-muted">Evento:</td>
+                <td><span class="badge bg-primary">{{ log.evento }}</span></td>
+              </tr>
+              <tr>
+                <td class="text-muted">Status:</td>
+                <td>
+                  {% if log.status_processamento == 'SUCCESS' %}
+                    <span class="badge bg-success">
+                      <i class="bi bi-check-circle"></i> Sucesso
+                    </span>
+                  {% elif log.status_processamento == 'ERROR' %}
+                    <span class="badge bg-danger">
+                      <i class="bi bi-x-circle"></i> Erro
+                    </span>
+                  {% else %}
+                    <span class="badge bg-warning">
+                      <i class="bi bi-dash-circle"></i> Ignorado
+                    </span>
+                  {% endif %}
+                </td>
+              </tr>
+              <tr>
+                <td class="text-muted">Data Recebimento:</td>
+                <td class="fw-semibold">{{ log.data_recebimento|date:"d/m/Y H:i:s" }}</td>
+              </tr>
+              <tr>
+                <td class="text-muted">IP Origem:</td>
+                <td class="font-monospace">{{ log.ip_origem|default:"-" }}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title mb-3">
+              <i class="bi bi-credit-card text-success"></i> Dados do Pagamento
+            </h5>
+            <table class="table table-sm table-borderless">
+              <tr>
+                <td class="text-muted" width="40%">Payment ID:</td>
+                <td class="font-monospace small">{{ log.payment_id|default:"-" }}</td>
+              </tr>
+              <tr>
+                <td class="text-muted">Customer ID:</td>
+                <td class="font-monospace small">{{ log.customer_id|default:"-" }}</td>
+              </tr>
+              <tr>
+                <td class="text-muted">Status Pagamento:</td>
+                <td>
+                  {% if log.payment_status %}
+                    <span class="badge bg-secondary">{{ log.payment_status }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+              </tr>
+              <tr>
+                <td class="text-muted">Valor:</td>
+                <td>
+                  {% if log.valor %}
+                    <span class="fs-5 fw-bold text-success">R$ {{ log.valor }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Erro (se houver) -->
+    {% if log.mensagem_erro %}
+    <div class="card border-danger shadow-sm mb-4">
+      <div class="card-header bg-danger text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-exclamation-triangle"></i> Mensagem de Erro
+        </h5>
+      </div>
+      <div class="card-body">
+        <pre class="mb-0 text-danger" style="white-space: pre-wrap;">{{ log.mensagem_erro }}</pre>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Payload JSON -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-code-square text-primary"></i> Payload JSON
+          </h5>
+          <button class="btn btn-sm btn-outline-primary" onclick="copyPayload()">
+            <i class="bi bi-clipboard"></i> Copiar
+          </button>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <pre id="payload" class="mb-0 p-3 bg-dark text-light" style="max-height: 500px; overflow-y: auto;"><code>{{ payload_formatado }}</code></pre>
+      </div>
+    </div>
+
+    <!-- Headers HTTP -->
+    {% if log.headers %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-light">
+        <h5 class="mb-0">
+          <i class="bi bi-file-code text-info"></i> Headers HTTP
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        <pre class="mb-0 p-3 bg-light" style="max-height: 300px; overflow-y: auto;"><code>{{ log.headers|pprint }}</code></pre>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</main>
+
+<script>
+function copyPayload() {
+  const payload = document.getElementById('payload').innerText;
+  navigator.clipboard.writeText(payload).then(() => {
+    // Feedback visual
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check"></i> Copiado!';
+    btn.classList.remove('btn-outline-primary');
+    btn.classList.add('btn-success');
+    
+    setTimeout(() => {
+      btn.innerHTML = originalHTML;
+      btn.classList.remove('btn-success');
+      btn.classList.add('btn-outline-primary');
+    }, 2000);
+  });
+}
+</script>
+{% endblock %}

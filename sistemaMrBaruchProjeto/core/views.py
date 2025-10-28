@@ -483,6 +483,7 @@ def obter_grupos_usuario_ajax(request, usuario_id):
 # ==================== WEBHOOK ASAAS ====================
 import json
 import logging
+import traceback
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
@@ -491,11 +492,21 @@ from .services import LogService
 logger = logging.getLogger(__name__)
 
 
+def get_client_ip(request):
+    """Obtém IP real do cliente"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+
 @csrf_exempt
 @require_POST
 def webhook_asaas(request):
     """
-    Endpoint para receber webhooks do ASAAS
+    Endpoint para receber webhooks do ASAAS com log completo
     
     Eventos suportados:
     - PAYMENT_CREATED: Cobrança criada
@@ -509,6 +520,11 @@ def webhook_asaas(request):
     - PAYMENT_CHARGEBACK_REQUESTED: Chargeback solicitado
     - PAYMENT_CHARGEBACK_DISPUTE: Contestação de chargeback
     """
+    from .models import WebhookLog
+    from decimal import Decimal
+    
+    webhook_log = None
+    
     try:
         # 1. Obter dados do webhook
         body = request.body.decode('utf-8')
@@ -518,6 +534,18 @@ def webhook_asaas(request):
             dados_webhook = json.loads(body)
         except json.JSONDecodeError as e:
             logger.error(f"[webhook_asaas] Erro ao decodificar JSON: {str(e)}")
+            # Tentar criar log de erro
+            try:
+                WebhookLog.objects.create(
+                    tipo='ASAAS',
+                    evento='ERRO_PARSE',
+                    payload={'error': str(e), 'body': body[:1000]},
+                    status_processamento='ERROR',
+                    mensagem_erro=f"Erro ao decodificar JSON: {str(e)}",
+                    ip_origem=get_client_ip(request)
+                )
+            except:
+                pass
             return JsonResponse({
                 'success': False,
                 'error': 'Invalid JSON'
@@ -530,26 +558,53 @@ def webhook_asaas(request):
         payment_status = payment_data.get('status')
         payment_value = payment_data.get('value')
         billing_type = payment_data.get('billingType')
+        customer_id = payment_data.get('customer')
         
-        logger.info(f"[webhook_asaas] Event: {event} | Payment: {payment_id} | Status: {payment_status} | Type: {billing_type} | Value: R$ {payment_value}")
+        # 3. Capturar headers importantes
+        headers = {
+            'Content-Type': request.META.get('CONTENT_TYPE'),
+            'User-Agent': request.META.get('HTTP_USER_AGENT'),
+            'X-Forwarded-For': request.META.get('HTTP_X_FORWARDED_FOR'),
+            'X-Real-IP': request.META.get('HTTP_X_REAL_IP'),
+        }
         
-        # 3. Validar dados obrigatórios
+        # 4. Criar log no banco de dados
+        webhook_log = WebhookLog.objects.create(
+            tipo='ASAAS',
+            evento=event or 'DESCONHECIDO',
+            payload=dados_webhook,
+            headers=headers,
+            payment_id=payment_id or '',
+            customer_id=customer_id or '',
+            payment_status=payment_status or '',
+            valor=Decimal(str(payment_value)) if payment_value else None,
+            ip_origem=get_client_ip(request),
+            status_processamento='SUCCESS'  # Será atualizado se houver erro
+        )
+        
+        logger.info(f"[webhook_asaas] Webhook #{webhook_log.id} | Event: {event} | Payment: {payment_id} | Status: {payment_status} | Type: {billing_type} | Value: R$ {payment_value}")
+        
+        # 5. Validar dados obrigatórios
         if not event or not payment_id:
             logger.warning(f"[webhook_asaas] Webhook sem event ou payment_id")
+            webhook_log.status_processamento = 'ERROR'
+            webhook_log.mensagem_erro = 'Missing event or payment_id'
+            webhook_log.save(update_fields=['status_processamento', 'mensagem_erro'])
             return JsonResponse({
                 'success': False,
-                'error': 'Missing event or payment_id'
+                'error': 'Missing event or payment_id',
+                'webhook_id': webhook_log.id
             }, status=400)
         
-        # 4. Registrar no log do sistema
+        # 6. Registrar no log do sistema
         LogService.registrar(
             nivel='INFO',
-            mensagem=f"Webhook ASAAS recebido - Event: {event} - Payment: {payment_id} - Status: {payment_status}",
+            mensagem=f"Webhook #{webhook_log.id} ASAAS recebido - Event: {event} - Payment: {payment_id} - Status: {payment_status}",
             modulo='core',
             acao='webhook_asaas_recebido'
         )
         
-        # 5. Processar por tipo de evento
+        # 7. Processar por tipo de evento
         success = False
         
         if event in ['PAYMENT_RECEIVED', 'PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED_IN_CASH']:
@@ -570,31 +625,51 @@ def webhook_asaas(request):
             
         elif event in ['PAYMENT_CREATED', 'PAYMENT_UPDATED']:
             # Apenas registrar no log, não precisa ação
-            logger.info(f"[webhook_asaas] Evento {event} registrado - sem ação necessária")
+            logger.info(f"[webhook_asaas] Webhook #{webhook_log.id} - Evento {event} registrado - sem ação necessária")
             success = True
             
         else:
             # Evento não tratado
-            logger.warning(f"[webhook_asaas] Evento não tratado: {event}")
+            logger.warning(f"[webhook_asaas] Webhook #{webhook_log.id} - Evento não tratado: {event}")
             LogService.registrar(
                 nivel='WARNING',
                 mensagem=f"Evento webhook não tratado: {event}",
                 modulo='core',
                 acao='webhook_evento_nao_tratado'
             )
+            webhook_log.status_processamento = 'IGNORED'
+            webhook_log.mensagem_erro = f'Evento não tratado: {event}'
+            webhook_log.save(update_fields=['status_processamento', 'mensagem_erro'])
             success = True  # Retorna sucesso para não reenviar
         
-        # 6. Responder ao ASAAS
+        # 8. Atualizar status do log
         if success:
-            return HttpResponse(status=200)
+            webhook_log.status_processamento = 'SUCCESS'
+            webhook_log.save(update_fields=['status_processamento'])
+            logger.info(f"[webhook_asaas] Webhook #{webhook_log.id} processado com sucesso")
+            return JsonResponse({
+                'success': True,
+                'webhook_id': webhook_log.id
+            }, status=200)
         else:
+            webhook_log.status_processamento = 'ERROR'
+            webhook_log.mensagem_erro = 'Falha no processamento'
+            webhook_log.save(update_fields=['status_processamento', 'mensagem_erro'])
             return JsonResponse({
                 'success': False,
-                'error': 'Processing failed'
+                'error': 'Processing failed',
+                'webhook_id': webhook_log.id
             }, status=500)
             
     except Exception as e:
         logger.error(f"[webhook_asaas] Erro crítico: {str(e)}", exc_info=True)
+        
+        # Atualizar log com erro
+        if webhook_log:
+            webhook_log.status_processamento = 'ERROR'
+            webhook_log.mensagem_erro = f"{str(e)}\n\n{traceback.format_exc()}"
+            webhook_log.save(update_fields=['status_processamento', 'mensagem_erro'])
+        
         LogService.registrar(
             nivel='ERROR',
             mensagem=f"Erro crítico no webhook ASAAS: {str(e)}",
@@ -603,7 +678,8 @@ def webhook_asaas(request):
         )
         return JsonResponse({
             'success': False,
-            'error': 'Internal server error'
+            'error': 'Internal server error',
+            'webhook_id': webhook_log.id if webhook_log else None
         }, status=500)
 
 
@@ -986,5 +1062,73 @@ def _verificar_venda_quitada(venda):
             modulo='financeiro',
             acao='venda_quitada'
         )
-        
+
+
+# ==================== VISUALIZAÇÃO DE LOGS DE WEBHOOK ====================
+
+@login_required
+def webhook_logs(request):
+    """Visualizar histórico de webhooks recebidos"""
+    from django.core.paginator import Paginator
+    from .models import WebhookLog
+    from django.shortcuts import get_object_or_404
+    
+    logs = WebhookLog.objects.all().order_by('-data_recebimento')
+    
+    # Filtros
+    tipo = request.GET.get('tipo')
+    evento = request.GET.get('evento')
+    status = request.GET.get('status')
+    payment_id = request.GET.get('payment_id')
+    
+    if tipo:
+        logs = logs.filter(tipo=tipo)
+    if evento:
+        logs = logs.filter(evento__icontains=evento)
+    if status:
+        logs = logs.filter(status_processamento=status)
+    if payment_id:
+        logs = logs.filter(payment_id__icontains=payment_id)
+    
+    # Paginação
+    paginator = Paginator(logs, 50)
+    page = request.GET.get('page', 1)
+    logs_page = paginator.get_page(page)
+    
+    # Estatísticas
+    stats = {
+        'total': WebhookLog.objects.count(),
+        'success': WebhookLog.objects.filter(status_processamento='SUCCESS').count(),
+        'error': WebhookLog.objects.filter(status_processamento='ERROR').count(),
+        'ignored': WebhookLog.objects.filter(status_processamento='IGNORED').count(),
+    }
+    
+    context = {
+        'logs': logs_page,
+        'stats': stats,
+        'filtros': {
+            'tipo': tipo,
+            'evento': evento,
+            'status': status,
+            'payment_id': payment_id,
+        }
+    }
+    
+    return render(request, 'core/webhook_logs.html', context)
+
+
+@login_required
+def webhook_log_detalhe(request, log_id):
+    """Visualizar detalhes de um webhook específico"""
+    from .models import WebhookLog
+    from django.shortcuts import get_object_or_404
+    
+    log = get_object_or_404(WebhookLog, id=log_id)
+    
+    context = {
+        'log': log,
+        'payload_formatado': json.dumps(log.payload, indent=2, ensure_ascii=False),
+    }
+    
+    return render(request, 'core/webhook_log_detalhe.html', context)
         

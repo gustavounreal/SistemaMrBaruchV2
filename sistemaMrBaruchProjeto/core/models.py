@@ -77,3 +77,58 @@ class Notificacao(models.Model):
         verbose_name = "Notificação"
         verbose_name_plural = "Notificações"
         ordering = ['-data_criacao']
+
+
+class WebhookLog(models.Model):
+    """Armazena histórico completo de webhooks recebidos"""
+    
+    TIPO_CHOICES = [
+        ('ASAAS', 'ASAAS'),
+        ('OUTRO', 'Outro'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('SUCCESS', 'Sucesso'),
+        ('ERROR', 'Erro'),
+        ('IGNORED', 'Ignorado'),
+    ]
+    
+    tipo = models.CharField('Tipo', max_length=20, choices=TIPO_CHOICES, default='ASAAS')
+    evento = models.CharField('Evento', max_length=100, blank=True)
+    payload = models.JSONField('Payload Completo')
+    headers = models.JSONField('Headers HTTP', blank=True, null=True)
+    
+    # Dados processados
+    status_processamento = models.CharField('Status', max_length=20, choices=STATUS_CHOICES)
+    mensagem_erro = models.TextField('Mensagem de Erro', blank=True)
+    
+    # Dados extraídos
+    payment_id = models.CharField('Payment ID', max_length=100, blank=True, db_index=True)
+    customer_id = models.CharField('Customer ID', max_length=100, blank=True, db_index=True)
+    payment_status = models.CharField('Status Pagamento', max_length=50, blank=True)
+    valor = models.DecimalField('Valor', max_digits=10, decimal_places=2, null=True, blank=True)
+    
+    # Metadados
+    ip_origem = models.GenericIPAddressField('IP Origem', blank=True, null=True)
+    data_recebimento = models.DateTimeField('Data Recebimento', auto_now_add=True, db_index=True)
+    processado_em = models.DateTimeField('Processado em', auto_now=True)
+    
+    class Meta:
+        db_table = 'core_webhook_log'
+        verbose_name = 'Log de Webhook'
+        verbose_name_plural = 'Logs de Webhooks'
+        ordering = ['-data_recebimento']
+        indexes = [
+            models.Index(fields=['-data_recebimento']),
+            models.Index(fields=['payment_id']),
+            models.Index(fields=['evento']),
+        ]
+    
+    def __str__(self):
+        return f"{self.tipo} - {self.evento} - {self.data_recebimento.strftime('%d/%m/%Y %H:%M')}"
+    
+    @property
+    def payload_formatado(self):
+        """Retorna payload formatado para visualização"""
+        import json
+        return json.dumps(self.payload, indent=2, ensure_ascii=False)
