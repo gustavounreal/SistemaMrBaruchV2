@@ -20,6 +20,7 @@ from core.webhook_handlers import webhook_handler
 
 # IMPORTAR FORMULÁRIOS E MODELOS LOCAIS
 from marketing.models import Lead, OrigemContato, OrigemLead
+from .models import Atendimento, HistoricoAtendimento
 from financeiro.views import criar_cliente_asaas
 from comissoes.models import ComissaoLead
 from financeiro.models import PixLevantamento, ClienteAsaas
@@ -472,121 +473,82 @@ def salvar_lead_api(request):
 
 
 def processar_formulario_atendimento(request, valor_consulta):
-    """Processa o formulário de atendimento usando serviços do core"""
-    form = None  # Formulário removido, usar campos do Lead
+    """Processa o formulário de atendimento usando serviços do core - validação manual"""
     
-    if form.is_valid():
-        try:
-            # Salva o atendimento
-            atendimento = form.save(commit=False)
-            atendimento.atendente = request.user
-            atendimento.valor_consulta = valor_consulta  # Usa valor configurado
-            atendimento.save()
-            
-            #LOG DE CRIAÇÃO COM SERVIÇO DO CORE
-            LogService.registrar(
-                usuario=request.user,
-                nivel='INFO',
-                mensagem=f"Novo atendimento criado - ID: {atendimento.id}, Cliente: {atendimento.nome_completo}",
-                modulo='atendimento',
-                acao='criacao_atendimento',
-                ip=get_client_ip(request)
-            )
-            
-            #VALIDAÇÃO DE TELEFONE COM UTILS DO CORE
-            if not Validadores.validar_telefone(atendimento.telefone):
-                form.add_error('telefone', 'Telefone inválido')
-                return render(request, 'atendimento/novo_atendimento.html', {'form': form})
-            
-            # Formata dados do Lead para o ASAAS
-            lead = getattr(atendimento, 'lead', None)
-            if lead is None:
-                # Se não houver lead vinculado, buscar pelo telefone/email
-                lead = Lead.objects.filter(telefone=atendimento.telefone).first()
-            if lead:
-                customer_data = asaas_service.formatar_dados_lead(lead)
-                customer_response = asaas_service.criar_cliente(customer_data)
-            else:
-                customer_data = None
-                customer_response = None
-            
-            if customer_response and 'id' in customer_response:
-                customer_id = customer_response['id']
-                # Cria cobrança PIX usando dados do Lead
-                cobranca_data = {
-                    'customer_id': customer_id,
-                    'billing_type': 'PIX',
-                    'value': float(valor_consulta),
-                    'dueDate': timezone.now().date().isoformat(),
-                    'description': f'Taxa de levantamento - {lead.nome_completo if lead else atendimento.nome_completo}',
-                    'externalReference': f'atendimento_{atendimento.id}'
-                }
-                payment_response = asaas_service.criar_cobranca(cobranca_data)
-                
-                if payment_response and 'id' in payment_response:
-                    # Obtém QR Code PIX
-                    pix_data = asaas_service.obter_qr_code_pix(payment_response['id'])
-                    
-                    if pix_data:
-                        atendimento.asaas_payment_id = payment_response['id']
-                        atendimento.pix_code = pix_data.get('payload', '')
-                        atendimento.pix_qr_code = pix_data.get('encodedImage', '')
-                        atendimento.status = 'AGUARDANDO_PAGAMENTO'
-                        atendimento.save()
-                        
-                        #NOTIFICAÇÃO DE SUCESSO
-                        NotificacaoService.criar_notificacao(
-                            usuario=request.user,
-                            titulo='PIX Gerado com Sucesso',
-                            mensagem=f'PIX gerado para {atendimento.nome_completo} - R$ {valor_consulta}',
-                            tipo='SUCESSO',
-                            link=f'/atendimento/{atendimento.id}/'
-                        )
-                        
-                        LogService.registrar(
-                            usuario=request.user,
-                            nivel='INFO',
-                            mensagem=f"PIX gerado - Atendimento ID: {atendimento.id}, Valor: R$ {valor_consulta}",
-                            modulo='atendimento',
-                            acao='pix_gerado',
-                            ip=get_client_ip(request)
-                        )
-                        
-                        context = {
-                            'atendimento': atendimento,
-                            'pix_data': {
-                                'payload': pix_data.get('payload', ''),
-                                'encodedImage': pix_data.get('encodedImage', ''),
-                                'valor_formatado': Validadores.formatar_moeda(valor_consulta)
-                            }
-                        }
-                        
-                        return render(request, 'atendimento/pix_gerado.html', context)
-            
-            # Se algo deu errado
-            LogService.registrar(
-                usuario=request.user,
-                nivel='ERROR',
-                mensagem=f"Erro ao gerar PIX - Atendimento ID: {atendimento.id}",
-                modulo='atendimento',
-                acao='erro_pix',
-                ip=get_client_ip(request)
-            )
-            form.add_error(None, 'Erro ao gerar PIX. Tente novamente.')
-            
-        except Exception as e:
-            logger.error(f"Erro processar atendimento: {str(e)}")
-            LogService.registrar(
-                usuario=request.user,
-                nivel='ERROR',
-                mensagem=f"Erro processar atendimento: {str(e)}",
-                modulo='atendimento',
-                acao='erro_processamento',
-                ip=get_client_ip(request)
-            )
-            form.add_error(None, f'Erro no sistema: {str(e)}')
+    # Extrair dados do POST
+    lead_id = request.POST.get('lead_id')
+    motivo_principal_id = request.POST.get('motivo_principal')
+    perfil_emocional_id = request.POST.get('perfil_emocional')
+    tipo_servico = request.POST.get('tipo_servico_interesse')
+    observacoes = request.POST.get('observacoes', '')
     
-    return render(request, 'atendimento/novo_atendimento.html', {'form': form})
+    # Validações obrigatórias
+    if not lead_id:
+        return JsonResponse({'success': False, 'message': 'Lead não identificado.'})
+    
+    if not motivo_principal_id or not perfil_emocional_id or not tipo_servico:
+        return JsonResponse({'success': False, 'message': 'Motivo principal, perfil emocional e tipo de serviço são obrigatórios.'})
+    
+    try:
+        # Buscar o lead
+        lead = Lead.objects.get(id=lead_id)
+        
+        # Buscar motivo e perfil
+        from marketing.models import MotivoContato
+        motivo_principal = MotivoContato.objects.get(id=motivo_principal_id, tipo='MOTIVO')
+        perfil_emocional = MotivoContato.objects.get(id=perfil_emocional_id, tipo='PERFIL')
+        
+        # Criar o atendimento manualmente (sem form)
+        atendimento = Atendimento.objects.create(
+            lead=lead,
+            atendente=request.user,
+            motivo_principal=motivo_principal,
+            perfil_emocional=perfil_emocional,
+            tipo_servico_interesse=tipo_servico,
+            observacoes=observacoes
+        )
+        
+        # Log de criação
+        LogService.registrar(
+            usuario=request.user,
+            nivel='INFO',
+            mensagem=f"Novo atendimento criado - ID: {atendimento.id}, Cliente: {lead.nome_completo}",
+            modulo='atendimento',
+            acao='criacao_atendimento',
+            ip=get_client_ip(request)
+        )
+        
+        # Formata dados do Lead para o ASAAS (comentado até ajustar modelo)
+        # TODO: Adicionar campos pix_code, pix_qr_code, asaas_payment_id e status ao modelo Atendimento
+        # ou criar modelo separado para gerenciar pagamentos PIX
+        
+        # if lead:
+        #     customer_data = asaas_service.formatar_dados_lead(lead)
+        #     customer_response = asaas_service.criar_cliente(customer_data)
+        # ...resto do código de PIX comentado
+        
+        # Por enquanto, retorna sucesso na criação do atendimento
+        return JsonResponse({
+            'success': True,
+            'atendimento_id': atendimento.id,
+            'message': 'Atendimento criado com sucesso!'
+        })
+        
+    except Lead.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Lead não encontrado.'})
+        
+    except Exception as e:
+        logger.error(f"Erro processar atendimento: {str(e)}")
+        LogService.registrar(
+            usuario=request.user,
+            nivel='ERROR',
+            mensagem=f"Erro processar atendimento: {str(e)}",
+            modulo='atendimento',
+            acao='erro_processamento',
+            ip=get_client_ip(request)
+        )
+        return JsonResponse({'success': False, 'message': f'Erro no sistema: {str(e)}'})
+
 
 
 #@login_required
