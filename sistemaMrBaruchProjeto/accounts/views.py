@@ -152,94 +152,7 @@ def login_page(request):
 @login_required(login_url='/accounts/login/')
 def dashboard_view(request):
     """Dashboard principal - aceita tanto sessão quanto JWT"""
-    modulos = [
-        {
-            'icon': 'headset', 
-            'color': 'warning', 
-            'nome': 'Atendimento', 
-            'texto': 'Gestão de leads, PIX, levantamentos e área de trabalho dos atendentes', 
-            'link': 'javascript:acessarModuloComSessao("atendimento")'
-        },
-       # {
-       #     'icon': 'people-fill', 
-       #     'color': 'info', 
-       #     'nome': 'Clientes', 
-       #     'texto': 'Cadastro e gestão completa da base de clientes', 
-       #     'link': '#'
-       # },
-        {
-            'icon': 'cart-check-fill', 
-            'color': 'primary', 
-            'nome': 'Comercial-1', 
-            'texto': 'Controle de vendas, propostas e contratos comerciais', 
-            'link': '/vendas/'
-        },
-       
-        {
-            'icon': 'briefcase-fill', 
-            'color': 'dark', 
-            'nome': 'Administrativo/Jurídico', 
-            'texto': 'Gestão de contratos, processos e documentação legal', 
-            'link': '/juridico/'
-        },
-        {
-            'icon': 'trophy-fill', 
-            'color': 'primary', 
-            'nome': 'Comissões', 
-            'texto': 'Cálculo automático de comissões de atendentes e captadores', 
-            'link': '/comissoes/'
-        },
-        {
-            'icon': 'graph-up-arrow', 
-            'color': 'danger', 
-            'nome': 'Relatórios', 
-            'texto': 'Análises e relatórios gerenciais do sistema', 
-            'link': '/relatorios/'
-        },
-       #  {
-       #     'icon': 'megaphone-fill', 
-       #     'color': 'danger', 
-       #     'nome': 'Marketing', 
-       #     'texto': 'Campanhas, captação de leads e estratégias de divulgação', 
-       #     'link': '#'
-       # },
-       # {
-       #     'icon': 'star-fill', 
-       #     'color': 'success', 
-       #      'nome': 'Pós-Venda', 
-       #     'texto': 'Follow-up, satisfação do cliente e retenção', 
-       #     'link': '#'
-       # },
-         {
-             'icon': 'piggy-bank-fill', 
-             'color': 'warning', 
-             'nome': 'Retenção/Financeiro', 
-             'texto': 'Cobrança, Renegociação e Quebra de contrato', 
-             'link': '#'
-         },
-         {
-             'icon': 'person-circle', 
-             'color': 'info', 
-             'nome': 'Área do cliente', 
-             'texto': 'Cobrança, Renegociação e Quebra de contrato', 
-             'link': '#'
-         },
-        {
-            'icon': 'gear-wide-connected', 
-            'color': 'dark', 
-            'nome': 'Configurações', 
-            'texto': 'Parâmetros do sistema, grupos de usuários e integrações', 
-            'link': '/core/painel_configuracoes/'
-        },
-        {
-            'icon': 'bi bi-book', 
-            'color': 'info', 
-            'nome': 'Central de Documentação', 
-            'texto': 'Guias, tutoriais e documentação técnica completa do sistema', 
-            'link': '/core/documentacao/'
-        },
-    ]
-
+    
     # Buscar dados reais do banco de dados
     from financeiro.models import ClienteAsaas, Comissao
     from vendas.models import Venda
@@ -290,7 +203,6 @@ def dashboard_view(request):
         'vendas_mes': vendas_mes,
         'atendimentos_count': atendimentos_count,
         'comissoes_valor': comissoes_valor,
-        'modulos': modulos
     }
 
     return render(request, 'accounts/dashboard.html', context)

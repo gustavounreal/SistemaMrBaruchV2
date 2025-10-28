@@ -218,19 +218,6 @@
           </div>
         </div>
       </div>
-
-      {% for modulo in modulos %}
-            <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-            <div class="card module-card h-100 text-center">
-                <div class="card-body p-4">
-                <i class="bi bi-{{ modulo.icon }} text-{{ modulo.color }} fs-1 mb-3"></i>
-                <h5 class="fw-bold mb-2">{{ modulo.nome }}</h5>
-                <p class="text-muted small">{{ modulo.texto }}</p>
-                <a href="{{ modulo.link }}" class="btn btn-outline-{{ modulo.color }}">Acessar</a>
-                </div>
-            </div>
-            </div>
-        {% endfor %}              
        
     </div>
   </div>
