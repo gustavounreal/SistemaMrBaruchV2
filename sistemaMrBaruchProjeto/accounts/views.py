@@ -174,13 +174,7 @@ def dashboard_view(request):
             'texto': 'Controle de vendas, propostas e contratos comerciais', 
             'link': '/vendas/'
         },
-        {
-            'icon': 'funnel-fill', 
-            'color': 'success', 
-            'nome': 'Comercial-2', 
-            'texto': 'Repescagem, Esquentar Lead, requalificar lead', 
-            'link': '#'
-        },
+       
         {
             'icon': 'briefcase-fill', 
             'color': 'dark', 
