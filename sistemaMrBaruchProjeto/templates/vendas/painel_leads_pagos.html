@@ -407,6 +407,9 @@
                 <a href="{% url 'vendas:detalhes_venda' lead.venda.id %}" class="btn btn-success btn-sm">
                   <i class="bi bi-eye"></i> Ver Venda
                 </a>
+                <a href="{% url 'vendas:confirmacao_venda' lead.venda.id %}" class="btn btn-outline-primary btn-sm">
+                  <i class="bi bi-clipboard-check"></i> Ver Confirmação
+                </a>
               {% elif lead.pre_venda %}
                 {% if lead.pre_venda.status == 'ACEITO' %}
                   <a href="{% url 'vendas:cadastro_venda' lead.pre_venda.id %}" class="btn btn-info btn-sm">
