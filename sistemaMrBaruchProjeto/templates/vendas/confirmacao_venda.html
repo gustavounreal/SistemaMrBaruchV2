@@ -227,6 +227,9 @@
             <div class="card">
                 <h3>Ações Rápidas</h3>
                 <div class="botoes">
+                    <a href="{% url 'vendas:gerar_orcamento_pdf' venda.id %}" target="_blank" class="btn btn-sucesso">
+                        <i class="bi bi-file-earmark-pdf"></i> Gerar Orçamento
+                    </a>
                     {% if pix_entrada %}
                    <!-- <a href="{% url 'vendas:exibir_pix_entrada' venda.id %}" class="btn">
                         <i class="bi bi-qr-code"></i> Ver QR Code PIX

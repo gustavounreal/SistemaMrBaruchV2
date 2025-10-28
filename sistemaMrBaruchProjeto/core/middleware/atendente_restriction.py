@@ -72,9 +72,9 @@ class AtendenteRestrictionMiddleware(MiddlewareMixin):
 
             # Redireciona para a área de trabalho do atendente
             try:
-                target = reverse('atendimento:area_de_trabalho_atendente')
+                target = reverse('atendimento:novo_atendimento')
             except Exception:
-                target = '/atendimento/area-de-trabalho/'
+                target = '/atendimento/novo/'
             return redirect(target)
 
         return None

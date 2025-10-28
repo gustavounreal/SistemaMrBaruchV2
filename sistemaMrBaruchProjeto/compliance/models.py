@@ -135,9 +135,9 @@ class AnaliseCompliance(models.Model):
         self.analista_responsavel = analista
         self.save()
         
-        # Atualiza o lead para indicar que passou pelo Compliance
+        # Atualiza o lead para indicar que passou pelo Compliance e está QUALIFICADO
         self.lead.passou_compliance = True
-        self.lead.status = 'APROVADO_COMPLIANCE'
+        self.lead.status = 'QUALIFICADO'  # ✅ CORRIGIDO: Agora usa QUALIFICADO (na mão do consultor)
         self.lead.save(update_fields=['passou_compliance', 'status'])
         
         # Registra no histórico

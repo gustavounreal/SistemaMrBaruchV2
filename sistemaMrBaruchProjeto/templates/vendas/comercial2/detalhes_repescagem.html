@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes da Repescagem - {{ repescagem.lead.nome_completo }}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
+    <style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f4f6f9;
+        margin: 0;
+        padding: 0;
+    }
+    
+    /* Layout com sidebar */
+    .main-container {
+        margin-left: 280px;
+        margin-right: auto;
+        padding: 2rem;
+        width: calc(100% - 280px);
+        position: relative;
+        z-index: 1;
+    }
+    
+    @media (max-width: 992px) {
+        .main-container {
+            margin-left: 0;
+            width: 100%;
+            padding: 1rem;
+        }
+    }
+    
+    .navbar {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 1rem 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .navbar-brand {
+        color: white !important;
+        font-weight: bold;
+        font-size: 1.3rem;
+    }
+    
+    .navbar .nav-link {
+        color: rgba(255,255,255,0.9) !important;
+    }
+    
+    .navbar .nav-link:hover {
+        color: white !important;
+    }
+    .detail-card {
+        background: white;
+        border-radius: 8px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .lead-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+    }
+    
+    .lead-name-big {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #666;
+    }
+    
+    .info-value {
+        color: #333;
+    }
+    
+    .estrategia-card {
+        background: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 4px;
+    }
+    
+    .estrategia-titulo {
+        font-weight: 600;
+        color: #007bff;
+        margin-bottom: 8px;
+    }
+    
+    .historico-item {
+        background: white;
+        border-left: 3px solid #28a745;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .status-atual {
+        display: inline-block;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    
+    .modal-backdrop {
+        background-color: rgba(0,0,0,0.5);
+    }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    {% include 'vendas/comercial2/sidebar_comercial2.html' %}
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Botão Voltar -->
+        <div class="mb-3">
+            <a href="{% url 'vendas:painel_comercial2' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar ao Painel
+            </a>
+        </div>
+
+    <!-- Cabeçalho do Lead -->
+    <div class="lead-header">
+        <div class="lead-name-big">
+            <i class="fas fa-user-circle"></i> {{ repescagem.lead.nome_completo }}
+        </div>
+        <div class="lead-contacts">
+            <i class="fas fa-phone"></i> {{ repescagem.lead.telefone }}
+            {% if repescagem.lead.email %}
+                | <i class="fas fa-envelope"></i> {{ repescagem.lead.email }}
+            {% endif %}
+        </div>
+        <div class="mt-3">
+            <span class="status-atual" style="background: rgba(255,255,255,0.3);">
+                Status: {{ repescagem.get_status_display }}
+            </span>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Coluna Esquerda -->
+        <div class="col-md-8">
+            <!-- Informações da Pré-Venda Original -->
+            <div class="detail-card">
+                <h4><i class="fas fa-file-invoice-dollar"></i> Proposta Original (Pré-Venda)</h4>
+                <hr>
+                <div class="info-row">
+                    <span class="info-label">Data da Tentativa:</span>
+                    <span class="info-value">{{ repescagem.pre_venda.data_criacao|date:"d/m/Y H:i" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Consultor Original:</span>
+                    <span class="info-value">
+                        {% if repescagem.consultor_original %}
+                            {{ repescagem.consultor_original.get_full_name }}
+                        {% else %}
+                            Não informado
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Serviço Proposto:</span>
+                    <span class="info-value">{{ repescagem.pre_venda.get_servico_interesse_display }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Valor Total:</span>
+                    <span class="info-value"><strong>R$ {{ repescagem.pre_venda.valor_total|floatformat:2 }}</strong></span>
+                </div>
+                {% if repescagem.pre_venda.valor_entrada %}
+                    <div class="info-row">
+                        <span class="info-label">Valor Entrada:</span>
+                        <span class="info-value">R$ {{ repescagem.pre_venda.valor_entrada|floatformat:2 }}</span>
+                    </div>
+                {% endif %}
+                {% if repescagem.pre_venda.quantidade_parcelas %}
+                    <div class="info-row">
+                        <span class="info-label">Parcelamento:</span>
+                        <span class="info-value">
+                            {{ repescagem.pre_venda.quantidade_parcelas }}x de R$ {{ repescagem.pre_venda.valor_parcela|floatformat:2 }}
+                            ({{ repescagem.pre_venda.frequencia_pagamento }})
+                        </span>
+                    </div>
+                {% endif %}
+                {% if total_divida %}
+                    <div class="info-row">
+                        <span class="info-label">Total da Dívida (Lead):</span>
+                        <span class="info-value text-danger"><strong>R$ {{ total_divida|floatformat:2 }}</strong></span>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Motivo da Recusa -->
+            <div class="detail-card" style="border-left: 4px solid {{ repescagem.motivo_recusa.cor }};">
+                <h4><i class="fas fa-exclamation-triangle"></i> Motivo da Recusa</h4>
+                <hr>
+                <div class="alert" style="background-color: {{ repescagem.motivo_recusa.cor }}20; border-color: {{ repescagem.motivo_recusa.cor }};">
+                    <h5 style="color: {{ repescagem.motivo_recusa.cor }};">
+                        <i class="fas fa-tag"></i> {{ repescagem.motivo_recusa.nome }}
+                    </h5>
+                    {% if repescagem.motivo_recusa.descricao %}
+                        <p class="mb-0">{{ repescagem.motivo_recusa.descricao }}</p>
+                    {% endif %}
+                </div>
+                
+                {% if repescagem.pre_venda.motivo_recusa %}
+                    <div class="mt-3">
+                        <strong>Observações do Consultor Original:</strong>
+                        <p class="mb-0">{{ repescagem.pre_venda.motivo_recusa|linebreaks }}</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Estratégias de Repescagem -->
+            <div class="detail-card">
+                <h4><i class="fas fa-lightbulb"></i> Estratégias de Repescagem Sugeridas</h4>
+                <hr>
+                {% if estrategias %}
+                    {% for estrategia in estrategias %}
+                        <div class="estrategia-card">
+                            <div class="estrategia-titulo">
+                                {{ forloop.counter }}. {{ estrategia.titulo }}
+                            </div>
+                            <div class="estrategia-descricao">
+                                {{ estrategia.descricao|linebreaks }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i> Nenhuma estratégia configurada para este motivo.
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Condições Especiais (se aplicadas) -->
+            {% if repescagem.condicoes_especiais_aplicadas %}
+                <div class="detail-card" style="border: 2px solid #fd7e14;">
+                    <h4><i class="fas fa-star"></i> Condições Especiais Aplicadas</h4>
+                    <hr>
+                    <div class="alert alert-warning">
+                        <strong>Descrição:</strong>
+                        <p>{{ repescagem.descricao_condicoes_especiais|linebreaks }}</p>
+                    </div>
+                    
+                    {% if repescagem.novo_valor_total %}
+                        <div class="info-row">
+                            <span class="info-label">Novo Valor Total:</span>
+                            <span class="info-value"><strong>R$ {{ repescagem.novo_valor_total|floatformat:2 }}</strong></span>
+                        </div>
+                    {% endif %}
+                    {% if repescagem.novo_valor_entrada %}
+                        <div class="info-row">
+                            <span class="info-label">Nova Entrada:</span>
+                            <span class="info-value">R$ {{ repescagem.novo_valor_entrada|floatformat:2 }}</span>
+                        </div>
+                    {% endif %}
+                    {% if repescagem.nova_quantidade_parcelas %}
+                        <div class="info-row">
+                            <span class="info-label">Novo Parcelamento:</span>
+                            <span class="info-value">
+                                {{ repescagem.nova_quantidade_parcelas }}x 
+                                {% if repescagem.novo_valor_parcela %}
+                                    de R$ {{ repescagem.novo_valor_parcela|floatformat:2 }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <!-- Histórico de Interações -->
+            <div class="detail-card">
+                <h4><i class="fas fa-history"></i> Histórico de Interações</h4>
+                <hr>
+                {% if historico %}
+                    {% for item in historico %}
+                        <div class="historico-item">
+                            <div class="d-flex justify-content-between mb-2">
+                                <strong>
+                                    <i class="fas fa-{{ item.get_tipo_interacao_display|lower }}"></i>
+                                    {{ item.get_tipo_interacao_display }}
+                                </strong>
+                                <span class="text-muted">{{ item.data_interacao|date:"d/m/Y H:i" }}</span>
+                            </div>
+                            <div>
+                                <strong>Descrição:</strong> {{ item.descricao|linebreaks }}
+                            </div>
+                            {% if item.resultado %}
+                                <div class="mt-2">
+                                    <strong>Resultado:</strong> {{ item.resultado|linebreaks }}
+                                </div>
+                            {% endif %}
+                            <div class="text-muted small mt-2">
+                                Por: {{ item.usuario.get_full_name }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Nenhuma interação registrada ainda.
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Observações da Repescagem -->
+            {% if repescagem.observacoes_repescagem %}
+                <div class="detail-card">
+                    <h4><i class="fas fa-sticky-note"></i> Observações da Repescagem</h4>
+                    <hr>
+                    <p>{{ repescagem.observacoes_repescagem|linebreaks }}</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Coluna Direita -->
+        <div class="col-md-4">
+            <!-- Indicadores -->
+            <div class="detail-card">
+                <h5><i class="fas fa-chart-line"></i> Indicadores</h5>
+                <hr>
+                <div class="info-row">
+                    <span class="info-label">Tempo no Comercial 2:</span>
+                    <span class="info-value">{{ repescagem.tempo_no_comercial2 }} dia{{ repescagem.tempo_no_comercial2|pluralize }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Tentativas de Contato:</span>
+                    <span class="info-value">{{ repescagem.tentativas_contato }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Data de Criação:</span>
+                    <span class="info-value">{{ repescagem.data_criacao|date:"d/m/Y H:i" }}</span>
+                </div>
+                {% if repescagem.data_primeiro_contato %}
+                    <div class="info-row">
+                        <span class="info-label">Primeiro Contato:</span>
+                        <span class="info-value">{{ repescagem.data_primeiro_contato|date:"d/m/Y H:i" }}</span>
+                    </div>
+                {% endif %}
+                {% if repescagem.data_ultimo_contato %}
+                    <div class="info-row">
+                        <span class="info-label">Último Contato:</span>
+                        <span class="info-value">{{ repescagem.data_ultimo_contato|date:"d/m/Y H:i" }}</span>
+                    </div>
+                {% endif %}
+                {% if repescagem.consultor_repescagem %}
+                    <div class="info-row">
+                        <span class="info-label">Consultor Responsável:</span>
+                        <span class="info-value">{{ repescagem.consultor_repescagem.get_full_name }}</span>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Ações -->
+            <div class="detail-card">
+                <h5><i class="fas fa-tasks"></i> Ações</h5>
+                <hr>
+                <div class="action-buttons">
+                    <!-- Registrar Interação -->
+                    <button class="btn btn-primary btn-block" data-toggle="modal" data-target="#modalInteracao">
+                        <i class="fas fa-plus-circle"></i> Registrar Interação
+                    </button>
+                    
+                    <!-- Atualizar Status -->
+                    <button class="btn btn-info btn-block" data-toggle="modal" data-target="#modalStatus">
+                        <i class="fas fa-sync-alt"></i> Atualizar Status
+                    </button>
+                    
+                    <!-- Aplicar Condições Especiais -->
+                    {% if not repescagem.condicoes_especiais_aplicadas %}
+                        <button class="btn btn-warning btn-block" data-toggle="modal" data-target="#modalCondicoes">
+                            <i class="fas fa-star"></i> Aplicar Condições Especiais
+                        </button>
+                    {% endif %}
+                    
+                    <!-- Lead Morno Contratou -->
+                    {% if repescagem.status not in 'CONVERTIDO,LEAD_LIXO,SEM_INTERESSE' %}
+                        <form method="POST" action="{% url 'vendas:marcar_lead_morno_contratou' repescagem.id %}" 
+                              onsubmit="return confirm('Confirma que o lead contratou? Ele será enviado para o Compliance.');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success btn-block">
+                                <i class="fas fa-check-circle"></i> Lead Contratou - Enviar ao Compliance
+                            </button>
+                        </form>
+                    {% endif %}
+                    
+                    <!-- Marcar como Lead Lixo -->
+                    {% if repescagem.status not in 'CONVERTIDO,LEAD_LIXO' %}
+                        <button class="btn btn-danger btn-block" data-toggle="modal" data-target="#modalLeadLixo">
+                            <i class="fas fa-trash-alt"></i> Marcar como Lead Lixo
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Registrar Interação -->
+<div class="modal fade" id="modalInteracao" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'vendas:registrar_interacao_repescagem' repescagem.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plus-circle"></i> Registrar Interação</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Tipo de Interação *</label>
+                        <select name="tipo_interacao" class="form-control" required>
+                            <option value="LIGACAO">Ligação</option>
+                            <option value="WHATSAPP">WhatsApp</option>
+                            <option value="EMAIL">E-mail</option>
+                            <option value="SMS">SMS</option>
+                            <option value="VISITA">Visita Presencial</option>
+                            <option value="OUTROS">Outros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Descrição da Interação *</label>
+                        <textarea name="descricao" class="form-control" rows="4" required 
+                                  placeholder="Descreva o que foi conversado..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Resultado/Resposta do Lead</label>
+                        <textarea name="resultado" class="form-control" rows="3" 
+                                  placeholder="Como o lead reagiu? Qual foi a resposta?"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Registrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Atualizar Status -->
+<div class="modal fade" id="modalStatus" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'vendas:atualizar_status_repescagem' repescagem.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-sync-alt"></i> Atualizar Status</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Novo Status *</label>
+                        <select name="status" class="form-control" required>
+                            <option value="PENDENTE">Pendente</option>
+                            <option value="EM_CONTATO">Em Contato</option>
+                            <option value="AGUARDANDO_RESPOSTA">Aguardando Resposta</option>
+                            <option value="INTERESSADO">Interessado - Negociando</option>
+                            <option value="CONDICOES_ESPECIAIS">Condições Especiais Aplicadas</option>
+                            <option value="SEM_INTERESSE">Sem Interesse</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Observações</label>
+                        <textarea name="observacoes" class="form-control" rows="3" 
+                                  placeholder="Adicione observações sobre a mudança de status..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-save"></i> Atualizar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Condições Especiais -->
+<div class="modal fade" id="modalCondicoes" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'vendas:aplicar_condicoes_especiais' repescagem.id %}">
+                {% csrf_token %}
+                <div class="modal-header bg-warning text-white">
+                    <h5 class="modal-title"><i class="fas fa-star"></i> Aplicar Condições Especiais</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Descrição das Condições Especiais *</label>
+                        <textarea name="descricao_condicoes_especiais" class="form-control" rows="4" required
+                                  placeholder="Descreva as condições especiais oferecidas ao lead..."></textarea>
+                    </div>
+                    
+                    <h6 class="mt-4">Nova Proposta Financeira (opcional)</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Novo Valor Total</label>
+                                <input type="number" step="0.01" name="novo_valor_total" class="form-control" 
+                                       placeholder="0,00">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Nova Entrada</label>
+                                <input type="number" step="0.01" name="novo_valor_entrada" class="form-control" 
+                                       placeholder="0,00">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Nova Quantidade de Parcelas</label>
+                                <input type="number" name="nova_quantidade_parcelas" class="form-control" 
+                                       placeholder="0">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Novo Valor da Parcela</label>
+                                <input type="number" step="0.01" name="novo_valor_parcela" class="form-control" 
+                                       placeholder="0,00">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save"></i> Aplicar Condições
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Lead Lixo -->
+<div class="modal fade" id="modalLeadLixo" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'vendas:marcar_lead_lixo' repescagem.id %}">
+                {% csrf_token %}
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-trash-alt"></i> Marcar como Lead Lixo</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Esta ação marcará o lead como perdido. Tem certeza?
+                    </div>
+                    <div class="form-group">
+                        <label>Motivo para marcar como Lead Lixo</label>
+                        <textarea name="motivo_lead_lixo" class="form-control" rows="3" 
+                                  placeholder="Explique por que este lead está sendo descartado..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt"></i> Confirmar Lead Lixo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div> <!-- End main-container -->
+
+<!-- jQuery, Popper.js, Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+
+</body>
+</html>

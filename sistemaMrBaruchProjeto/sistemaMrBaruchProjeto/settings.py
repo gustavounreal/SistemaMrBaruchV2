@@ -15,14 +15,14 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    'e4f0fd8205d7.ngrok-free.app',
+    'd1adcb20f7d3.ngrok-free.app',
 ]
 
 # CSRF Trusted Origins para ngrok e outros domínios
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost',
     'http://127.0.0.1',
-    'https://e4f0fd8205d7.ngrok-free.app',
+    'https://d1adcb20f7d3.ngrok-free.app',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -63,9 +63,12 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'core.middleware.jwt_middleware.JWTAuthMiddleware', 
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    #redirecionamentos grupos 
+    'core.middleware.comercial2_redirect.Comercial2RedirectMiddleware',
     'core.middleware.atendente_restriction.AtendenteRestrictionMiddleware',
     'core.middleware.compliance_restriction.ComplianceRestrictionMiddleware',
     'core.middleware.consultor_restriction.ConsultorRestrictionMiddleware',
+
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]

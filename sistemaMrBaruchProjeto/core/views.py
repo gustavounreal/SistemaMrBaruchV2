@@ -9,6 +9,8 @@ from .models import ConfiguracaoSistema
 from .forms import ConfiguracaoSistemaForm
 from .services import GrupoService
 from django.http import JsonResponse
+from financeiro.models import ClienteAsaas
+from marketing.models import Lead
 
 @login_required
 @permission_required('core.change_configuracaosistema')
@@ -1103,21 +1105,16 @@ def webhook_logs(request):
         'ignored': WebhookLog.objects.filter(status_processamento='IGNORED').count(),
     }
     
-    from financeiro.models import ClienteAsaas
-    from marketing.models import Lead
-    
-    # Montar dict customer_id -> nome_completo
-    customer_to_nome = {}
+    # Montar dict customer_id -> nome_completo e adicionar ao objeto log
     for log in logs_page:
         customer_id = getattr(log, 'customer_id', None)
-        nome = None
+        log.nome_cliente = None
         if customer_id:
             try:
                 cliente_asaas = ClienteAsaas.objects.select_related('lead').get(asaas_customer_id=customer_id)
-                nome = cliente_asaas.lead.nome_completo
+                log.nome_cliente = cliente_asaas.lead.nome_completo
             except ClienteAsaas.DoesNotExist:
-                nome = None
-        customer_to_nome[log.id] = nome
+                log.nome_cliente = None
 
     context = {
         'logs': logs_page,
@@ -1128,7 +1125,6 @@ def webhook_logs(request):
             'status': status,
             'payment_id': payment_id,
         },
-        'customer_to_nome': customer_to_nome,
     }
     
     return render(request, 'core/webhook_logs.html', context)

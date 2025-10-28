@@ -539,7 +539,7 @@ def iniciar_pre_venda(request, lead_id):
         return redirect('vendas:painel_leads_pagos')
     
     # Verifica se o levantamento foi pago
-    if lead.status not in ['LEVANTAMENTO_PAGO', 'APROVADO_COMPLIANCE', 'EM_NEGOCIACAO']:
+    if lead.status not in ['LEVANTAMENTO_PAGO', 'APROVADO_COMPLIANCE', 'EM_NEGOCIACAO', 'QUALIFICADO']:
         messages.error(request, 'O levantamento ainda não foi pago pelo cliente.')
         return redirect('vendas:painel_leads_pagos')
     
@@ -1686,6 +1686,55 @@ def confirmacao_venda(request, venda_id):
 
 @login_required
 @user_passes_test(is_consultor_or_admin)
+def gerar_orcamento_pdf(request, venda_id):
+    """Gera orçamento em PDF para impressão/envio ao cliente"""
+    from django.template.loader import render_to_string
+    from django.http import HttpResponse
+    from datetime import date
+    
+    venda = get_object_or_404(
+        Venda.objects.select_related('cliente__lead', 'servico', 'consultor', 'captador'),
+        id=venda_id
+    )
+    
+    # Buscar parcelas
+    parcelas = Parcela.objects.filter(venda=venda).order_by('numero_parcela')
+    
+    # Buscar pré-venda relacionada
+    pre_venda = None
+    lead = None
+    if hasattr(venda.cliente, 'lead') and venda.cliente.lead:
+        lead = venda.cliente.lead
+        pre_venda = PreVenda.objects.filter(lead=lead).first()
+    
+    context = {
+        'venda': venda,
+        'lead': lead,
+        'parcelas': parcelas,
+        'pre_venda': pre_venda,
+        'data_emissao': date.today(),
+        'empresa': {
+            'nome': 'Grupo Mr Baruch Michel da Silva Rodrigues LTDA',
+            'cnpj': '31.406.396/0001-03',
+            'endereco': 'Rua Jequirituba 1666 Slj 02',
+            'bairro': 'Parque América',
+            'cidade': 'São Paulo',
+            'estado': 'SP',
+            'cep': '04822-000',
+            'email': 'grupomrbaruch@hotmail.com',
+        }
+    }
+    
+    # Renderizar template HTML
+    html = render_to_string('vendas/orcamento_pdf.html', context)
+    
+    # Retornar como HTML (para impressão do navegador)
+    response = HttpResponse(html, content_type='text/html')
+    return response
+
+
+@login_required
+@user_passes_test(is_consultor_or_admin)
 def listar_vendas(request):
     """Lista todas as vendas com filtros"""
     vendas = Venda.objects.select_related('cliente', 'servico', 'consultor', 'captador').order_by('-data_venda')
@@ -1822,3 +1871,538 @@ def detalhes_pre_venda(request, pre_venda_id):
     }
     
     return render(request, 'vendas/detalhes_pre_venda.html', context)
+
+
+# ============================================================================
+# VIEWS DO COMERCIAL 2 - REPESCAGEM DE LEADS
+# ============================================================================
+
+def is_comercial2_or_admin(user):
+    """Verifica se usuário é do comercial2 ou admin"""
+    if user.is_superuser or user.is_staff:
+        return True
+    return user.groups.filter(name__in=['comercial2', 'Comercial2', 'admin', 'Admin']).exists()
+
+
+@login_required
+@user_passes_test(is_comercial2_or_admin)
+def painel_comercial2(request):
+    """
+    Painel principal do Comercial 2 - Repescagem de Leads
+    """
+    from .models import RepescagemLead, EstrategiaRepescagem
+    
+    # Filtros
+    status_filter = request.GET.get('status', '')
+    motivo_filter = request.GET.get('motivo', '')
+    search = request.GET.get('search', '')
+    
+    # Query base
+    repescagens = RepescagemLead.objects.select_related(
+        'lead', 'pre_venda', 'motivo_recusa', 
+        'consultor_original', 'consultor_repescagem'
+    ).all()
+    
+    # Aplicar filtros
+    if status_filter:
+        repescagens = repescagens.filter(status=status_filter)
+    
+    if motivo_filter:
+        repescagens = repescagens.filter(motivo_recusa_id=motivo_filter)
+    
+    if search:
+        repescagens = repescagens.filter(
+            django_models.Q(lead__nome_completo__icontains=search) |
+            django_models.Q(lead__telefone__icontains=search) |
+            django_models.Q(lead__email__icontains=search)
+        )
+    
+    # Paginação
+    paginator = Paginator(repescagens, 20)
+    page = request.GET.get('page', 1)
+    
+    try:
+        repescagens_page = paginator.page(page)
+    except PageNotAnInteger:
+        repescagens_page = paginator.page(1)
+    except EmptyPage:
+        repescagens_page = paginator.page(paginator.num_pages)
+    
+    # Estatísticas
+    total_repescagens = RepescagemLead.objects.count()
+    pendentes = RepescagemLead.objects.filter(status='PENDENTE').count()
+    em_contato = RepescagemLead.objects.filter(status='EM_CONTATO').count()
+    convertidos = RepescagemLead.objects.filter(status='CONVERTIDO').count()
+    lead_lixo = RepescagemLead.objects.filter(status='LEAD_LIXO').count()
+    
+    # Motivos disponíveis para filtro
+    from .models import MotivoRecusa
+    motivos = MotivoRecusa.objects.filter(ativo=True)
+    
+    context = {
+        'repescagens': repescagens_page,
+        'motivos': motivos,
+        'status_filter': status_filter,
+        'motivo_filter': motivo_filter,
+        'search': search,
+        'total_repescagens': total_repescagens,
+        'pendentes': pendentes,
+        'em_contato': em_contato,
+        'convertidos': convertidos,
+        'lead_lixo': lead_lixo,
+    }
+    
+    return render(request, 'vendas/comercial2/painel_repescagem.html', context)
+
+
+@login_required
+@user_passes_test(is_comercial2_or_admin)
+def detalhes_repescagem(request, repescagem_id):
+    """
+    Detalhes de uma repescagem específica
+    """
+    from .models import RepescagemLead, EstrategiaRepescagem, HistoricoRepescagem
+    
+    repescagem = get_object_or_404(
+        RepescagemLead.objects.select_related(
+            'lead', 'pre_venda', 'motivo_recusa',
+            'consultor_original', 'consultor_repescagem'
+        ),
+        id=repescagem_id
+    )
+    
+    # Buscar estratégias de repescagem para o motivo
+    estrategias = EstrategiaRepescagem.objects.filter(
+        motivo_recusa=repescagem.motivo_recusa,
+        ativo=True
+    ).order_by('ordem')
+    
+    # Buscar histórico de interações
+    historico = HistoricoRepescagem.objects.filter(
+        repescagem=repescagem
+    ).select_related('usuario').order_by('-data_interacao')
+    
+    # Calcular total da dívida do lead (se disponível)
+    total_divida = 0
+    if hasattr(repescagem.lead, 'total_divida'):
+        total_divida = repescagem.lead.total_divida
+    
+    context = {
+        'repescagem': repescagem,
+        'estrategias': estrategias,
+        'historico': historico,
+        'total_divida': total_divida,
+    }
+    
+    return render(request, 'vendas/comercial2/detalhes_repescagem.html', context)
+
+
+@login_required
+@user_passes_test(is_comercial2_or_admin)
+def atualizar_status_repescagem(request, repescagem_id):
+    """
+    Atualiza o status de uma repescagem
+    """
+    from .models import RepescagemLead
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método inválido'})
+    
+    repescagem = get_object_or_404(RepescagemLead, id=repescagem_id)
+    novo_status = request.POST.get('status')
+    observacoes = request.POST.get('observacoes', '')
+    
+    if novo_status not in dict(RepescagemLead.STATUS_CHOICES).keys():
+        return JsonResponse({'success': False, 'error': 'Status inválido'})
+    
+    # Atualizar status
+    repescagem.status = novo_status
+    
+    # Se tiver observações, adicionar
+    if observacoes:
+        if repescagem.observacoes_repescagem:
+            repescagem.observacoes_repescagem += f"\n\n[{timezone.now().strftime('%d/%m/%Y %H:%M')}]\n{observacoes}"
+        else:
+            repescagem.observacoes_repescagem = observacoes
+    
+    # Atribuir consultor se ainda não tiver
+    if not repescagem.consultor_repescagem:
+        repescagem.consultor_repescagem = request.user
+    
+    # Se marcou como convertido ou lead lixo, registrar data de conclusão
+    if novo_status in ['CONVERTIDO', 'LEAD_LIXO', 'SEM_INTERESSE']:
+        repescagem.data_conclusao = timezone.now()
+        
+        # Atualizar status do lead
+        if novo_status == 'CONVERTIDO':
+            repescagem.lead.status = 'QUALIFICADO'
+        elif novo_status in ['LEAD_LIXO', 'SEM_INTERESSE']:
+            repescagem.lead.status = 'PERDIDO'
+        
+        repescagem.lead.save()
+    
+    repescagem.save()
+    
+    messages.success(request, f'Status atualizado para: {repescagem.get_status_display()}')
+    
+    return redirect('vendas:detalhes_repescagem', repescagem_id=repescagem_id)
+
+
+@login_required
+@user_passes_test(is_comercial2_or_admin)
+def registrar_interacao_repescagem(request, repescagem_id):
+    """
+    Registra uma nova interação no histórico da repescagem
+    """
+    from .models import RepescagemLead, HistoricoRepescagem
+    
+    if request.method != 'POST':
+        messages.error(request, 'Método inválido')
+        return redirect('vendas:detalhes_repescagem', repescagem_id=repescagem_id)
+    
+    repescagem = get_object_or_404(RepescagemLead, id=repescagem_id)
+    
+    tipo_interacao = request.POST.get('tipo_interacao')
+    descricao = request.POST.get('descricao')
+    resultado = request.POST.get('resultado', '')
+    
+    if not tipo_interacao or not descricao:
+        messages.error(request, 'Tipo de interação e descrição são obrigatórios')
+        return redirect('vendas:detalhes_repescagem', repescagem_id=repescagem_id)
+    
+    # Criar histórico
+    HistoricoRepescagem.objects.create(
+        repescagem=repescagem,
+        tipo_interacao=tipo_interacao,
+        descricao=descricao,
+        resultado=resultado,
+        usuario=request.user
+    )
+    
+    # Incrementar tentativas de contato
+    repescagem.incrementar_tentativa()
+    
+    # Atualizar status se estava pendente
+    if repescagem.status == 'PENDENTE':
+        repescagem.status = 'EM_CONTATO'
+        repescagem.save()
+    
+    messages.success(request, 'Interação registrada com sucesso!')
+    
+    return redirect('vendas:detalhes_repescagem', repescagem_id=repescagem_id)
+
+
+@login_required
+@user_passes_test(is_comercial2_or_admin)
+def aplicar_condicoes_especiais(request, repescagem_id):
+    """
+    Aplica condições especiais à repescagem
+    """
+    from .models import RepescagemLead
+    
+    if request.method != 'POST':
+        messages.error(request, 'Método inválido')
+        return redirect('vendas:detalhes_repescagem', repescagem_id=repescagem_id)
+    
+    repescagem = get_object_or_404(RepescagemLead, id=repescagem_id)
+    
+    # Obter dados do formulário
+    descricao_condicoes = request.POST.get('descricao_condicoes_especiais')
+    novo_valor_total = request.POST.get('novo_valor_total')
+    novo_valor_entrada = request.POST.get('novo_valor_entrada')
+    nova_quantidade_parcelas = request.POST.get('nova_quantidade_parcelas')
+    novo_valor_parcela = request.POST.get('novo_valor_parcela')
+    
+    # Atualizar repescagem
+    repescagem.condicoes_especiais_aplicadas = True
+    repescagem.descricao_condicoes_especiais = descricao_condicoes
+    
+    if novo_valor_total:
+        repescagem.novo_valor_total = Decimal(novo_valor_total.replace(',', '.'))
+    
+    if novo_valor_entrada:
+        repescagem.novo_valor_entrada = Decimal(novo_valor_entrada.replace(',', '.'))
+    
+    if nova_quantidade_parcelas:
+        repescagem.nova_quantidade_parcelas = int(nova_quantidade_parcelas)
+    
+    if novo_valor_parcela:
+        repescagem.novo_valor_parcela = Decimal(novo_valor_parcela.replace(',', '.'))
+    
+    repescagem.status = 'CONDICOES_ESPECIAIS'
+    repescagem.save()
+    
+    messages.success(request, 'Condições especiais aplicadas com sucesso!')
+    
+    return redirect('vendas:detalhes_repescagem', repescagem_id=repescagem_id)
+
+
+@login_required
+@user_passes_test(is_comercial2_or_admin)
+def marcar_lead_morno_contratou(request, repescagem_id):
+    """
+    Marca que o lead morno contratou e envia para compliance
+    """
+    from .models import RepescagemLead
+    
+    repescagem = get_object_or_404(RepescagemLead, id=repescagem_id)
+    
+    repescagem.marcar_como_convertido()
+    
+    messages.success(request, 
+        f'✅ Lead {repescagem.lead.nome_completo} marcado como convertido! '
+        'Aguardando atribuição de consultor pelo Compliance.'
+    )
+    
+    return redirect('vendas:painel_comercial2')
+
+
+@login_required
+@user_passes_test(is_comercial2_or_admin)
+def marcar_lead_lixo(request, repescagem_id):
+    """
+    Marca a repescagem e o lead como lead lixo
+    """
+    from .models import RepescagemLead
+    
+    repescagem = get_object_or_404(RepescagemLead, id=repescagem_id)
+    
+    motivo = request.POST.get('motivo_lead_lixo', '')
+    
+    if motivo:
+        if repescagem.observacoes_repescagem:
+            repescagem.observacoes_repescagem += f"\n\n[LEAD LIXO - {timezone.now().strftime('%d/%m/%Y %H:%M')}]\n{motivo}"
+        else:
+            repescagem.observacoes_repescagem = f"[LEAD LIXO]\n{motivo}"
+    
+    repescagem.marcar_como_lead_lixo()
+    
+    messages.warning(request, 
+        f'Lead {repescagem.lead.nome_completo} marcado como Lead Lixo.'
+    )
+    
+    return redirect('vendas:painel_comercial2')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name__in=['admin', 'Admin']).exists())
+def gestao_estrategias_repescagem(request):
+    """
+    Painel de gestão de estratégias de repescagem (apenas Administradores)
+    """
+    from .models import EstrategiaRepescagem, MotivoRecusa
+    
+    # Buscar todas as estratégias
+    estrategias = EstrategiaRepescagem.objects.select_related('motivo_recusa').order_by('motivo_recusa', 'ordem')
+    
+    # Buscar motivos de recusa
+    motivos = MotivoRecusa.objects.filter(ativo=True)
+    
+    context = {
+        'estrategias': estrategias,
+        'motivos': motivos,
+    }
+    
+    return render(request, 'vendas/comercial2/gestao_estrategias.html', context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name__in=['admin', 'Admin']).exists())
+def criar_estrategia_repescagem(request):
+    """
+    Cria uma nova estratégia de repescagem
+    """
+    from .models import EstrategiaRepescagem, MotivoRecusa
+    
+    if request.method != 'POST':
+        return redirect('vendas:gestao_estrategias_repescagem')
+    
+    motivo_id = request.POST.get('motivo_recusa')
+    titulo = request.POST.get('titulo')
+    descricao = request.POST.get('descricao')
+    ordem = request.POST.get('ordem', 0)
+    
+    if not motivo_id or not titulo or not descricao:
+        messages.error(request, 'Todos os campos são obrigatórios')
+        return redirect('vendas:gestao_estrategias_repescagem')
+    
+    motivo = get_object_or_404(MotivoRecusa, id=motivo_id)
+    
+    EstrategiaRepescagem.objects.create(
+        motivo_recusa=motivo,
+        titulo=titulo,
+        descricao=descricao,
+        ordem=int(ordem) if ordem else 0,
+        ativo=True
+    )
+    
+    messages.success(request, 'Estratégia criada com sucesso!')
+    
+    return redirect('vendas:gestao_estrategias_repescagem')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name__in=['admin', 'Admin']).exists())
+def editar_estrategia_repescagem(request, estrategia_id):
+    """
+    Edita uma estratégia de repescagem existente
+    """
+    from .models import EstrategiaRepescagem
+    
+    if request.method != 'POST':
+        return redirect('vendas:gestao_estrategias_repescagem')
+    
+    estrategia = get_object_or_404(EstrategiaRepescagem, id=estrategia_id)
+    
+    estrategia.titulo = request.POST.get('titulo', estrategia.titulo)
+    estrategia.descricao = request.POST.get('descricao', estrategia.descricao)
+    estrategia.ordem = int(request.POST.get('ordem', estrategia.ordem))
+    estrategia.ativo = request.POST.get('ativo') == 'on'
+    
+    estrategia.save()
+    
+    messages.success(request, 'Estratégia atualizada com sucesso!')
+    
+    return redirect('vendas:gestao_estrategias_repescagem')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name__in=['admin', 'Admin']).exists())
+def excluir_estrategia_repescagem(request, estrategia_id):
+    """
+    Exclui uma estratégia de repescagem
+    """
+    from .models import EstrategiaRepescagem
+    
+    estrategia = get_object_or_404(EstrategiaRepescagem, id=estrategia_id)
+    estrategia.delete()
+    
+    messages.success(request, 'Estratégia excluída com sucesso!')
+    
+    return redirect('vendas:gestao_estrategias_repescagem')
+
+
+@login_required
+@user_passes_test(is_comercial2_or_admin)
+def dashboard_comercial2_kpis(request):
+    """
+    Dashboard com KPIs e métricas do Comercial 2
+    """
+    from .models import RepescagemLead, MotivoRecusa
+    from django.db.models import Count, Avg, Q, F
+    from datetime import timedelta
+    import json
+    
+    # Filtros de período
+    periodo = request.GET.get('periodo', '30')  # Default 30 dias
+    try:
+        dias = int(periodo)
+    except:
+        dias = 30
+    
+    data_inicio = timezone.now() - timedelta(days=dias)
+    
+    # === ESTATÍSTICAS GERAIS ===
+    total_repescagens = RepescagemLead.objects.count()
+    repescagens_periodo = RepescagemLead.objects.filter(data_criacao__gte=data_inicio)
+    
+    stats = {
+        'total_geral': total_repescagens,
+        'total_periodo': repescagens_periodo.count(),
+        'pendentes': RepescagemLead.objects.filter(status='PENDENTE').count(),
+        'em_contato': RepescagemLead.objects.filter(status='EM_CONTATO').count(),
+        'convertidos': RepescagemLead.objects.filter(status='CONVERTIDO').count(),
+        'convertidos_periodo': repescagens_periodo.filter(status='CONVERTIDO').count(),
+        'sem_interesse': RepescagemLead.objects.filter(status='SEM_INTERESSE').count(),
+        'lead_lixo': RepescagemLead.objects.filter(status='LEAD_LIXO').count(),
+    }
+    
+    # === TAXA DE CONVERSÃO ===
+    total_finalizados = RepescagemLead.objects.filter(
+        Q(status='CONVERTIDO') | Q(status='SEM_INTERESSE') | Q(status='LEAD_LIXO')
+    ).count()
+    
+    if total_finalizados > 0:
+        stats['taxa_conversao'] = round((stats['convertidos'] / total_finalizados) * 100, 1)
+    else:
+        stats['taxa_conversao'] = 0
+    
+    # Taxa de conversão no período
+    total_finalizados_periodo = repescagens_periodo.filter(
+        Q(status='CONVERTIDO') | Q(status='SEM_INTERESSE') | Q(status='LEAD_LIXO')
+    ).count()
+    
+    if total_finalizados_periodo > 0:
+        stats['taxa_conversao_periodo'] = round(
+            (stats['convertidos_periodo'] / total_finalizados_periodo) * 100, 1
+        )
+    else:
+        stats['taxa_conversao_periodo'] = 0
+    
+    # === TEMPO MÉDIO DE REPESCAGEM ===
+    repescagens_concluidas = RepescagemLead.objects.filter(
+        data_conclusao__isnull=False
+    )
+    
+    if repescagens_concluidas.exists():
+        tempos = []
+        for r in repescagens_concluidas:
+            delta = r.data_conclusao - r.data_criacao
+            tempos.append(delta.total_seconds() / 86400)  # Converter para dias
+        stats['tempo_medio_dias'] = round(sum(tempos) / len(tempos), 1)
+    else:
+        stats['tempo_medio_dias'] = 0
+    
+    # === DISTRIBUIÇÃO POR STATUS (para gráfico de pizza) ===
+    distribuicao_status = RepescagemLead.objects.values('status').annotate(
+        total=Count('id')
+    ).order_by('-total')
+    
+    # === TOP 5 MOTIVOS DE RECUSA QUE MAIS CONVERTEM ===
+    motivos_conversao = RepescagemLead.objects.filter(
+        status='CONVERTIDO'
+    ).values(
+        'motivo_recusa__nome'
+    ).annotate(
+        total_conversoes=Count('id')
+    ).order_by('-total_conversoes')[:5]
+    
+    # === TOP 5 MOTIVOS DE RECUSA GERAIS ===
+    motivos_gerais = RepescagemLead.objects.values(
+        'motivo_recusa__nome'
+    ).annotate(
+        total=Count('id')
+    ).order_by('-total')[:5]
+    
+    # === PERFORMANCE POR CONSULTOR ===
+    performance_consultores = RepescagemLead.objects.filter(
+        consultor_repescagem__isnull=False
+    ).values(
+        'consultor_repescagem__username',
+        'consultor_repescagem__first_name',
+        'consultor_repescagem__last_name'
+    ).annotate(
+        total_atendimentos=Count('id'),
+        total_convertidos=Count('id', filter=Q(status='CONVERTIDO')),
+    ).order_by('-total_convertidos')
+    
+    # Calcular taxa de conversão por consultor
+    for perf in performance_consultores:
+        if perf['total_atendimentos'] > 0:
+            perf['taxa_conversao'] = round(
+                (perf['total_convertidos'] / perf['total_atendimentos']) * 100, 1
+            )
+        else:
+            perf['taxa_conversao'] = 0
+    
+    context = {
+        'stats': stats,
+        'distribuicao_status': json.dumps(list(distribuicao_status)),
+        'motivos_conversao': json.dumps(list(motivos_conversao)),
+        'motivos_gerais': list(motivos_gerais),
+        'performance_consultores': list(performance_consultores),
+        'periodo_dias': dias,
+    }
+    
+    return render(request, 'vendas/comercial2/dashboard_kpis.html', context)
+

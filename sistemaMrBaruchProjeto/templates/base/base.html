@@ -18,6 +18,12 @@
   {% load static %}
   <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 
+  {% load user_groups %}
+  {% has_group 'comercial2' as is_comercial2 %}
+  {% if is_comercial2 %}
+    <link rel="stylesheet" href="{% static 'css/comercial2.css' %}">
+  {% endif %}
+
   {% block extra_head %}{% endblock %}
 {% load static %}
 {% load user_groups %}

@@ -1,8 +1,8 @@
 from django.core.management.base import BaseCommand
-from marketing.models import CategoriaMotivo, MotivoContato
+from marketing.models import CategoriaMotivo, MotivoContato, OrigemLead
 
 class Command(BaseCommand):
-    help = 'Popula as tabelas CategoriaMotivo e MotivoContato com dados iniciais.'
+    help = 'Popula as tabelas CategoriaMotivo, MotivoContato e OrigemLead com dados iniciais.'
 
     def handle(self, *args, **options):
         categorias = [
@@ -46,6 +46,16 @@ class Command(BaseCommand):
             {"categoria": "PRAZO MEDIO / RISCO MÉDIO - BAIXO", "tipo": "PERFIL", "nome": "PLANEJADOR/ANSIOSO"},
         ]
 
+        origens_lead = [
+            {"nome": "Instagram"},
+            {"nome": "Facebook"},
+            {"nome": "Indicação"},
+            {"nome": "Google"},
+            {"nome": "WhatsApp"},
+            {"nome": "Site"},
+            {"nome": "Outro"},
+        ]
+
         # Popula categorias
         for cat in categorias:
             categoria, created = CategoriaMotivo.objects.get_or_create(nome=cat["nome"], defaults={"descricao": cat["descricao"]})
@@ -66,3 +76,11 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f"Motivo/Perfil criado: {motivo.texto} ({motivo.tipo})"))
             else:
                 self.stdout.write(f"Motivo/Perfil já existe: {motivo.texto} ({motivo.tipo})")
+
+        # Popula origens de lead
+        for origem in origens_lead:
+            obj, created = OrigemLead.objects.get_or_create(nome=origem["nome"])
+            if created:
+                self.stdout.write(self.style.SUCCESS(f"Origem de Lead criada: {obj.nome}"))
+            else:
+                self.stdout.write(f"Origem de Lead já existe: {obj.nome}")

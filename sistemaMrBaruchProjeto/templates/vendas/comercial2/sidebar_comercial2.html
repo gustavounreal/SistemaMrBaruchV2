@@ -1,0 +1,369 @@
+{% comment %}
+Menu lateral para Comercial 2 - Repescagem de Leads
+{% endcomment %}
+<div id="sidebarComercial2" class="sidebar-comercial2">
+    <div class="sidebar-header">
+        <h3 class="sidebar-title">
+            <i class="fas fa-redo-alt"></i>
+            <span class="sidebar-title-text">Comercial 2</span>
+        </h3>
+    </div>
+    
+    <nav class="sidebar-menu">
+        <div class="menu-section">
+            <div class="menu-section-title">Repescagem</div>
+            <a href="{% url 'vendas:painel_comercial2' %}" class="menu-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span class="menu-item-text">Painel de Repescagem</span>
+            </a>
+        </div>
+        
+        <div class="menu-section">
+            <div class="menu-section-title">Gestão</div>
+            <a href="{% url 'vendas:gestao_estrategias_repescagem' %}" class="menu-item">
+                <i class="fas fa-cogs"></i>
+                <span class="menu-item-text">Estratégias</span>
+            </a>
+        </div>
+        
+        <div class="menu-section">
+            <div class="menu-section-title">Sistema</div>
+            <a href="/admin/" class="menu-item">
+                <i class="fas fa-user-shield"></i>
+                <span class="menu-item-text">Administração</span>
+            </a>
+            <a href="{% url 'vendas:painel_leads_pagos' %}" class="menu-item">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="menu-item-text">Vendas</span>
+            </a>
+        </div>
+    </nav>
+    
+    <div class="sidebar-footer">
+        <div class="user-info">
+            <div class="user-avatar">
+                {{ user.username|slice:":1"|upper }}
+            </div>
+            <div class="user-details">
+                <div class="user-name">{{ user.username }}</div>
+                <div class="user-role">Comercial 2</div>
+            </div>
+        </div>
+        <form id="sidebarLogoutFormComercial2" action="{% url 'accounts:logout_session' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn-logout">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="btn-logout-text">Sair do Sistema</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Botão Toggle Mobile -->
+<button class="mobile-toggle" id="mobileToggleComercial2">
+    <i class="fas fa-bars"></i>
+</button>
+
+<style>
+/* ===== SIDEBAR COMERCIAL 2 - ESTILO ===== */
+.sidebar-comercial2 {
+    width: 280px;
+    background: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
+    color: white;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 4px 0 12px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+}
+
+.sidebar-comercial2::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-comercial2::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+/* Header */
+.sidebar-header {
+    padding: 1.75rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-title {
+    color: white;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sidebar-title i {
+    font-size: 1.5rem;
+}
+
+/* Menu */
+.sidebar-menu {
+    padding: 1.5rem 0;
+}
+
+.menu-section {
+    margin-bottom: 2rem;
+}
+
+.menu-section-title {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.9rem 1.5rem;
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    transition: all 0.25s ease;
+    border-left: 3px solid transparent;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.menu-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    border-left-color: #667eea;
+    padding-left: 1.7rem;
+}
+
+.menu-item.active {
+    background: rgba(102, 126, 234, 0.2);
+    color: white;
+    border-left-color: #667eea;
+    font-weight: 600;
+}
+
+.menu-item i {
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+
+/* Footer */
+.sidebar-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-bottom: 1rem;
+}
+
+.user-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.user-details {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.user-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-role {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-logout {
+    width: 100%;
+    padding: 0.7rem;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+    border-radius: 8px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.btn-logout:hover {
+    background: rgba(239, 68, 68, 0.25);
+    color: #fecaca;
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* Mobile Toggle */
+.mobile-toggle {
+    display: none !important;
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1001;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Responsivo */
+@media (max-width: 992px) {
+    .sidebar-comercial2 {
+        transform: translateX(-280px);
+    }
+    
+    .sidebar-comercial2.active {
+        transform: translateX(0);
+    }
+    
+    .mobile-toggle {
+        display: block !important;
+    }
+}
+
+@media (min-width: 993px) {
+    .mobile-toggle {
+        display: none !important;
+    }
+}
+</style>
+
+<script>
+/* Sidebar Comercial 2 - JavaScript */
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('sidebarComercial2');
+    const mobileToggle = document.getElementById('mobileToggleComercial2');
+    const logoutForm = document.getElementById('sidebarLogoutFormComercial2');
+    
+    // Toggle Mobile Sidebar
+    if (mobileToggle) {
+        mobileToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('active');
+        });
+        
+        // Fechar sidebar ao clicar fora (mobile)
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth <= 992) {
+                if (!sidebar.contains(e.target) && !mobileToggle.contains(e.target)) {
+                    sidebar.classList.remove('active');
+                }
+            }
+        });
+    }
+    
+    // Marcar link ativo baseado na URL atual
+    const currentPath = window.location.pathname;
+    document.querySelectorAll('.sidebar-comercial2 .menu-item').forEach(link => {
+        if (link.getAttribute('href') === currentPath) {
+            link.classList.add('active');
+        }
+    });
+    
+    // Logout Handler
+    if (logoutForm) {
+        logoutForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Limpar tokens JWT
+            try {
+                const refresh = localStorage.getItem('refresh_token');
+                
+                if (refresh) {
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    
+                    await fetch('/accounts/api/auth/logout/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({ refresh_token: refresh })
+                    });
+                }
+            } catch (err) {
+                console.warn('Logout API failed:', err);
+            }
+            
+            // Limpar localStorage
+            try {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                localStorage.removeItem('token_expires');
+                localStorage.removeItem('user_data');
+            } catch (err) {
+                console.warn('Clear localStorage failed:', err);
+            }
+            
+            // Encerrar sessão Django
+            try {
+                const csrfToken = logoutForm.querySelector('[name=csrfmiddlewaretoken]').value;
+                
+                await fetch(logoutForm.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+            } catch (err) {
+                console.warn('Logout session failed:', err);
+            }
+            
+            // Redirecionar para login
+            window.location.replace('/accounts/login/');
+        });
+    }
+});
+</script>

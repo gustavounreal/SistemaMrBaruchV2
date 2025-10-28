@@ -150,6 +150,12 @@ class Lead(models.Model):
         choices=STATUS_CHOICES,
         default='NOVO'
     )
+    
+    # Contador de repescagens (Comercial 2)
+    numero_repescagens = models.PositiveIntegerField(
+        default=0,
+        help_text="Quantidade de vezes que este lead foi enviado ao Comercial 2 (repescagem)"
+    )
 
     observacoes = models.TextField(blank=True, null=True)
 
@@ -184,6 +190,22 @@ class Lead(models.Model):
             return f"{cleaned[:2]}.{cleaned[2:5]}.{cleaned[5:8]}/{cleaned[8:12]}-{cleaned[12:]}"
         # fallback: retornar o valor original sem alteração
         return self.cpf_cnpj
+    
+    def incrementar_repescagens(self):
+        """Incrementa o contador de repescagens do lead"""
+        self.numero_repescagens += 1
+        self.save(update_fields=['numero_repescagens'])
+    
+    def get_badge_repescagem(self):
+        """Retorna badge HTML para exibir quantidade de repescagens"""
+        if self.numero_repescagens == 0:
+            return ''
+        elif self.numero_repescagens == 1:
+            return '<span class="badge bg-warning">1ª Repescagem</span>'
+        elif self.numero_repescagens == 2:
+            return '<span class="badge bg-danger">2ª Repescagem</span>'
+        else:
+            return f'<span class="badge bg-dark">{self.numero_repescagens}ª Repescagem ⚠️</span>'
 
 
 class Campanha(models.Model):

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comercial 2 - Repescagem de Leads</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
+    <style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f4f6f9;
+        margin: 0;
+        padding: 0;
+        font-size: 0.95rem;
+    }
+    
+    /* Layout com sidebar */
+    .main-container {
+    margin-left: 280px;
+    margin-right: auto;
+    padding: 1.2rem;
+    width: calc(100% - 280px);
+    position: relative;
+    z-index: 1;
+    }
+    
+    @media (max-width: 992px) {
+        .main-container {
+            margin-left: 0;
+            width: 100%;
+            padding: 1rem;
+        }
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .stats-number {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin: 8px 0;
+    }
+    
+    .stats-label {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .repescagem-card {
+        background: white;
+        border-radius: 8px;
+        padding: 18px 20px;
+        margin: 0 auto 15px;
+        border-left: 6px solid rgba(0,123,255,0.12);
+        transition: box-shadow 0.18s ease, transform 0.18s ease;
+    }
+    
+    .repescagem-card:hover {
+        box-shadow: 0 8px 20px rgba(20,20,20,0.08);
+        transform: translateY(-4px);
+    }
+    
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .status-pendente { background: #ffc107; color: #000; }
+    .status-em-contato { background: #17a2b8; color: #fff; }
+    .status-interessado { background: #28a745; color: #fff; }
+    .status-condicoes { background: #fd7e14; color: #fff; }
+    .status-convertido { background: #28a745; color: #fff; }
+    .status-sem-interesse { background: #6c757d; color: #fff; }
+    .status-lead-lixo { background: #dc3545; color: #fff; }
+    
+    .motivo-tag {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        margin-right: 5px;
+    }
+    
+    .filter-section {
+        background: white;
+        padding: 16px;
+        border-radius: 8px;
+        margin: 0 auto 20px;
+        max-width: 1100px;
+    }
+    
+    .lead-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 10px;
+    }
+    
+    .lead-name {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .lead-contact {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .tentativas-badge {
+        background: #e9ecef;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+    }
+    
+    .navbar {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 1rem 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .navbar-brand {
+        color: white !important;
+        font-weight: bold;
+        font-size: 1.3rem;
+    }
+    
+    .navbar .nav-link {
+        color: rgba(255,255,255,0.9) !important;
+    }
+    
+    .navbar .nav-link:hover {
+        color: white !important;
+    }
+    
+    .page-header {
+    background: white;
+    padding: 1.2rem;
+    border-radius: 8px;
+    margin-bottom: 1.2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        font-size: 1.25rem !important;
+    }
+    
+    /* Center list wrapper and stats for a compact, homogeneous layout */
+    .stats-row-wrapper {
+        max-width: 1100px;
+        margin: 0 auto 18px;
+    }
+
+    .repescagem-list-wrapper {
+        max-width: 1100px;
+        margin: 0 auto 24px;
+    }
+
+    /* Button tweaks to match system style */
+    .btn {
+        border-radius: 8px;
+    }
+    
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    {% include 'vendas/comercial2/sidebar_comercial2.html' %}
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Cabeçalho -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1 class="mb-0"><i class="fas fa-redo-alt"></i> Comercial 2 - Repescagem de Leads</h1>
+                <p class="text-muted">Gerencie leads que não fecharam na pré-venda</p>
+            </div>
+            <div class="col-md-4 text-right">
+                <a href="{% url 'vendas:dashboard_comercial2_kpis' %}" class="btn btn-info">
+                    <i class="fas fa-chart-line"></i> Ver Dashboard KPIs
+                </a>
+            </div>
+        </div>
+
+    <!-- Estatísticas -->
+    <div class="stats-row-wrapper">
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="stats-card text-center">
+                <i class="fas fa-clipboard-list fa-2x text-primary"></i>
+                <div class="stats-number text-primary">{{ total_repescagens }}</div>
+                <div class="stats-label">Total</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card text-center">
+                <i class="fas fa-clock fa-2x text-warning"></i>
+                <div class="stats-number text-warning">{{ pendentes }}</div>
+                <div class="stats-label">Pendentes</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card text-center">
+                <i class="fas fa-phone-alt fa-2x text-info"></i>
+                <div class="stats-number text-info">{{ em_contato }}</div>
+                <div class="stats-label">Em Contato</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card text-center">
+                <i class="fas fa-check-circle fa-2x text-success"></i>
+                <div class="stats-number text-success">{{ convertidos }}</div>
+                <div class="stats-label">Convertidos</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card text-center">
+                <i class="fas fa-trash-alt fa-2x text-danger"></i>
+                <div class="stats-number text-danger">{{ lead_lixo }}</div>
+                <div class="stats-label">Lead Lixo</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card text-center">
+                <i class="fas fa-percentage fa-2x text-success"></i>
+                <div class="stats-number text-success">
+                    {% if total_repescagens > 0 %}
+                        {{ convertidos|floatformat:0 }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </div>
+                <div class="stats-label">Taxa Conversão</div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-section">
+        <form method="GET" action="{% url 'vendas:painel_comercial2' %}">
+            <div class="row">
+                <div class="col-md-3">
+                    <label><i class="fas fa-search"></i> Buscar Lead</label>
+                    <input type="text" name="search" class="form-control" placeholder="Nome, telefone ou email" value="{{ search }}">
+                </div>
+                <div class="col-md-3">
+                    <label><i class="fas fa-filter"></i> Status</label>
+                    <select name="status" class="form-control">
+                        <option value="">Todos</option>
+                        <option value="PENDENTE" {% if status_filter == 'PENDENTE' %}selected{% endif %}>Pendente</option>
+                        <option value="EM_CONTATO" {% if status_filter == 'EM_CONTATO' %}selected{% endif %}>Em Contato</option>
+                        <option value="AGUARDANDO_RESPOSTA" {% if status_filter == 'AGUARDANDO_RESPOSTA' %}selected{% endif %}>Aguardando Resposta</option>
+                        <option value="INTERESSADO" {% if status_filter == 'INTERESSADO' %}selected{% endif %}>Interessado</option>
+                        <option value="CONDICOES_ESPECIAIS" {% if status_filter == 'CONDICOES_ESPECIAIS' %}selected{% endif %}>Condições Especiais</option>
+                        <option value="CONVERTIDO" {% if status_filter == 'CONVERTIDO' %}selected{% endif %}>Convertido</option>
+                        <option value="SEM_INTERESSE" {% if status_filter == 'SEM_INTERESSE' %}selected{% endif %}>Sem Interesse</option>
+                        <option value="LEAD_LIXO" {% if status_filter == 'LEAD_LIXO' %}selected{% endif %}>Lead Lixo</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label><i class="fas fa-tags"></i> Motivo da Recusa</label>
+                    <select name="motivo" class="form-control">
+                        <option value="">Todos</option>
+                        {% for motivo in motivos %}
+                            <option value="{{ motivo.id }}" {% if motivo_filter == motivo.id|stringformat:"s" %}selected{% endif %}>
+                                {{ motivo.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary mr-2">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                    <a href="{% url 'vendas:painel_comercial2' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Limpar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lista de Repescagens -->
+    <div class="repescagem-list-wrapper">
+    <div class="row">
+        <div class="col-12">
+            {% if repescagens %}
+                {% for repescagem in repescagens %}
+                    <div class="repescagem-card" style="border-left-color: {{ repescagem.motivo_recusa.cor }};">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="lead-info">
+                                    <div>
+                                        <div class="lead-name">
+                                            <i class="fas fa-user"></i> {{ repescagem.lead.nome_completo }}
+                                        </div>
+                                        <div class="lead-contact">
+                                            <i class="fas fa-phone"></i> {{ repescagem.lead.telefone }}
+                                            {% if repescagem.lead.email %}
+                                                | <i class="fas fa-envelope"></i> {{ repescagem.lead.email }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-2">
+                                    <span class="motivo-tag" style="background-color: {{ repescagem.motivo_recusa.cor }}20; color: {{ repescagem.motivo_recusa.cor }};">
+                                        <i class="fas fa-exclamation-circle"></i> {{ repescagem.motivo_recusa.nome }}
+                                    </span>
+                                    
+                                    <span class="tentativas-badge">
+                                        <i class="fas fa-redo"></i> {{ repescagem.tentativas_contato }} tentativa{{ repescagem.tentativas_contato|pluralize }}
+                                    </span>
+                                    
+                                    {% if repescagem.condicoes_especiais_aplicadas %}
+                                        <span class="badge badge-warning">
+                                            <i class="fas fa-star"></i> Condições Especiais
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mt-2 text-muted small">
+                                    <i class="fas fa-calendar"></i> Criado em: {{ repescagem.data_criacao|date:"d/m/Y H:i" }}
+                                    | <i class="fas fa-clock"></i> Tempo no Comercial 2: {{ repescagem.tempo_no_comercial2 }} dia{{ repescagem.tempo_no_comercial2|pluralize }}
+                                    {% if repescagem.consultor_original %}
+                                        | <i class="fas fa-user-tie"></i> Consultor original: {{ repescagem.consultor_original.get_full_name }}
+                                    {% endif %}
+                                </div>
+                                
+                                {% if repescagem.pre_venda %}
+                                    <div class="mt-2 text-muted small">
+                                        <strong>Proposta original:</strong>
+                                        R$ {{ repescagem.pre_venda.valor_total|floatformat:2 }}
+                                        {% if repescagem.pre_venda.quantidade_parcelas %}
+                                            ({{ repescagem.pre_venda.quantidade_parcelas }}x de R$ {{ repescagem.pre_venda.valor_parcela|floatformat:2 }})
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 text-right">
+                                <div class="mb-3">
+                                    <span class="status-badge status-{{ repescagem.status|lower|cut:' '|cut:'_' }}">
+                                        {{ repescagem.get_status_display }}
+                                    </span>
+                                </div>
+                                
+                                {% if repescagem.consultor_repescagem %}
+                                    <div class="text-muted small mb-2">
+                                        <i class="fas fa-user-check"></i> {{ repescagem.consultor_repescagem.get_full_name }}
+                                    </div>
+                                {% endif %}
+                                
+                                <a href="{% url 'vendas:detalhes_repescagem' repescagem.id %}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-eye"></i> Ver Detalhes
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                
+                <!-- Paginação -->
+                {% if repescagens.has_other_pages %}
+                    <nav aria-label="Navegação de página">
+                        <ul class="pagination justify-content-center">
+                            {% if repescagens.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if motivo_filter %}&motivo={{ motivo_filter }}{% endif %}">
+                                        Primeira
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ repescagens.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if motivo_filter %}&motivo={{ motivo_filter }}{% endif %}">
+                                        Anterior
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Página {{ repescagens.number }} de {{ repescagens.paginator.num_pages }}
+                                </span>
+                            </li>
+                            
+                            {% if repescagens.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ repescagens.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if motivo_filter %}&motivo={{ motivo_filter }}{% endif %}">
+                                        Próxima
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ repescagens.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if motivo_filter %}&motivo={{ motivo_filter }}{% endif %}">
+                                        Última
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Nenhuma repescagem encontrada com os filtros aplicados.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    </div>
+</div> <!-- End main-container -->
+
+<!-- jQuery, Popper.js, Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+
+</body>
+</html>
