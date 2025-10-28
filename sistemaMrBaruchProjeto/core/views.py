@@ -1103,6 +1103,22 @@ def webhook_logs(request):
         'ignored': WebhookLog.objects.filter(status_processamento='IGNORED').count(),
     }
     
+    from financeiro.models import ClienteAsaas
+    from marketing.models import Lead
+    
+    # Montar dict customer_id -> nome_completo
+    customer_to_nome = {}
+    for log in logs_page:
+        customer_id = getattr(log, 'customer_id', None)
+        nome = None
+        if customer_id:
+            try:
+                cliente_asaas = ClienteAsaas.objects.select_related('lead').get(asaas_customer_id=customer_id)
+                nome = cliente_asaas.lead.nome_completo
+            except ClienteAsaas.DoesNotExist:
+                nome = None
+        customer_to_nome[log.id] = nome
+
     context = {
         'logs': logs_page,
         'stats': stats,
@@ -1111,7 +1127,8 @@ def webhook_logs(request):
             'evento': evento,
             'status': status,
             'payment_id': payment_id,
-        }
+        },
+        'customer_to_nome': customer_to_nome,
     }
     
     return render(request, 'core/webhook_logs.html', context)
@@ -1125,10 +1142,18 @@ def webhook_log_detalhe(request, log_id):
     
     log = get_object_or_404(WebhookLog, id=log_id)
     
+    nome_cliente = None
+    if log.customer_id:
+        try:
+            cliente_asaas = ClienteAsaas.objects.select_related('lead').get(asaas_customer_id=log.customer_id)
+            nome_cliente = cliente_asaas.lead.nome_completo
+        except ClienteAsaas.DoesNotExist:
+            nome_cliente = None
+    
     context = {
         'log': log,
         'payload_formatado': json.dumps(log.payload, indent=2, ensure_ascii=False),
+        'nome_cliente': nome_cliente,
     }
     
     return render(request, 'core/webhook_log_detalhe.html', context)
-        

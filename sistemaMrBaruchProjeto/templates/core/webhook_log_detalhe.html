@@ -69,6 +69,16 @@
                 <td class="text-muted">IP Origem:</td>
                 <td class="font-monospace">{{ log.ip_origem|default:"-" }}</td>
               </tr>
+              <tr>
+                <td class="text-muted">Cliente:</td>
+                <td>
+                  {% if nome_cliente %}
+                    <span class="fw-semibold">{{ nome_cliente }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+              </tr>
             </table>
           </div>
         </div>
