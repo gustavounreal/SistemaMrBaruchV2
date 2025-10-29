@@ -754,6 +754,150 @@
             max-height: calc(100vh - 4rem);
             overflow-y: auto;
         }
+
+        /* ===== HISTÓRICO TIMELINE ===== */
+        .timeline-container {
+            position: relative;
+            padding: 1.5rem 0;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 3.5rem;
+            padding-bottom: 2rem;
+            border-left: 2px solid #e2e8f0;
+            margin-left: 1rem;
+        }
+
+        .timeline-item:last-child {
+            padding-bottom: 0;
+            border-left-color: transparent;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            left: -1.25rem;
+            top: 0;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: white;
+            border: 3px solid #e2e8f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        .timeline-marker i {
+            font-size: 1rem;
+        }
+
+        .timeline-content {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .timeline-content:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .timeline-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.85rem;
+            padding-bottom: 0.85rem;
+            border-bottom: 1px solid #f7fafc;
+        }
+
+        .timeline-badge {
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 0.4rem 0.85rem;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .timeline-user {
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .timeline-user i {
+            color: #667eea;
+        }
+
+        .timeline-date {
+            color: #718096;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-left: auto;
+        }
+
+        .timeline-date i {
+            color: #cbd5e0;
+        }
+
+        .timeline-description {
+            color: #4a5568;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .timeline-description p {
+            margin: 0;
+            white-space: pre-line;
+        }
+
+        .timeline-description strong {
+            color: #2d3748;
+        }
+
+        /* Badge variants */
+        .bg-warning.text-dark {
+            background-color: #fbbf24 !important;
+            color: #78350f !important;
+        }
+
+        @media (max-width: 768px) {
+            .timeline-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .timeline-date {
+                margin-left: 0;
+            }
+
+            .timeline-item {
+                padding-left: 2.5rem;
+            }
+
+            .timeline-marker {
+                width: 2rem;
+                height: 2rem;
+                left: -1rem;
+            }
+
+            .timeline-marker i {
+                font-size: 0.85rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1398,6 +1542,73 @@
                     </div>
                 </div>
                 <!-- FIM SEÇÃO JURÍDICO -->
+
+                <!-- SEÇÃO HISTÓRICO DE EDIÇÕES -->
+                <div class="section-card mt-3">
+                    <div class="section-header">
+                        <h5><i class="fas fa-history"></i> Histórico de Edições</h5>
+                        {% if conferencia.historico %}
+                            <span class="badge bg-info">{{ conferencia.historico|length }} registro(s)</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Nenhum registro</span>
+                        {% endif %}
+                    </div>
+
+                    {% if conferencia.historico %}
+                        <div class="timeline-container">
+                            {% for entrada in conferencia.historico reversed %}
+                                <div class="timeline-item">
+                                    <div class="timeline-marker">
+                                        {% if entrada.acao == 'DADOS_EDITADOS' %}
+                                            <i class="fas fa-edit text-warning"></i>
+                                        {% elif entrada.acao == 'DOCUMENTO_RECEBIDO' %}
+                                            <i class="fas fa-file-upload text-primary"></i>
+                                        {% elif entrada.acao == 'CONFERENCIA_APROVADA' %}
+                                            <i class="fas fa-check-circle text-success"></i>
+                                        {% elif entrada.acao == 'CONFERENCIA_REPROVADA' %}
+                                            <i class="fas fa-times-circle text-danger"></i>
+                                        {% else %}
+                                            <i class="fas fa-info-circle text-info"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-header">
+                                            <span class="timeline-badge 
+                                                {% if entrada.acao == 'DADOS_EDITADOS' %}bg-warning text-dark{% endif %}
+                                                {% if entrada.acao == 'DOCUMENTO_RECEBIDO' %}bg-primary{% endif %}
+                                                {% if entrada.acao == 'CONFERENCIA_APROVADA' %}bg-success{% endif %}
+                                                {% if entrada.acao == 'CONFERENCIA_REPROVADA' %}bg-danger{% endif %}
+                                                {% if entrada.acao not in 'DADOS_EDITADOS|DOCUMENTO_RECEBIDO|CONFERENCIA_APROVADA|CONFERENCIA_REPROVADA' %}bg-info{% endif %}
+                                            ">
+                                                {{ entrada.acao|default:"AÇÃO" }}
+                                            </span>
+                                            <span class="timeline-user">
+                                                <i class="fas fa-user"></i> {{ entrada.usuario|default:"Sistema" }}
+                                            </span>
+                                            <span class="timeline-date">
+                                                <i class="fas fa-clock"></i> 
+                                                {% load tz %}
+                                                {% timezone "America/Sao_Paulo" %}
+                                                    {{ entrada.data|date:"d/m/Y H:i" }}
+                                                {% endtimezone %}
+                                            </span>
+                                        </div>
+                                        <div class="timeline-description">
+                                            {{ entrada.descricao|linebreaks }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-secondary mb-0">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Nenhuma edição registrada ainda.</strong>
+                            Quando você editar dados da venda, as alterações serão registradas aqui automaticamente.
+                        </div>
+                    {% endif %}
+                </div>
+                <!-- FIM SEÇÃO HISTÓRICO -->
                 
             </div>
             <!-- FIM COLUNA PRINCIPAL -->

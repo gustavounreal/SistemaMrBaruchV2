@@ -772,36 +772,87 @@ def corrigir_status_pos_venda(request, venda_id):
 def editar_dados_venda(request, venda_id):
     """
     Permite editar dados da venda e do cliente.
+    Registra TODAS as alterações no histórico com sistema de auditoria completo.
     """
     if request.method == 'POST':
         venda = get_object_or_404(Venda, id=venda_id)
         cliente = venda.cliente
         lead = cliente.lead
         
-        # Atualizar dados do Lead
-        lead.nome_completo = request.POST.get('nome_completo', lead.nome_completo)
-        lead.cpf_cnpj = request.POST.get('cpf_cnpj', lead.cpf_cnpj)
-        lead.telefone = request.POST.get('telefone', lead.telefone)
-        lead.email = request.POST.get('email', lead.email)
+        # Obter conferência para registrar no histórico
+        conferencia = get_object_or_404(ConferenciaVendaCompliance, venda=venda)
+        
+        # Lista para rastrear alterações
+        alteracoes = []
+        
+        # ===== AUDITORIA: Lead =====
+        if lead.nome_completo != request.POST.get('nome_completo', lead.nome_completo):
+            alteracoes.append(f"Nome: '{lead.nome_completo}' → '{request.POST.get('nome_completo')}'")
+            lead.nome_completo = request.POST.get('nome_completo', lead.nome_completo)
+        
+        if lead.cpf_cnpj != request.POST.get('cpf_cnpj', lead.cpf_cnpj):
+            alteracoes.append(f"CPF/CNPJ: '{lead.cpf_cnpj}' → '{request.POST.get('cpf_cnpj')}'")
+            lead.cpf_cnpj = request.POST.get('cpf_cnpj', lead.cpf_cnpj)
+        
+        if lead.telefone != request.POST.get('telefone', lead.telefone):
+            alteracoes.append(f"Telefone: '{lead.telefone}' → '{request.POST.get('telefone')}'")
+            lead.telefone = request.POST.get('telefone', lead.telefone)
+        
+        if lead.email != request.POST.get('email', lead.email):
+            alteracoes.append(f"Email: '{lead.email}' → '{request.POST.get('email')}'")
+            lead.email = request.POST.get('email', lead.email)
+        
         lead.save()
         
-        # Atualizar dados do Cliente
-        cliente.rg = request.POST.get('rg', cliente.rg)
+        # ===== AUDITORIA: Cliente =====
+        if cliente.rg != request.POST.get('rg', cliente.rg):
+            alteracoes.append(f"RG: '{cliente.rg}' → '{request.POST.get('rg')}'")
+            cliente.rg = request.POST.get('rg', cliente.rg)
+        
         data_nasc = request.POST.get('data_nascimento')
-        if data_nasc:
+        if data_nasc and str(cliente.data_nascimento) != data_nasc:
+            alteracoes.append(f"Data Nascimento: '{cliente.data_nascimento}' → '{data_nasc}'")
             cliente.data_nascimento = data_nasc
-        cliente.profissao = request.POST.get('profissao', cliente.profissao)
-        cliente.nacionalidade = request.POST.get('nacionalidade', cliente.nacionalidade)
-        cliente.estado_civil = request.POST.get('estado_civil', cliente.estado_civil)
-        cliente.cep = request.POST.get('cep', cliente.cep)
-        cliente.rua = request.POST.get('rua', cliente.rua)
-        cliente.numero = request.POST.get('numero', cliente.numero)
-        cliente.bairro = request.POST.get('bairro', cliente.bairro)
-        cliente.cidade = request.POST.get('cidade', cliente.cidade)
-        cliente.estado = request.POST.get('estado', cliente.estado)
+        
+        if cliente.profissao != request.POST.get('profissao', cliente.profissao):
+            alteracoes.append(f"Profissão: '{cliente.profissao}' → '{request.POST.get('profissao')}'")
+            cliente.profissao = request.POST.get('profissao', cliente.profissao)
+        
+        if cliente.nacionalidade != request.POST.get('nacionalidade', cliente.nacionalidade):
+            alteracoes.append(f"Nacionalidade: '{cliente.nacionalidade}' → '{request.POST.get('nacionalidade')}'")
+            cliente.nacionalidade = request.POST.get('nacionalidade', cliente.nacionalidade)
+        
+        if cliente.estado_civil != request.POST.get('estado_civil', cliente.estado_civil):
+            alteracoes.append(f"Estado Civil: '{cliente.estado_civil}' → '{request.POST.get('estado_civil')}'")
+            cliente.estado_civil = request.POST.get('estado_civil', cliente.estado_civil)
+        
+        if cliente.cep != request.POST.get('cep', cliente.cep):
+            alteracoes.append(f"CEP: '{cliente.cep}' → '{request.POST.get('cep')}'")
+            cliente.cep = request.POST.get('cep', cliente.cep)
+        
+        if cliente.rua != request.POST.get('rua', cliente.rua):
+            alteracoes.append(f"Rua: '{cliente.rua}' → '{request.POST.get('rua')}'")
+            cliente.rua = request.POST.get('rua', cliente.rua)
+        
+        if cliente.numero != request.POST.get('numero', cliente.numero):
+            alteracoes.append(f"Número: '{cliente.numero}' → '{request.POST.get('numero')}'")
+            cliente.numero = request.POST.get('numero', cliente.numero)
+        
+        if cliente.bairro != request.POST.get('bairro', cliente.bairro):
+            alteracoes.append(f"Bairro: '{cliente.bairro}' → '{request.POST.get('bairro')}'")
+            cliente.bairro = request.POST.get('bairro', cliente.bairro)
+        
+        if cliente.cidade != request.POST.get('cidade', cliente.cidade):
+            alteracoes.append(f"Cidade: '{cliente.cidade}' → '{request.POST.get('cidade')}'")
+            cliente.cidade = request.POST.get('cidade', cliente.cidade)
+        
+        if cliente.estado != request.POST.get('estado', cliente.estado):
+            alteracoes.append(f"Estado: '{cliente.estado}' → '{request.POST.get('estado')}'")
+            cliente.estado = request.POST.get('estado', cliente.estado)
+        
         cliente.save()
         
-        # Atualizar dados da Venda (convertendo tipos corretamente)
+        # ===== AUDITORIA: Venda (convertendo tipos corretamente) =====
         from decimal import Decimal, InvalidOperation
         def parse_decimal(val, default):
             try:
@@ -815,37 +866,71 @@ def editar_dados_venda(request, venda_id):
             except (TypeError, ValueError):
                 return default
 
-        valor_total = request.POST.get('valor_total', venda.valor_total)
-        venda.valor_total = parse_decimal(valor_total, venda.valor_total)
+        valor_total_novo = parse_decimal(request.POST.get('valor_total', venda.valor_total), venda.valor_total)
+        if venda.valor_total != valor_total_novo:
+            alteracoes.append(f"Valor Total: R$ {venda.valor_total} → R$ {valor_total_novo}")
+            venda.valor_total = valor_total_novo
 
-        valor_entrada = request.POST.get('valor_entrada', venda.valor_entrada)
-        venda.valor_entrada = parse_decimal(valor_entrada, venda.valor_entrada)
+        valor_entrada_novo = parse_decimal(request.POST.get('valor_entrada', venda.valor_entrada), venda.valor_entrada)
+        if venda.valor_entrada != valor_entrada_novo:
+            alteracoes.append(f"Valor Entrada: R$ {venda.valor_entrada} → R$ {valor_entrada_novo}")
+            venda.valor_entrada = valor_entrada_novo
 
-        quantidade_parcelas = request.POST.get('quantidade_parcelas', venda.quantidade_parcelas)
-        venda.quantidade_parcelas = parse_int(quantidade_parcelas, venda.quantidade_parcelas)
+        qtd_parcelas_novo = parse_int(request.POST.get('quantidade_parcelas', venda.quantidade_parcelas), venda.quantidade_parcelas)
+        if venda.quantidade_parcelas != qtd_parcelas_novo:
+            alteracoes.append(f"Quantidade Parcelas: {venda.quantidade_parcelas} → {qtd_parcelas_novo}")
+            venda.quantidade_parcelas = qtd_parcelas_novo
 
-        valor_parcela = request.POST.get('valor_parcela', venda.valor_parcela)
-        venda.valor_parcela = parse_decimal(valor_parcela, venda.valor_parcela)
+        valor_parcela_novo = parse_decimal(request.POST.get('valor_parcela', venda.valor_parcela), venda.valor_parcela)
+        if venda.valor_parcela != valor_parcela_novo:
+            alteracoes.append(f"Valor Parcela: R$ {venda.valor_parcela} → R$ {valor_parcela_novo}")
+            venda.valor_parcela = valor_parcela_novo
 
-        venda.frequencia_pagamento = request.POST.get('frequencia_pagamento', venda.frequencia_pagamento)
-        venda.forma_entrada = request.POST.get('forma_entrada', venda.forma_entrada)
-        venda.forma_pagamento = request.POST.get('forma_pagamento', venda.forma_pagamento)
+        if venda.frequencia_pagamento != request.POST.get('frequencia_pagamento', venda.frequencia_pagamento):
+            alteracoes.append(f"Frequência Pagamento: '{venda.frequencia_pagamento}' → '{request.POST.get('frequencia_pagamento')}'")
+            venda.frequencia_pagamento = request.POST.get('frequencia_pagamento', venda.frequencia_pagamento)
+        
+        if venda.forma_entrada != request.POST.get('forma_entrada', venda.forma_entrada):
+            alteracoes.append(f"Forma Entrada: '{venda.forma_entrada}' → '{request.POST.get('forma_entrada')}'")
+            venda.forma_entrada = request.POST.get('forma_entrada', venda.forma_entrada)
+        
+        if venda.forma_pagamento != request.POST.get('forma_pagamento', venda.forma_pagamento):
+            alteracoes.append(f"Forma Pagamento: '{venda.forma_pagamento}' → '{request.POST.get('forma_pagamento')}'")
+            venda.forma_pagamento = request.POST.get('forma_pagamento', venda.forma_pagamento)
 
         data_venc = request.POST.get('data_vencimento_primeira')
-        if data_venc:
+        if data_venc and str(venda.data_vencimento_primeira) != data_venc:
+            alteracoes.append(f"Data Vencimento 1ª Parcela: '{venda.data_vencimento_primeira}' → '{data_venc}'")
             venda.data_vencimento_primeira = data_venc
 
         data_inicio = request.POST.get('data_inicio_servico')
-        if data_inicio:
+        if data_inicio and str(venda.data_inicio_servico) != data_inicio:
+            alteracoes.append(f"Data Início Serviço: '{venda.data_inicio_servico}' → '{data_inicio}'")
             venda.data_inicio_servico = data_inicio
 
-        dias_conclusao = request.POST.get('dias_para_conclusao')
-        if dias_conclusao:
-            venda.dias_para_conclusao = parse_int(dias_conclusao, venda.dias_para_conclusao)
+        dias_conclusao_novo = parse_int(request.POST.get('dias_para_conclusao'), venda.dias_para_conclusao)
+        if venda.dias_para_conclusao != dias_conclusao_novo:
+            alteracoes.append(f"Dias para Conclusão: {venda.dias_para_conclusao} → {dias_conclusao_novo}")
+            venda.dias_para_conclusao = dias_conclusao_novo
 
         venda.save()
         
-        messages.success(request, 'Dados atualizados com sucesso!')
+        # ===== REGISTRAR NO HISTÓRICO =====
+        if alteracoes:
+            descricao = "EDIÇÃO DE DADOS:\n" + "\n".join([f"• {alt}" for alt in alteracoes])
+            conferencia.adicionar_historico(
+                acao='DADOS_EDITADOS',
+                usuario=request.user,
+                descricao=descricao
+            )
+            
+            messages.success(
+                request, 
+                f'Dados atualizados com sucesso! {len(alteracoes)} campo(s) alterado(s).'
+            )
+        else:
+            messages.info(request, 'Nenhuma alteração foi detectada.')
+        
         return redirect('compliance:gestao_pos_venda', venda_id=venda_id)
     
     return redirect('compliance:gestao_pos_venda', venda_id=venda_id)
@@ -1106,3 +1191,277 @@ def adicionar_documento_extra(request, venda_id):
         return redirect('compliance:gestao_pos_venda', venda_id=venda_id)
     
     return redirect('compliance:painel_pos_venda')
+
+
+# ===== RELATÓRIOS DE AUDITORIA =====
+
+@login_required
+@user_passes_test(is_compliance)
+def relatorio_auditoria(request):
+    """
+    Relatório completo de auditoria de edições.
+    Mostra todas as alterações feitas nos dados das vendas.
+    """
+    from django.db.models import JSONField
+    from django.db.models.functions import Cast
+    import json
+    from collections import defaultdict, Counter
+    
+    # Filtros
+    data_inicio = request.GET.get('data_inicio')
+    data_fim = request.GET.get('data_fim')
+    usuario_filtro = request.GET.get('usuario')
+    venda_id_filtro = request.GET.get('venda_id')
+    
+    # Buscar todas as conferências com histórico
+    conferencias = ConferenciaVendaCompliance.objects.filter(
+        historico__isnull=False
+    ).exclude(historico=[]).select_related(
+        'venda', 'venda__cliente', 'venda__cliente__lead'
+    ).order_by('-data_atualizacao')
+    
+    # Processar históricos
+    edicoes_detalhadas = []
+    estatisticas = {
+        'total_edicoes': 0,
+        'total_campos_alterados': 0,
+        'vendas_editadas': set(),
+        'usuarios': Counter(),
+        'campos_mais_editados': Counter(),
+        'edicoes_por_dia': defaultdict(int),
+        'edicoes_por_hora': defaultdict(int),
+        'edicoes_por_dia_semana': defaultdict(int),
+    }
+    
+    for conferencia in conferencias:
+        if not conferencia.historico:
+            continue
+            
+        for entrada in conferencia.historico:
+            if entrada.get('acao') != 'DADOS_EDITADOS':
+                continue
+            
+            # Parse da data
+            try:
+                data_edicao = datetime.fromisoformat(entrada.get('data', ''))
+                data_edicao_local = timezone.localtime(data_edicao)
+            except:
+                continue
+            
+            # Aplicar filtros
+            if data_inicio:
+                try:
+                    dt_inicio = datetime.strptime(data_inicio, '%Y-%m-%d')
+                    dt_inicio = timezone.make_aware(dt_inicio)
+                    if data_edicao < dt_inicio:
+                        continue
+                except:
+                    pass
+            
+            if data_fim:
+                try:
+                    dt_fim = datetime.strptime(data_fim, '%Y-%m-%d')
+                    dt_fim = timezone.make_aware(dt_fim.replace(hour=23, minute=59, second=59))
+                    if data_edicao > dt_fim:
+                        continue
+                except:
+                    pass
+            
+            usuario = entrada.get('usuario', 'Sistema')
+            if usuario_filtro and usuario != usuario_filtro:
+                continue
+            
+            if venda_id_filtro and str(conferencia.venda.id) != venda_id_filtro:
+                continue
+            
+            # Extrair campos alterados da descrição
+            descricao = entrada.get('descricao', '')
+            campos_alterados = []
+            linhas = descricao.split('\n')
+            
+            for linha in linhas:
+                if '→' in linha:
+                    # Extrair nome do campo
+                    campo = linha.split(':')[0].strip('• ').strip()
+                    if campo:
+                        campos_alterados.append(campo)
+                        estatisticas['campos_mais_editados'][campo] += 1
+            
+            # Adicionar à lista
+            edicoes_detalhadas.append({
+                'venda_id': conferencia.venda.id,
+                'cliente_nome': conferencia.venda.cliente.lead.nome_completo,
+                'usuario': usuario,
+                'data': data_edicao_local,
+                'descricao': descricao,
+                'campos_alterados': campos_alterados,
+                'total_campos': len(campos_alterados),
+            })
+            
+            # Estatísticas
+            estatisticas['total_edicoes'] += 1
+            estatisticas['total_campos_alterados'] += len(campos_alterados)
+            estatisticas['vendas_editadas'].add(conferencia.venda.id)
+            estatisticas['usuarios'][usuario] += 1
+            
+            # Estatísticas temporais
+            data_str = data_edicao_local.strftime('%Y-%m-%d')
+            estatisticas['edicoes_por_dia'][data_str] += 1
+            
+            hora = data_edicao_local.hour
+            estatisticas['edicoes_por_hora'][hora] += 1
+            
+            dia_semana = data_edicao_local.strftime('%A')
+            dias_semana_pt = {
+                'Monday': 'Segunda', 'Tuesday': 'Terça', 'Wednesday': 'Quarta',
+                'Thursday': 'Quinta', 'Friday': 'Sexta', 'Saturday': 'Sábado',
+                'Sunday': 'Domingo'
+            }
+            dia_semana_pt_br = dias_semana_pt.get(dia_semana, dia_semana)
+            estatisticas['edicoes_por_dia_semana'][dia_semana_pt_br] += 1
+    
+    # Ordenar edições por data (mais recente primeiro)
+    edicoes_detalhadas.sort(key=lambda x: x['data'], reverse=True)
+    
+    # Converter estatísticas
+    estatisticas['total_vendas_editadas'] = len(estatisticas['vendas_editadas'])
+    estatisticas['usuarios_dict'] = dict(estatisticas['usuarios'].most_common())
+    estatisticas['campos_mais_editados_dict'] = dict(estatisticas['campos_mais_editados'].most_common(10))
+    estatisticas['edicoes_por_dia_dict'] = dict(sorted(estatisticas['edicoes_por_dia'].items()))
+    estatisticas['edicoes_por_hora_dict'] = dict(sorted(estatisticas['edicoes_por_hora'].items()))
+    
+    # Ordem correta dos dias da semana
+    ordem_dias = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']
+    estatisticas['edicoes_por_dia_semana_dict'] = {
+        dia: estatisticas['edicoes_por_dia_semana'].get(dia, 0)
+        for dia in ordem_dias
+    }
+    
+    # Calcular médias
+    if estatisticas['total_edicoes'] > 0:
+        estatisticas['media_campos_por_edicao'] = round(
+            estatisticas['total_campos_alterados'] / estatisticas['total_edicoes'], 
+            2
+        )
+    else:
+        estatisticas['media_campos_por_edicao'] = 0
+    
+    # Paginação
+    paginator = Paginator(edicoes_detalhadas, 20)
+    page_number = request.GET.get('page', 1)
+    edicoes_page = paginator.get_page(page_number)
+    
+    # Lista de usuários para filtro
+    todos_usuarios = sorted(list(estatisticas['usuarios'].keys()))
+    
+    context = {
+        'edicoes': edicoes_page,
+        'estatisticas': estatisticas,
+        'todos_usuarios': todos_usuarios,
+        'filtros': {
+            'data_inicio': data_inicio or '',
+            'data_fim': data_fim or '',
+            'usuario': usuario_filtro or '',
+            'venda_id': venda_id_filtro or '',
+        }
+    }
+    
+    return render(request, 'compliance/relatorios/auditoria.html', context)
+
+
+@login_required
+@user_passes_test(is_compliance)
+def exportar_relatorio_auditoria(request):
+    """
+    Exporta o relatório de auditoria em CSV.
+    """
+    import csv
+    from django.http import HttpResponse
+    from collections import defaultdict, Counter
+    
+    # Filtros (mesma lógica da view principal)
+    data_inicio = request.GET.get('data_inicio')
+    data_fim = request.GET.get('data_fim')
+    usuario_filtro = request.GET.get('usuario')
+    venda_id_filtro = request.GET.get('venda_id')
+    
+    conferencias = ConferenciaVendaCompliance.objects.filter(
+        historico__isnull=False
+    ).exclude(historico=[]).select_related(
+        'venda', 'venda__cliente', 'venda__cliente__lead'
+    )
+    
+    # Preparar CSV
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="relatorio_auditoria_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    response.write('\ufeff')  # BOM para Excel reconhecer UTF-8
+    
+    writer = csv.writer(response)
+    writer.writerow([
+        'Venda ID', 'Cliente', 'Usuário', 'Data', 'Hora', 
+        'Total Campos Alterados', 'Campos', 'Detalhes'
+    ])
+    
+    for conferencia in conferencias:
+        if not conferencia.historico:
+            continue
+            
+        for entrada in conferencia.historico:
+            if entrada.get('acao') != 'DADOS_EDITADOS':
+                continue
+            
+            try:
+                data_edicao = datetime.fromisoformat(entrada.get('data', ''))
+                data_edicao_local = timezone.localtime(data_edicao)
+            except:
+                continue
+            
+            # Aplicar filtros
+            if data_inicio:
+                try:
+                    dt_inicio = datetime.strptime(data_inicio, '%Y-%m-%d')
+                    dt_inicio = timezone.make_aware(dt_inicio)
+                    if data_edicao < dt_inicio:
+                        continue
+                except:
+                    pass
+            
+            if data_fim:
+                try:
+                    dt_fim = datetime.strptime(data_fim, '%Y-%m-%d')
+                    dt_fim = timezone.make_aware(dt_fim.replace(hour=23, minute=59, second=59))
+                    if data_edicao > dt_fim:
+                        continue
+                except:
+                    pass
+            
+            usuario = entrada.get('usuario', 'Sistema')
+            if usuario_filtro and usuario != usuario_filtro:
+                continue
+            
+            if venda_id_filtro and str(conferencia.venda.id) != venda_id_filtro:
+                continue
+            
+            # Extrair campos
+            descricao = entrada.get('descricao', '')
+            campos_alterados = []
+            linhas = descricao.split('\n')
+            
+            for linha in linhas:
+                if '→' in linha:
+                    campo = linha.split(':')[0].strip('• ').strip()
+                    if campo:
+                        campos_alterados.append(campo)
+            
+            writer.writerow([
+                conferencia.venda.id,
+                conferencia.venda.cliente.lead.nome_completo,
+                usuario,
+                data_edicao_local.strftime('%d/%m/%Y'),
+                data_edicao_local.strftime('%H:%M:%S'),
+                len(campos_alterados),
+                ', '.join(campos_alterados),
+                descricao.replace('\n', ' | ')
+            ])
+    
+    return response

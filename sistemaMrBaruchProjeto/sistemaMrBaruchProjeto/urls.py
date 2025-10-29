@@ -15,6 +15,7 @@ urlpatterns = [
     path('compliance/', include('compliance.urls', namespace='compliance')),
     path('core/', include('core.urls', namespace='core')),
     path('comissoes/', include('comissoes.urls', namespace='comissoes')),
+    path('relacionamento/', include('relacionamento.urls', namespace='relacionamento')),
     path('relatorios/', include('relatorios.urls', namespace='relatorios')),
     path('vendas/', include('vendas.urls', namespace='vendas')),
     path('marketing/', include('marketing.urls', namespace='marketing')),

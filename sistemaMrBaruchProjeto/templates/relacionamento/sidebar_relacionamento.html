@@ -1,87 +1,67 @@
+
 {% comment %}
-Menu lateral para Compliance - Estilo Moderno
-Links baseados nas rotas permitidas
+Sidebar Relacionamento - Estilo Compliance
 {% endcomment %}
-<div id="sidebarCompliance" class="sidebar-compliance">
+<div id="sidebarRelacionamento" class="sidebar-relacionamento">
     <div class="sidebar-header">
         <h3 class="sidebar-title">
-            <i class="fas fa-shield-alt"></i>
-            <span class="sidebar-title-text">Compliance</span>
+            <i class="fas fa-handshake"></i>
+            <span class="sidebar-title-text">Relacionamento</span>
         </h3>
     </div>
-    
     <nav class="sidebar-menu">
         <div class="menu-section">
             <div class="menu-section-title">Principal</div>
-            <a href="{% url 'compliance:painel' %}" class="menu-item">
+            <a href="{% url 'relacionamento:painel_relacionamento' %}" class="menu-item">
                 <i class="fas fa-home"></i>
                 <span class="menu-item-text">Painel Principal</span>
             </a>
-            <a href="{% url 'compliance:lista_analises' %}" class="menu-item">
-                <i class="fas fa-list-check"></i>
-                <span class="menu-item-text">Lista de Análises</span>
+        </div>
+        <div class="menu-section">
+            <div class="menu-section-title">Interações</div>
+            <a href="{% url 'relacionamento:lista_interacoes' %}" class="menu-item">
+                <i class="fas fa-comments"></i>
+                <span class="menu-item-text">Todas Interações</span>
+            </a>
+            <a href="{% url 'relacionamento:nova_interacao' %}" class="menu-item">
+                <i class="fas fa-plus-circle"></i>
+                <span class="menu-item-text">Nova Interação</span>
             </a>
         </div>
-        
-
-        <div class="menu-section">
-            <div class="menu-section-title">Gestão Pós-Venda</div>
-            <a href="{% url 'compliance:painel_pos_venda' %}" class="menu-item">
-                <i class="fas fa-clipboard-check"></i>
-                <span class="menu-item-text">Painel Pós-Venda</span>
+       <!-- <div class="menu-section">
+            <div class="menu-section-title">Indicações</div>
+            <a href="{% url 'relacionamento:indicacoes' %}" class="menu-item">
+                <i class="fas fa-user-friends"></i>
+                <span class="menu-item-text">Todas Indicações</span>
+            </a>
+            <a href="{% url 'relacionamento:nova_indicacao' %}" class="menu-item">
+                <i class="fas fa-user-plus"></i>
+                <span class="menu-item-text">Nova Indicação</span>
             </a>
         </div>
-        
-        <!-- SEÇÃO: Relatórios -->
         <div class="menu-section">
-            <div class="menu-section-title">Relatórios</div>
-            <a href="{% url 'compliance:relatorio_auditoria' %}" class="menu-item">
-                <i class="fas fa-chart-line"></i>
-                <span class="menu-item-text">Auditoria de Edições</span>
+            <div class="menu-section-title">Fidelidade</div>
+            <a href="{% url 'relacionamento:programa_fidelidade' %}" class="menu-item">
+                <i class="fas fa-award"></i>
+                <span class="menu-item-text">Programa Fidelidade</span>
             </a>
-        </div>
-        
-        <!-- NOVA SEÇÃO: Jurídico Integrado -->
+        </div>-->
         <div class="menu-section">
-            <div class="menu-section-title">Jurídico</div>
-            <a href="#juridico-submenu" class="menu-item menu-item-toggle" data-bs-toggle="collapse" aria-expanded="false">
-                <i class="fas fa-gavel"></i>
-                <span class="menu-item-text">Contratos</span>
-                <i class="fas fa-chevron-down toggle-icon"></i>
-            </a>
-            <div id="juridico-submenu" class="collapse submenu">
-               <!-- <a href="{% url 'juridico:lista_contratos' %}" class="submenu-item">
-                    <i class="fas fa-file-contract"></i>
-                    <span class="submenu-item-text">Lista de Contratos</span>
-                </a>
-                <a href="{% url 'juridico:dashboard' %}" class="submenu-item">
-                    <i class="fas fa-chart-line"></i>
-                    <span class="submenu-item-text">Dashboard Jurídico</span>
-                </a>-->
-                <a href="{% url 'juridico:painel_contratos_enviados' %}" class="submenu-item">
-                    <i class="fas fa-paper-plane"></i>
-                    <span class="submenu-item-text">Contratos Enviados</span>
-                </a>
-            </div>
-        </div>
-        
-        <div class="menu-section">
-            <div class="menu-section-title">Conta</div>
-            <a href="{% url 'compliance:perfil_compliance' %}" class="menu-item">
-                <i class="fas fa-user-circle"></i>
-                <span class="menu-item-text">Meu Perfil</span>
+            <div class="menu-section-title">Sistema</div>
+            <a href="{% url 'accounts:dashboard' %}" class="menu-item">
+                <i class="fas fa-th-large"></i>
+                <span class="menu-item-text">Dashboard Central</span>
             </a>
         </div>
     </nav>
-    
     <div class="sidebar-footer">
         <div class="user-info">
             <div class="user-avatar">
-                {{ user.username|slice:":1"|upper }}
+                {{ user.username|slice:"0:1"|upper }}
             </div>
             <div class="user-details">
                 <div class="user-name">{{ user.username }}</div>
-                <div class="user-role">Compliance</div>
+                <div class="user-role">Relacionamento</div>
             </div>
         </div>
         <form id="sidebarLogoutForm" action="{% url 'accounts:logout_session' %}" method="POST" style="margin: 0;">
@@ -100,9 +80,8 @@ Links baseados nas rotas permitidas
 </button>
 
 <style>
-/* ===== SIDEBAR COMPLIANCE - ESTILO MODERNO ===== */
-.sidebar-compliance {
-    width: 280px;
+.sidebar-relacionamento {
+    width: 260px;
     background: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
     color: white;
     position: fixed;
@@ -115,25 +94,25 @@ Links baseados nas rotas permitidas
     transition: all 0.3s ease;
 }
 
-.sidebar-compliance::-webkit-scrollbar {
+.sidebar-relacionamento::-webkit-scrollbar {
     width: 6px;
 }
 
-.sidebar-compliance::-webkit-scrollbar-thumb {
+.sidebar-relacionamento::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.3);
     border-radius: 10px;
 }
 
 /* Header */
 .sidebar-header {
-    padding: 1.75rem 1.5rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.5rem 1.5rem;
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-title {
     color: white;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     font-weight: 700;
     margin: 0;
     display: flex;
@@ -142,13 +121,13 @@ Links baseados nas rotas permitidas
 }
 
 .sidebar-title i {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
 }
 
 /* Menu */
 .sidebar-menu {
-    padding: 1.5rem 0;
-    padding-bottom: 200px; /* Espaço para o footer */
+    padding: 1.2rem 0;
+    padding-bottom: 160px;
 }
 
 .menu-section {
@@ -169,7 +148,7 @@ Links baseados nas rotas permitidas
     display: flex;
     align-items: center;
     gap: 0.85rem;
-    padding: 0.9rem 1.5rem;
+    padding: 0.85rem 1.5rem;
     color: rgba(255, 255, 255, 0.85);
     text-decoration: none;
     transition: all 0.25s ease;
@@ -181,14 +160,14 @@ Links baseados nas rotas permitidas
 .menu-item:hover {
     background: rgba(255, 255, 255, 0.08);
     color: white;
-    border-left-color: #667eea;
+    border-left-color: #17a2b8;
     padding-left: 1.7rem;
 }
 
 .menu-item.active {
-    background: rgba(102, 126, 234, 0.2);
+    background: rgba(23, 162, 184, 0.2);
     color: white;
-    border-left-color: #667eea;
+    border-left-color: #17a2b8;
     font-weight: 600;
 }
 
@@ -198,67 +177,12 @@ Links baseados nas rotas permitidas
     text-align: center;
 }
 
-/* Submenu Toggle */
-.menu-item-toggle {
-    position: relative;
-}
-
-.menu-item-toggle .toggle-icon {
-    margin-left: auto;
-    font-size: 0.75rem;
-    transition: transform 0.3s ease;
-}
-
-.menu-item-toggle[aria-expanded="true"] .toggle-icon {
-    transform: rotate(180deg);
-}
-
-/* Submenu */
-.submenu {
-    background: rgba(0, 0, 0, 0.2);
-    padding: 0;
-    margin-top: 0;
-    margin-bottom: 0.5rem;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease, padding 0.3s ease, margin 0.3s ease;
-}
-
-.submenu.show {
-    max-height: 300px; /* Reduzido de 500px */
-    padding: 0.5rem 0;
-    margin-bottom: 0.5rem;
-}
-
-.submenu-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1.5rem 0.75rem 3rem;
-    color: rgba(255, 255, 255, 0.7);
-    text-decoration: none;
-    transition: all 0.25s ease;
-    font-size: 0.9rem;
-}
-
-.submenu-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: white;
-    padding-left: 3.2rem;
-}
-
-.submenu-item i {
-    font-size: 0.95rem;
-    width: 16px;
-    text-align: center;
-}
-
 /* Footer */
 .sidebar-footer {
     position: fixed;
     bottom: 0;
     left: 0;
-    width: 280px;
+    width: 260px;
     padding: 1.5rem;
     background: rgba(0, 0, 0, 0.3);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -277,7 +201,7 @@ Links baseados nas rotas permitidas
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -342,35 +266,30 @@ Links baseados nas rotas permitidas
     top: 1rem;
     right: 1rem;
     z-index: 1001;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
     color: white;
     border: none;
     border-radius: 10px;
     padding: 0.75rem 1rem;
     font-size: 1.2rem;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
 }
 
-/* Responsivo */
 @media (max-width: 992px) {
-    .sidebar-compliance {
-        transform: translateX(-280px);
+    .sidebar-relacionamento {
+        transform: translateX(-260px);
     }
-    
-    .sidebar-compliance.active {
+    .sidebar-relacionamento.active {
         transform: translateX(0);
     }
-    
     .sidebar-footer {
-        width: 280px;
+        width: 260px;
         left: 0;
     }
-    
-    .sidebar-compliance.active .sidebar-footer {
+    .sidebar-relacionamento.active .sidebar-footer {
         transform: translateX(0);
     }
-    
     .mobile-toggle {
         display: block !important;
     }
@@ -380,7 +299,6 @@ Links baseados nas rotas permitidas
     .mobile-toggle {
         display: none !important;
     }
-    
     .sidebar-footer {
         left: 0;
     }
@@ -388,19 +306,15 @@ Links baseados nas rotas permitidas
 </style>
 
 <script>
-/* Sidebar Compliance - JavaScript Moderno */
 document.addEventListener('DOMContentLoaded', function() {
-    const sidebar = document.getElementById('sidebarCompliance');
+    const sidebar = document.getElementById('sidebarRelacionamento');
     const mobileToggle = document.getElementById('mobileToggle');
     const logoutForm = document.getElementById('sidebarLogoutForm');
-    
     // Toggle Mobile Sidebar
     if (mobileToggle) {
         mobileToggle.addEventListener('click', function() {
             sidebar.classList.toggle('active');
         });
-        
-        // Fechar sidebar ao clicar fora (mobile)
         document.addEventListener('click', function(e) {
             if (window.innerWidth <= 992) {
                 if (!sidebar.contains(e.target) && !mobileToggle.contains(e.target)) {
@@ -409,7 +323,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
     // Marcar link ativo baseado na URL atual
     const currentPath = window.location.pathname;
     document.querySelectorAll('.menu-item').forEach(link => {
@@ -417,59 +330,31 @@ document.addEventListener('DOMContentLoaded', function() {
             link.classList.add('active');
         }
     });
-    
-    // Funcionalidade de collapse para submenu
-    document.querySelectorAll('.menu-item-toggle').forEach(toggle => {
-        toggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            const targetId = this.getAttribute('href');
-            const target = document.querySelector(targetId);
-            
-            if (target) {
-                const isExpanded = this.getAttribute('aria-expanded') === 'true';
-                this.setAttribute('aria-expanded', !isExpanded);
-                
-                if (!isExpanded) {
-                    target.classList.add('show');
-                } else {
-                    target.classList.remove('show');
-                }
-            }
-        });
-    });
-    
     // Ajustar margem do conteúdo principal
     function adjustMainSpacing() {
         try {
             const main = document.querySelector('main.dashboard-main') || 
                         document.querySelector('main') || 
                         document.querySelector('.main-content');
-            
             if (!main) return;
-            
             if (window.innerWidth < 992) {
                 main.style.marginLeft = '';
                 return;
             }
-            
-            const sidebarWidth = sidebar.offsetWidth || 280;
+            const sidebarWidth = sidebar.offsetWidth || 260;
             main.style.marginLeft = sidebarWidth + 'px';
         } catch (e) {
             console.warn('adjustMainSpacing error:', e);
         }
     }
-    
     adjustMainSpacing();
-    
     window.addEventListener('resize', function() {
         clearTimeout(window._sidebarResizeTimeout);
         window._sidebarResizeTimeout = setTimeout(adjustMainSpacing, 120);
     });
-    
-    // Logout Handler - Simplificado
+    // Logout Handler
     if (logoutForm) {
         logoutForm.addEventListener('submit', function(e) {
-            // Limpar localStorage
             try {
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('refresh_token');
@@ -478,8 +363,6 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (err) {
                 console.warn('Clear localStorage failed:', err);
             }
-            
-            // Deixar o formulário submeter normalmente (POST)
             return true;
         });
     }

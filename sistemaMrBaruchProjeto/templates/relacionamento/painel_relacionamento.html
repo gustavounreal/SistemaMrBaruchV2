@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relacionamento com Cliente - Sistema Mr. Baruch</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow-x: hidden;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 0 2rem 2rem 2rem !important;
+            transition: margin-left 0.3s;
+            min-height: 100vh;
+        }
+        
+        .main-content > .row:first-child {
+            margin-top: 0 !important;
+            padding-top: 0.5rem !important;
+        }
+        
+        @media (max-width: 992px) {
+            .main-content {
+                margin-left: 0;
+                padding: 0 1rem 1rem 1rem !important;
+            }
+        }
+        
+        .card-stats {
+            border-left: 4px solid;
+            transition: transform 0.2s;
+        }
+        .card-stats:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .card-stats.primary { border-left-color: #007bff; }
+        .card-stats.success { border-left-color: #28a745; }
+        .card-stats.warning { border-left-color: #ffc107; }
+        .card-stats.info { border-left-color: #17a2b8; }
+        .card-stats.danger { border-left-color: #dc3545; }
+        
+        .stat-icon {
+            font-size: 2.5rem;
+            opacity: 0.3;
+        }
+        
+        .badge-status {
+            padding: 0.5em 1em;
+            font-size: 0.85rem;
+        }
+        
+        .interacao-item {
+            border-left: 3px solid #e9ecef;
+            transition: all 0.3s;
+        }
+        .interacao-item:hover {
+            border-left-color: #007bff;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    {% include 'relacionamento/sidebar_relacionamento.html' %}
+    
+    <div class="main-content">
+            <!-- Header -->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">
+                                <i class="fas fa-handshake text-primary"></i>
+                                Relacionamento com Cliente
+                            </h2>
+                            <p class="text-muted mb-0">
+                                Mantenha seus clientes engajados e satisfeitos durante toda a jornada
+                            </p>
+                        </div>
+                        <div>
+                            <a href="{% url 'relacionamento:nova_interacao' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Nova Interação
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cards de Estatísticas -->
+            <div class="row mb-4">
+                <!-- Interações -->
+                <div class="col-md-3">
+                    <div class="card card-stats primary h-100">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h6 class="text-uppercase text-muted mb-2">Total Interações</h6>
+                                    <h2 class="mb-0">{{ total_interacoes }}</h2>
+                                    <p class="text-muted mb-0 mt-2">
+                                        <span class="badge bg-warning">{{ interacoes_pendentes }} pendentes</span>
+                                    </p>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-comments stat-icon text-primary"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interações Hoje -->
+                <div class="col-md-3">
+                    <div class="card card-stats info h-100">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h6 class="text-uppercase text-muted mb-2">Hoje</h6>
+                                    <h2 class="mb-0">{{ interacoes_hoje }}</h2>
+                                    <p class="text-muted mb-0 mt-2">
+                                        <i class="fas fa-calendar-day"></i> Interações agendadas
+                                    </p>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-clock stat-icon text-info"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Satisfação -->
+                <div class="col-md-3">
+                    <div class="card card-stats success h-100">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h6 class="text-uppercase text-muted mb-2">Satisfação Média</h6>
+                                    <h2 class="mb-0">{{ media_satisfacao }}/10</h2>
+                                    <p class="text-muted mb-0 mt-2">
+                                        <span class="badge bg-info">{{ pesquisas_respondidas }} respondidas</span>
+                                    </p>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-star stat-icon text-success"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Indicações -->
+                <div class="col-md-3">
+                    <div class="card card-stats warning h-100">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h6 class="text-uppercase text-muted mb-2">Taxa de Conversão</h6>
+                                    <h2 class="mb-0">{{ taxa_conversao }}%</h2>
+                                    <p class="text-muted mb-0 mt-2">
+                                        {{ indicacoes_convertidas }}/{{ total_indicacoes }} indicações
+                                    </p>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-user-friends stat-icon text-warning"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navegação rápida -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">
+                                <i class="fas fa-th-large"></i> Acesso Rápido
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <a href="{% url 'relacionamento:lista_interacoes' %}" class="btn btn-outline-primary btn-block w-100 p-3">
+                                        <i class="fas fa-comments fa-2x d-block mb-2"></i>
+                                        <strong>Interações</strong>
+                                        <br><small>Gerenciar contatos</small>
+                                    </a>
+                                </div>
+                               <!-- <div class="col-md-3 mb-3">
+                                    <a href="{% url 'relacionamento:pesquisas_satisfacao' %}" class="btn btn-outline-success btn-block w-100 p-3">
+                                        <i class="fas fa-clipboard-check fa-2x d-block mb-2"></i>
+                                        <strong>Pesquisas</strong>
+                                        <br><small>Satisfação dos clientes</small>
+                                    </a>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <a href="{% url 'relacionamento:indicacoes' %}" class="btn btn-outline-warning btn-block w-100 p-3">
+                                        <i class="fas fa-user-friends fa-2x d-block mb-2"></i>
+                                        <strong>Indicações</strong>
+                                        <br><small>Novas oportunidades</small>
+                                    </a>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <a href="{% url 'relacionamento:programa_fidelidade' %}" class="btn btn-outline-info btn-block w-100 p-3">
+                                        <i class="fas fa-award fa-2x d-block mb-2"></i>
+                                        <strong>Fidelidade</strong>
+                                        <br><small>Pontos e benefícios</small>
+                                    </a>
+                                </div>-->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Próximas Interações -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-calendar-alt text-primary"></i>
+                                Próximas Interações Agendadas
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if proximas_interacoes %}
+                                <div class="list-group">
+                                    {% for interacao in proximas_interacoes %}
+                                    <a href="{% url 'relacionamento:detalhe_interacao' interacao.pk %}" 
+                                       class="list-group-item list-group-item-action interacao-item">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">{{ interacao.cliente.lead.nome_completo }}</h6>
+                                                <p class="mb-1 text-muted small">
+                                                    <i class="fas fa-tag"></i> {{ interacao.get_tipo_display }}
+                                                </p>
+                                                <p class="mb-0 small">
+                                                    <strong>{{ interacao.assunto }}</strong>
+                                                </p>
+                                            </div>
+                                            <div class="text-end">
+                                                <small class="text-muted">
+                                                    {{ interacao.data_agendada|date:"d/m/Y H:i" }}
+                                                </small>
+                                                <br>
+                                                {% if interacao.responsavel %}
+                                                <span class="badge bg-secondary mt-1">
+                                                    {{ interacao.responsavel.get_full_name|default:interacao.responsavel.username }}
+                                                </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted text-center py-4">
+                                    <i class="fas fa-calendar-check fa-3x mb-3 d-block"></i>
+                                    Nenhuma interação agendada no momento
+                                </p>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer bg-white">
+                            <a href="{% url 'relacionamento:lista_interacoes' %}" class="btn btn-sm btn-outline-primary">
+                                Ver todas as interações <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Últimas Atividades -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-history text-info"></i>
+                                Últimas Atividades
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if ultimas_interacoes %}
+                                <div class="list-group">
+                                    {% for interacao in ultimas_interacoes %}
+                                    <div class="list-group-item interacao-item">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">{{ interacao.cliente.lead.nome_completo }}</h6>
+                                                <p class="mb-1">
+                                                    <span class="badge 
+                                                        {% if interacao.status == 'realizada' %}bg-success
+                                                        {% elif interacao.status == 'agendada' %}bg-warning
+                                                        {% elif interacao.status == 'cancelada' %}bg-danger
+                                                        {% else %}bg-secondary{% endif %}">
+                                                        {{ interacao.get_status_display }}
+                                                    </span>
+                                                    <span class="badge bg-light text-dark">
+                                                        {{ interacao.get_tipo_display }}
+                                                    </span>
+                                                </p>
+                                                <p class="mb-0 small text-muted">
+                                                    {{ interacao.assunto|truncatewords:10 }}
+                                                </p>
+                                            </div>
+                                            <div class="text-end">
+                                                <small class="text-muted">
+                                                    {{ interacao.criado_em|date:"d/m H:i" }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted text-center py-4">
+                                    <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                    Nenhuma atividade recente
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+    // Auto-refresh a cada 5 minutos
+    setTimeout(function() {
+        location.reload();
+    }, 300000);
+    </script>
+</body>
+</html>

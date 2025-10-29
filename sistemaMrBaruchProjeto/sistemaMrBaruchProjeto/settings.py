@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'juridico',
     'marketing',
     'pos_venda',
+    'relacionamento',  # Novo módulo Relacionamento
     'relatorios',
     'vendas',   
 ]

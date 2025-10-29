@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes do Programa - Relacionamento</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Nunito', sans-serif; background-color: #f8f9fc; margin: 0 !important; padding: 0 !important; }
+        .main-content { margin-left: 250px; padding: 0 20px 20px 20px !important; transition: margin-left 0.3s; }
+        .page-header { background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); color: white; padding: 15px 30px; border-radius: 10px; margin-bottom: 20px; margin-top: 0.5rem !important; box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3); }
+        @media (max-width: 768px) { .main-content { margin-left: 0; padding: 0 15px 15px 15px !important; } }
+    </style>
+</head>
+<body>
+    {% include 'relacionamento/sidebar_relacionamento.html' %}
+    <div class="main-content">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-award"></i> Detalhes do Programa de Fidelidade</h2>
+            <a href="{% url 'relacionamento:programa_fidelidade' %}" class="btn btn-light">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+    
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <h4>{{ programa.cliente.lead.nome_completo }}</h4>
+            <hr>
+            <div class="row mb-4">
+                <div class="col-md-6"><strong>Nível:</strong> {{ programa.get_nivel_display }}</div>
+                <div class="col-md-6"><strong>Pontos:</strong> {{ programa.pontos_acumulados }}</div>
+                <div class="col-md-6 mt-3"><strong>Status:</strong> {{ programa.ativo|yesno:"Ativo,Inativo" }}</div>
+            </div>
+            
+            <h5 class="mt-4 mb-3">Histórico de Movimentações</h5>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Pontos</th>
+                            <th>Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mov in programa.movimentacoes.all %}
+                        <tr>
+                            <td>{{ mov.get_tipo_display }}</td>
+                            <td>
+                                <span class="badge {% if mov.tipo == 'adicao' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if mov.tipo == 'adicao' %}+{% else %}-{% endif %}{{ mov.pontos }}
+                                </span>
+                            </td>
+                            <td>{{ mov.data_movimentacao|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center">Nenhuma movimentação</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

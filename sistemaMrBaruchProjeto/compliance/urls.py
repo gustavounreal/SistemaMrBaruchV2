@@ -50,4 +50,8 @@ urlpatterns = [
     path('pos-venda/<int:venda_id>/contrato/visualizar/', views.visualizar_contrato, name='visualizar_contrato'),
     path('pos-venda/<int:venda_id>/contrato/upload-assinado/', views.upload_contrato_assinado, name='upload_contrato_assinado'),
     path('pos-venda/<int:venda_id>/contrato/validar-assinatura/', views.validar_assinatura, name='validar_assinatura'),
+    
+    # Relatórios de Auditoria
+    path('relatorios/auditoria/', views.relatorio_auditoria, name='relatorio_auditoria'),
+    path('relatorios/auditoria/exportar/', views.exportar_relatorio_auditoria, name='exportar_relatorio_auditoria'),
 ]
