@@ -502,3 +502,135 @@ def dashboard_graficos(request):
     }
     
     return render(request, 'relatorios/dashboard_graficos.html', context)
+
+
+@login_required
+def painel_central(request):
+    """
+    Painel central de relatórios - hub principal para acessar todos os relatórios
+    """
+    return render(request, 'relatorios/painel_central.html')
+
+
+@login_required
+def dashboard_kpis_comercial2(request):
+    """
+    Dashboard com KPIs e métricas do Comercial 2
+    Migrado de vendas para relatórios
+    """
+    from vendas.models import RepescagemLead
+    from django.db.models import Count, Avg, Q, F
+    
+    # Filtros de período
+    periodo = request.GET.get('periodo', '30')  # Default 30 dias
+    try:
+        dias = int(periodo)
+    except:
+        dias = 30
+    
+    data_inicio = timezone.now() - timedelta(days=dias)
+    
+    # === ESTATÍSTICAS GERAIS ===
+    total_repescagens = RepescagemLead.objects.count()
+    repescagens_periodo = RepescagemLead.objects.filter(data_criacao__gte=data_inicio)
+    
+    stats = {
+        'total_geral': total_repescagens,
+        'total_periodo': repescagens_periodo.count(),
+        'pendentes': RepescagemLead.objects.filter(status='PENDENTE').count(),
+        'em_contato': RepescagemLead.objects.filter(status='EM_CONTATO').count(),
+        'convertidos': RepescagemLead.objects.filter(status='CONVERTIDO').count(),
+        'convertidos_periodo': repescagens_periodo.filter(status='CONVERTIDO').count(),
+        'sem_interesse': RepescagemLead.objects.filter(status='SEM_INTERESSE').count(),
+        'lead_lixo': RepescagemLead.objects.filter(status='LEAD_LIXO').count(),
+    }
+    
+    # === TAXA DE CONVERSÃO ===
+    total_finalizados = RepescagemLead.objects.filter(
+        Q(status='CONVERTIDO') | Q(status='SEM_INTERESSE') | Q(status='LEAD_LIXO')
+    ).count()
+    
+    if total_finalizados > 0:
+        stats['taxa_conversao'] = round((stats['convertidos'] / total_finalizados) * 100, 1)
+    else:
+        stats['taxa_conversao'] = 0
+    
+    # Taxa de conversão no período
+    total_finalizados_periodo = repescagens_periodo.filter(
+        Q(status='CONVERTIDO') | Q(status='SEM_INTERESSE') | Q(status='LEAD_LIXO')
+    ).count()
+    
+    if total_finalizados_periodo > 0:
+        stats['taxa_conversao_periodo'] = round(
+            (stats['convertidos_periodo'] / total_finalizados_periodo) * 100, 1
+        )
+    else:
+        stats['taxa_conversao_periodo'] = 0
+    
+    # === TEMPO MÉDIO DE REPESCAGEM ===
+    repescagens_concluidas = RepescagemLead.objects.filter(
+        data_conclusao__isnull=False
+    )
+    
+    if repescagens_concluidas.exists():
+        tempos = []
+        for r in repescagens_concluidas:
+            delta = r.data_conclusao - r.data_criacao
+            tempos.append(delta.total_seconds() / 86400)  # Converter para dias
+        stats['tempo_medio_dias'] = round(sum(tempos) / len(tempos), 1)
+    else:
+        stats['tempo_medio_dias'] = 0
+    
+    # === DISTRIBUIÇÃO POR STATUS (para gráfico de pizza) ===
+    distribuicao_status = RepescagemLead.objects.values('status').annotate(
+        total=Count('id')
+    ).order_by('-total')
+    
+    # === TOP 5 MOTIVOS DE RECUSA QUE MAIS CONVERTEM ===
+    motivos_conversao = RepescagemLead.objects.filter(
+        status='CONVERTIDO'
+    ).values(
+        'motivo_recusa__nome'
+    ).annotate(
+        total_conversoes=Count('id')
+    ).order_by('-total_conversoes')[:5]
+    
+    # === TOP 5 MOTIVOS DE RECUSA GERAIS ===
+    motivos_gerais = RepescagemLead.objects.values(
+        'motivo_recusa__nome'
+    ).annotate(
+        total=Count('id')
+    ).order_by('-total')[:5]
+    
+    # === PERFORMANCE POR CONSULTOR ===
+    performance_consultores = RepescagemLead.objects.filter(
+        consultor_repescagem__isnull=False
+    ).values(
+        'consultor_repescagem__username',
+        'consultor_repescagem__first_name',
+        'consultor_repescagem__last_name'
+    ).annotate(
+        total_atendimentos=Count('id'),
+        total_convertidos=Count('id', filter=Q(status='CONVERTIDO')),
+    ).order_by('-total_convertidos')
+    
+    # Calcular taxa de conversão por consultor
+    for perf in performance_consultores:
+        if perf['total_atendimentos'] > 0:
+            perf['taxa_conversao'] = round(
+                (perf['total_convertidos'] / perf['total_atendimentos']) * 100, 1
+            )
+        else:
+            perf['taxa_conversao'] = 0
+    
+    context = {
+        'stats': stats,
+        'distribuicao_status': json.dumps(list(distribuicao_status)),
+        'motivos_conversao': json.dumps(list(motivos_conversao)),
+        'motivos_gerais': list(motivos_gerais),
+        'performance_consultores': list(performance_consultores),
+        'periodo_dias': dias,
+    }
+    
+    return render(request, 'relatorios/dashboard_kpis_comercial2.html', context)
+
