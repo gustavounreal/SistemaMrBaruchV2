@@ -578,17 +578,31 @@ function carregarPix(id) {
                         <label class="form-label">Copia e Cola</label>
                         <div class="input-group">
                             <span class="input-group-text bg-success text-white"><i class="bi bi-clipboard"></i></span>
-                            <input id="pixCode" class="form-control fixed-value" value="${data.pix_copia_cola}" readonly>
-                            <button type="button" class="btn btn-outline-success" onclick="event.preventDefault(); copiarCodigoPix();">
+                            <input id="pixCode" class="form-control fixed-value" value="${data.pix_copia_cola}" readonly onclick="this.select();">
+                            <button type="button" class="btn btn-outline-success" id="btnCopiarPix">
                                 <i class="bi bi-clipboard-check"></i> Copiar
                             </button>
                         </div>
+                        <small class="text-muted">Clique no botão para copiar ou clique no campo e use Ctrl+C</small>
                     </div>
                     <div class="alert alert-info mt-3">
                         <i class="bi bi-info-circle"></i> Clique no botão acima para copiar o código PIX
                     </div>
                 `;
                 console.log('Conteúdo do PIX inserido no DOM');
+                
+                // Adiciona o event listener ao botão após inserção no DOM
+                setTimeout(() => {
+                    const btnCopiar = document.getElementById('btnCopiarPix');
+                    if (btnCopiar) {
+                        btnCopiar.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            copiarCodigoPix();
+                        });
+                        console.log('Event listener adicionado ao botão de copiar');
+                    }
+                }, 100);
             } else {
                 const mensagemErro = data.message || 'Erro ao gerar PIX.';
                 console.error('Erro do servidor:', mensagemErro);
