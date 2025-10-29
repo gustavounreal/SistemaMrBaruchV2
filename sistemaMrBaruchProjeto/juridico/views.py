@@ -1026,3 +1026,560 @@ def download_contrato(request, contrato_id):
     except Exception as e:
         messages.error(request, f'Erro ao baixar contrato: {str(e)}')
         return redirect('juridico:detalhes_contrato', contrato_id=contrato.id)
+
+
+# ===============================================
+# SISTEMA DE DISTRATOS E QUEBRA DE CONTRATO
+# ===============================================
+
+@login_required
+@user_passes_test(is_compliance_or_juridico)
+def painel_distratos(request):
+    """Painel principal de distratos"""
+    from .models import Distrato
+    from django.db.models import Sum, Count
+    
+    # Filtros
+    status_filtro = request.GET.get('status', 'todos')
+    busca = request.GET.get('busca', '')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
+    
+    distratos = Distrato.objects.all().select_related(
+        'cliente', 'cliente__lead', 'venda', 'venda__servico'
+    )
+    
+    # Aplicar filtros
+    if status_filtro != 'todos':
+        distratos = distratos.filter(status=status_filtro)
+    
+    if busca:
+        distratos = distratos.filter(
+            Q(cliente__lead__nome_completo__icontains=busca) |
+            Q(numero_distrato__icontains=busca)
+        )
+    
+    if data_inicio:
+        distratos = distratos.filter(data_solicitacao__gte=data_inicio)
+    if data_fim:
+        distratos = distratos.filter(data_solicitacao__lte=data_fim)
+    
+    distratos = distratos.order_by('-data_solicitacao')
+    
+    # Estatísticas
+    stats = {
+        'total_distratos': Distrato.objects.count(),
+        'tentativa_acordo': Distrato.objects.filter(status='TENTATIVA_ACORDO').count(),
+        'multas_geradas': Distrato.objects.filter(status='MULTA_GERADA').count(),
+        'multas_vencidas': Distrato.objects.filter(status='MULTA_VENCIDA').count(),
+        'enviados_juridico': Distrato.objects.filter(status='ENVIADO_JURIDICO').count(),
+        'multas_pagas': Distrato.objects.filter(status='MULTA_PAGA').count(),
+        'valor_multas_vencidas': Distrato.objects.filter(
+            status='MULTA_VENCIDA'
+        ).aggregate(total=Sum('valor_multa'))['total'] or 0,
+    }
+    
+    context = {
+        'distratos': distratos,
+        'stats': stats,
+        'status_filtro': status_filtro,
+        'busca': busca,
+        'data_inicio': data_inicio,
+        'data_fim': data_fim,
+    }
+    
+    return render(request, 'juridico/distratos/painel.html', context)
+
+
+@login_required
+@user_passes_test(is_compliance_or_juridico)
+def solicitar_distrato(request, venda_id):
+    """Solicita distrato para uma venda"""
+    from .models import Distrato
+    
+    venda = get_object_or_404(Venda, id=venda_id)
+    
+    if request.method == 'POST':
+        observacoes = request.POST.get('observacoes', '')
+        
+        # Criar distrato
+        distrato = Distrato.objects.create(
+            venda=venda,
+            cliente=venda.cliente,
+            contrato=venda.contrato if hasattr(venda, 'contrato') else None,
+            status='TENTATIVA_ACORDO',
+            tentativa_acordo=True,
+            observacoes=observacoes,
+            usuario_solicitacao=request.user
+        )
+        
+        distrato.gerar_numero_distrato()
+        distrato.adicionar_historico('solicitacao', request.user, 'Distrato solicitado')
+        
+        messages.success(request, f'Distrato {distrato.numero_distrato} criado com sucesso!')
+        return redirect('juridico:detalhes_distrato', distrato_id=distrato.id)
+    
+    context = {
+        'venda': venda,
+    }
+    
+    return render(request, 'juridico/distratos/solicitar.html', context)
+
+
+@login_required
+@user_passes_test(is_compliance_or_juridico)
+def detalhes_distrato(request, distrato_id):
+    """Detalhes de um distrato"""
+    from .models import Distrato
+    
+    distrato = get_object_or_404(
+        Distrato.objects.select_related(
+            'cliente', 'cliente__lead', 'venda', 'venda__servico', 'contrato'
+        ),
+        id=distrato_id
+    )
+    
+    context = {
+        'distrato': distrato,
+    }
+    
+    return render(request, 'juridico/distratos/detalhes.html', context)
+
+
+@login_required
+@user_passes_test(is_compliance_or_juridico)
+def tentar_acordo(request, distrato_id):
+    """Registra tentativa de acordo"""
+    from .models import Distrato
+    
+    distrato = get_object_or_404(Distrato, id=distrato_id)
+    
+    if request.method == 'POST':
+        detalhes_acordo = request.POST.get('detalhes_acordo', '')
+        
+        distrato.data_tentativa_acordo = timezone.now()
+        distrato.detalhes_acordo = detalhes_acordo
+        distrato.save()
+        
+        distrato.adicionar_historico(
+            'tentativa_acordo',
+            request.user,
+            f'Tentativa de acordo registrada: {detalhes_acordo}'
+        )
+        
+        messages.success(request, 'Tentativa de acordo registrada!')
+        return redirect('juridico:detalhes_distrato', distrato_id=distrato.id)
+    
+    context = {
+        'distrato': distrato,
+    }
+    
+    return render(request, 'juridico/distratos/tentar_acordo.html', context)
+
+
+@login_required
+@user_passes_test(is_compliance_or_juridico)
+def recusar_acordo(request, distrato_id):
+    """Marca acordo como recusado"""
+    from .models import Distrato
+    
+    distrato = get_object_or_404(Distrato, id=distrato_id)
+    
+    if request.method == 'POST':
+        motivo = request.POST.get('motivo', '')
+        
+        distrato.status = 'ACORDO_RECUSADO'
+        distrato.acordo_aceito = False
+        distrato.data_recusa_acordo = timezone.now()
+        distrato.save()
+        
+        distrato.adicionar_historico(
+            'recusa_acordo',
+            request.user,
+            f'Acordo recusado: {motivo}'
+        )
+        
+        messages.warning(request, 'Acordo recusado. Próximo passo: gerar multa.')
+        return redirect('juridico:detalhes_distrato', distrato_id=distrato.id)
+    
+    return redirect('juridico:detalhes_distrato', distrato_id=distrato_id)
+
+
+@login_required
+@user_passes_test(is_compliance_or_juridico)
+def gerar_multa(request, distrato_id):
+    """Gera multa de distrato"""
+    from .models import Distrato
+    
+    distrato = get_object_or_404(Distrato, id=distrato_id)
+    
+    if request.method == 'POST':
+        valor_multa = Decimal(request.POST.get('valor_multa', '0'))
+        data_vencimento = request.POST.get('data_vencimento')
+        
+        distrato.valor_multa = valor_multa
+        distrato.data_vencimento_multa = data_vencimento
+        distrato.status = 'MULTA_GERADA'
+        distrato.data_geracao_multa = timezone.now()
+        distrato.save()
+        
+        distrato.adicionar_historico(
+            'geracao_multa',
+            request.user,
+            f'Multa gerada: R$ {valor_multa} - Vencimento: {data_vencimento}'
+        )
+        
+        messages.success(request, f'Multa de R$ {valor_multa} gerada com sucesso!')
+        return redirect('juridico:detalhes_distrato', distrato_id=distrato.id)
+    
+    context = {
+        'distrato': distrato,
+    }
+    
+    return render(request, 'juridico/distratos/gerar_multa.html', context)
+
+
+@login_required
+@user_passes_test(is_compliance_or_juridico)
+def marcar_multa_paga(request, distrato_id):
+    """Marca multa como paga"""
+    from .models import Distrato
+    
+    distrato = get_object_or_404(Distrato, id=distrato_id)
+    
+    if request.method == 'POST':
+        data_pagamento = request.POST.get('data_pagamento')
+        
+        distrato.data_pagamento_multa = data_pagamento
+        distrato.status = 'MULTA_PAGA'
+        distrato.save()
+        
+        distrato.adicionar_historico(
+            'pagamento_multa',
+            request.user,
+            f'Multa paga em {data_pagamento}'
+        )
+        
+        messages.success(request, 'Multa marcada como paga!')
+        return redirect('juridico:detalhes_distrato', distrato_id=distrato.id)
+    
+    return redirect('juridico:detalhes_distrato', distrato_id=distrato_id)
+
+
+@login_required
+@user_passes_test(is_compliance_or_juridico)
+def enviar_juridico(request, distrato_id):
+    """Envia distrato para o jurídico e cria processo"""
+    from .models import Distrato, ProcessoJuridico
+    
+    distrato = get_object_or_404(Distrato, id=distrato_id)
+    
+    if request.method == 'POST':
+        # Atualizar distrato
+        distrato.status = 'ENVIADO_JURIDICO'
+        distrato.data_envio_juridico = timezone.now()
+        distrato.save()
+        
+        # Criar processo jurídico
+        processo = ProcessoJuridico.objects.create(
+            distrato=distrato,
+            cliente=distrato.cliente,
+            venda=distrato.venda,
+            tipo_processo='DISTRATO',
+            status='EM_ANDAMENTO',
+            usuario_responsavel=request.user
+        )
+        
+        processo.gerar_numero_processo()
+        processo.adicionar_historico(
+            'criacao',
+            request.user,
+            f'Processo criado a partir do distrato {distrato.numero_distrato}'
+        )
+        
+        distrato.adicionar_historico(
+            'envio_juridico',
+            request.user,
+            f'Enviado ao jurídico - Processo {processo.numero_processo}'
+        )
+        
+        messages.success(request, f'Processo jurídico {processo.numero_processo} criado!')
+        return redirect('juridico:detalhes_processo', processo_id=processo.id)
+    
+    context = {
+        'distrato': distrato,
+    }
+    
+    return render(request, 'juridico/distratos/confirmar_envio_juridico.html', context)
+
+
+@login_required
+@user_passes_test(is_compliance_or_juridico)
+def lista_multas_vencidas(request):
+    """Lista de multas vencidas com filtros"""
+    from .models import Distrato
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    
+    # Filtros
+    periodo = request.GET.get('periodo', 'todos')
+    busca = request.GET.get('busca', '')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
+    
+    hoje = timezone.now().date()
+    
+    distratos = Distrato.objects.filter(
+        status='MULTA_VENCIDA',
+        data_vencimento_multa__lt=hoje
+    ).select_related('cliente', 'cliente__lead', 'venda')
+    
+    # Aplicar filtros
+    if periodo == 'dia':
+        distratos = distratos.filter(data_vencimento_multa=hoje)
+    elif periodo == 'semana':
+        inicio_semana = hoje - timedelta(days=7)
+        distratos = distratos.filter(data_vencimento_multa__gte=inicio_semana)
+    elif periodo == 'mes':
+        inicio_mes = hoje.replace(day=1)
+        distratos = distratos.filter(data_vencimento_multa__gte=inicio_mes)
+    
+    if busca:
+        distratos = distratos.filter(
+            Q(cliente__lead__nome_completo__icontains=busca) |
+            Q(numero_distrato__icontains=busca)
+        )
+    
+    if data_inicio:
+        distratos = distratos.filter(data_vencimento_multa__gte=data_inicio)
+    if data_fim:
+        distratos = distratos.filter(data_vencimento_multa__lte=data_fim)
+    
+    distratos = distratos.order_by('data_vencimento_multa')
+    
+    # Paginação
+    paginator = Paginator(distratos, 20)
+    page = request.GET.get('page', 1)
+    
+    try:
+        distratos_paginados = paginator.page(page)
+    except PageNotAnInteger:
+        distratos_paginados = paginator.page(1)
+    except EmptyPage:
+        distratos_paginados = paginator.page(paginator.num_pages)
+    
+    context = {
+        'distratos': distratos_paginados,
+        'periodo': periodo,
+        'busca': busca,
+        'data_inicio': data_inicio,
+        'data_fim': data_fim,
+    }
+    
+    return render(request, 'juridico/distratos/multas_vencidas.html', context)
+
+
+# ===============================================
+# PROCESSOS JURÍDICOS
+# ===============================================
+
+@login_required
+@user_passes_test(is_compliance_or_juridico)
+def painel_processos(request):
+    """Painel de processos jurídicos com relatórios"""
+    from .models import ProcessoJuridico
+    from django.db.models import Sum, Count
+    
+    # Filtros
+    status_filtro = request.GET.get('status', 'todos')
+    busca = request.GET.get('busca', '')
+    
+    processos = ProcessoJuridico.objects.all().select_related(
+        'cliente', 'cliente__lead', 'venda', 'distrato'
+    )
+    
+    # Aplicar filtros
+    if status_filtro != 'todos':
+        processos = processos.filter(status=status_filtro)
+    
+    if busca:
+        processos = processos.filter(
+            Q(cliente__lead__nome_completo__icontains=busca) |
+            Q(numero_processo__icontains=busca)
+        )
+    
+    processos = processos.order_by('-data_inicio')
+    
+    # Estatísticas para relatórios
+    stats = {
+        'total_processos': ProcessoJuridico.objects.count(),
+        'em_andamento': ProcessoJuridico.objects.filter(status='EM_ANDAMENTO').count(),
+        'aguardando_assinatura': ProcessoJuridico.objects.filter(status='AGUARDANDO_ASSINATURA').count(),
+        'com_assinatura': ProcessoJuridico.objects.filter(assinatura_cliente=True).count(),
+        'sem_assinatura': ProcessoJuridico.objects.filter(assinatura_cliente=False, status__in=['EM_ANDAMENTO', 'AGUARDANDO_ASSINATURA']).count(),
+        'concluidos': ProcessoJuridico.objects.filter(status='CONCLUIDO').count(),
+        'distratos_pagos': ProcessoJuridico.objects.filter(
+            distrato__data_pagamento_multa__isnull=False
+        ).count(),
+        'enviados_juridico': ProcessoJuridico.objects.filter(
+            data_envio_juridico__isnull=False
+        ).count(),
+    }
+    
+    context = {
+        'processos': processos,
+        'stats': stats,
+        'status_filtro': status_filtro,
+        'busca': busca,
+    }
+    
+    return render(request, 'juridico/processos/painel.html', context)
+
+
+@login_required
+@user_passes_test(is_compliance_or_juridico)
+def detalhes_processo(request, processo_id):
+    """Detalhes de um processo jurídico"""
+    from .models import ProcessoJuridico
+    
+    processo = get_object_or_404(
+        ProcessoJuridico.objects.select_related(
+            'cliente', 'cliente__lead', 'venda', 'distrato'
+        ),
+        id=processo_id
+    )
+    
+    context = {
+        'processo': processo,
+    }
+    
+    return render(request, 'juridico/processos/detalhes.html', context)
+
+
+@login_required
+@user_passes_test(is_compliance_or_juridico)
+def marcar_processo_assinado(request, processo_id):
+    """Marca processo como assinado pelo cliente"""
+    from .models import ProcessoJuridico
+    
+    processo = get_object_or_404(ProcessoJuridico, id=processo_id)
+    
+    if request.method == 'POST':
+        processo.mudar_status('ASSINADO', request.user, 'Cliente assinou o processo')
+        
+        messages.success(request, 'Processo marcado como assinado!')
+        return redirect('juridico:detalhes_processo', processo_id=processo.id)
+    
+    return redirect('juridico:detalhes_processo', processo_id=processo_id)
+
+
+@login_required
+@user_passes_test(is_compliance_or_juridico)
+def concluir_processo(request, processo_id):
+    """Conclui um processo jurídico"""
+    from .models import ProcessoJuridico
+    
+    processo = get_object_or_404(ProcessoJuridico, id=processo_id)
+    
+    if request.method == 'POST':
+        observacao = request.POST.get('observacao', '')
+        
+        processo.mudar_status('CONCLUIDO', request.user, observacao)
+        
+        messages.success(request, 'Processo concluído!')
+        return redirect('juridico:detalhes_processo', processo_id=processo.id)
+    
+    context = {
+        'processo': processo,
+    }
+    
+    return render(request, 'juridico/processos/concluir.html', context)
+
+
+@login_required
+@user_passes_test(is_compliance_or_juridico)
+def relatorio_processos(request):
+    """Relatório completo de processos jurídicos"""
+    from .models import ProcessoJuridico
+    
+    tipo_relatorio = request.GET.get('tipo', 'geral')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
+    
+    processos = ProcessoJuridico.objects.all().select_related(
+        'cliente', 'cliente__lead', 'venda', 'distrato'
+    )
+    
+    # Filtros por tipo de relatório
+    if tipo_relatorio == 'em_andamento':
+        processos = processos.filter(status='EM_ANDAMENTO')
+    elif tipo_relatorio == 'concluidos':
+        processos = processos.filter(status='CONCLUIDO')
+    elif tipo_relatorio == 'com_assinatura':
+        processos = processos.filter(assinatura_cliente=True)
+    elif tipo_relatorio == 'sem_assinatura':
+        processos = processos.filter(assinatura_cliente=False)
+    elif tipo_relatorio == 'distratos_pagos':
+        processos = processos.filter(distrato__data_pagamento_multa__isnull=False)
+    elif tipo_relatorio == 'enviados_juridico':
+        processos = processos.filter(data_envio_juridico__isnull=False)
+    
+    # Filtros de data
+    if data_inicio:
+        processos = processos.filter(data_inicio__gte=data_inicio)
+    if data_fim:
+        processos = processos.filter(data_inicio__lte=data_fim)
+    
+    processos = processos.order_by('-data_inicio')
+    
+    context = {
+        'processos': processos,
+        'tipo_relatorio': tipo_relatorio,
+        'data_inicio': data_inicio,
+        'data_fim': data_fim,
+    }
+    
+    return render(request, 'juridico/relatorios/processos.html', context)
+
+
+@login_required
+@user_passes_test(is_compliance_or_juridico)
+def relatorio_distratos(request):
+    """Relatório completo de distratos"""
+    from .models import Distrato
+    
+    tipo_relatorio = request.GET.get('tipo', 'geral')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
+    
+    distratos = Distrato.objects.all().select_related(
+        'cliente', 'cliente__lead', 'venda'
+    )
+    
+    # Filtros por tipo de relatório
+    if tipo_relatorio == 'acordos':
+        distratos = distratos.filter(acordo_aceito=True)
+    elif tipo_relatorio == 'multas_geradas':
+        distratos = distratos.filter(status='MULTA_GERADA')
+    elif tipo_relatorio == 'multas_vencidas':
+        distratos = distratos.filter(status='MULTA_VENCIDA')
+    elif tipo_relatorio == 'multas_pagas':
+        distratos = distratos.filter(status='MULTA_PAGA')
+    elif tipo_relatorio == 'enviados_juridico':
+        distratos = distratos.filter(status='ENVIADO_JURIDICO')
+    
+    # Filtros de data
+    if data_inicio:
+        distratos = distratos.filter(data_solicitacao__gte=data_inicio)
+    if data_fim:
+        distratos = distratos.filter(data_solicitacao__lte=data_fim)
+    
+    distratos = distratos.order_by('-data_solicitacao')
+    
+    context = {
+        'distratos': distratos,
+        'tipo_relatorio': tipo_relatorio,
+        'data_inicio': data_inicio,
+        'data_fim': data_fim,
+    }
+    
+    return render(request, 'juridico/relatorios/distratos.html', context)
