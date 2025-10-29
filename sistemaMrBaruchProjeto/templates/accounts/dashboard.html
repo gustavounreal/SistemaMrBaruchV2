@@ -94,7 +94,7 @@
             <i class="bi bi-headset text-primary fs-1 mb-3"></i>
             <h5 class="fw-bold mb-2">Atendimento</h5>
             <p class="text-muted small">Gestão de atendimentos e leads</p>
-            <a href="/atendimento/leads-pix/" class="btn btn-outline-primary mt-auto">Acessar</a>
+            <a href="{% url 'atendimento:leads_pix' %}" class="btn btn-outline-primary mt-auto">Acessar</a>
           </div>
         </div>
       </div>
@@ -106,7 +106,7 @@
             <i class="bi bi-shield-check text-success fs-1 mb-3"></i>
             <h5 class="fw-bold mb-2">Compliance</h5>
             <p class="text-muted small">Análises de leads e pós-venda</p>
-            <a href="/compliance/painel/" class="btn btn-outline-success mt-auto">Acessar</a>
+            <a href="{% url 'compliance:painel' %}" class="btn btn-outline-success mt-auto">Acessar</a>
           </div>
         </div>
       </div>
@@ -118,7 +118,7 @@
             <i class="bi bi-briefcase text-info fs-1 mb-3"></i>
             <h5 class="fw-bold mb-2">Comercial 1</h5>
             <p class="text-muted small">Gestão comercial e vendas</p>
-            <a href="/vendas/" class="btn btn-outline-info mt-auto">Acessar</a>
+            <a href="{% url 'vendas:painel_leads_pagos' %}" class="btn btn-outline-info mt-auto">Acessar</a>
           </div>
         </div>
       </div>
@@ -130,7 +130,7 @@
             <i class="bi bi-repeat text-warning fs-1 mb-3"></i>
             <h5 class="fw-bold mb-2">Comercial 2</h5>
             <p class="text-muted small">Repescagem de leads e gestão Comercial 2</p>
-            <a href="/vendas/comercial2/" class="btn btn-outline-warning mt-auto">Acessar</a>
+            <a href="{% url 'vendas:painel_comercial2' %}" class="btn btn-outline-warning mt-auto">Acessar</a>
           </div>
         </div>
       </div>
@@ -142,7 +142,7 @@
             <i class="bi bi-bank text-danger fs-1 mb-3"></i>
             <h5 class="fw-bold mb-2">Retenção / Financeiro / Administrativo / Jurídico</h5>
             <p class="text-muted small">Gestão de contratos, cobranças e retenção</p>
-            <a href="/financeiro/" class="btn btn-outline-danger mt-auto">Acessar</a>
+            <a href="{% url 'juridico:painel_juridico' %}" class="btn btn-outline-danger mt-auto">Acessar</a>
           </div>
         </div>
       </div>
@@ -154,7 +154,7 @@
             <i class="bi bi-currency-dollar text-success fs-1 mb-3"></i>
             <h5 class="fw-bold mb-2">Comissões</h5>
             <p class="text-muted small">Controle e relatórios de comissões</p>
-            <a href="/comissoes/" class="btn btn-outline-success mt-auto">Acessar</a>
+            <a href="{% url 'comissoes:painel_comissoes' %}" class="btn btn-outline-success mt-auto">Acessar</a>
           </div>
         </div>
       </div>
@@ -166,7 +166,7 @@
             <i class="bi bi-bar-chart-line text-primary fs-1 mb-3"></i>
             <h5 class="fw-bold mb-2">Relatórios</h5>
             <p class="text-muted small">Relatórios gerenciais e operacionais</p>
-            <a href="/relatorios/" class="btn btn-outline-primary mt-auto">Acessar</a>
+            <a href="{% url 'relatorios:painel_central' %}" class="btn btn-outline-primary mt-auto">Acessar</a>
           </div>
         </div>
       </div>
@@ -178,7 +178,7 @@
             <i class="bi bi-person-circle text-info fs-1 mb-3"></i>
             <h5 class="fw-bold mb-2">Área do Cliente</h5>
             <p class="text-muted small">Acesso exclusivo para clientes</p>
-            <a href="/cliente/" class="btn btn-outline-info mt-auto">Acessar</a>
+            <a href="{% url 'admin:clientes_cliente_changelist' %}" class="btn btn-outline-info mt-auto">Acessar</a>
           </div>
         </div>
       </div>
@@ -190,7 +190,7 @@
             <i class="bi bi-clipboard-data text-secondary fs-1 mb-3"></i>
             <h5 class="fw-bold mb-2">Log de Webhooks</h5>
             <p class="text-muted small">Histórico de integrações ASAAS</p>
-            <a href="/core/webhook/logs/" class="btn btn-outline-secondary mt-auto">Acessar</a>
+            <a href="{% url 'core:webhook_logs' %}" class="btn btn-outline-secondary mt-auto">Acessar</a>
           </div>
         </div>
       </div>
@@ -202,7 +202,7 @@
             <i class="bi bi-gear text-dark fs-1 mb-3"></i>
             <h5 class="fw-bold mb-2">Configurações</h5>
             <p class="text-muted small">Ajustes e preferências do sistema</p>
-            <a href="/core/configuracoes/" class="btn btn-outline-dark mt-auto">Acessar</a>
+            <a href="{% url 'core:painel_configuracoes' %}" class="btn btn-outline-dark mt-auto">Acessar</a>
           </div>
         </div>
       </div>
@@ -214,7 +214,7 @@
             <i class="bi bi-journal-bookmark text-primary fs-1 mb-3"></i>
             <h5 class="fw-bold mb-2">Central de Documentação</h5>
             <p class="text-muted small">Guias, fluxos e documentação do sistema</p>
-            <a href="/documentacao/" class="btn btn-outline-primary mt-auto">Acessar</a>
+            <a href="{% url 'core:central_documentacao' %}" class="btn btn-outline-primary mt-auto">Acessar</a>
           </div>
         </div>
       </div>
