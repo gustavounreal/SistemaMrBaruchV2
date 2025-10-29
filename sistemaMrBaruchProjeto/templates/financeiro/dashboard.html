@@ -52,14 +52,14 @@
         .stats-card.warning { border-left-color: #ffc107; }
         
         .stats-number {
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: bold;
             margin: 10px 0;
         }
         
         .stats-label {
             color: #6c757d;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -87,20 +87,20 @@
         }
         
         .module-btn i {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             margin-right: 15px;
             vertical-align: middle;
         }
         
         .module-btn .btn-title {
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             font-weight: 600;
             display: block;
             margin-bottom: 5px;
         }
         
         .module-btn .btn-desc {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             color: #6c757d;
         }
         
@@ -124,8 +124,8 @@
         </div>
         
         <!-- Cards de Estatísticas -->
-        <div class="row mb-4">
-            <div class="col-xl-3 col-md-6 mb-3">
+        <div class="row justify-content-center mb-4">
+            <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
                 <div class="stats-card danger">
                     <div class="stats-label">Inadimplentes</div>
                     <div class="stats-number text-danger">{{ total_inadimplentes }}</div>
@@ -133,7 +133,7 @@
                 </div>
             </div>
             
-            <div class="col-xl-3 col-md-6 mb-3">
+            <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
                 <div class="stats-card danger">
                     <div class="stats-label">Valor Inadimplente</div>
                     <div class="stats-number text-danger">R$ {{ total_valor_inadimplencia|floatformat:2 }}</div>
@@ -141,7 +141,7 @@
                 </div>
             </div>
             
-            <div class="col-xl-3 col-md-6 mb-3">
+            <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
                 <div class="stats-card success">
                     <div class="stats-label">Entradas do Mês</div>
                     <div class="stats-number text-success">R$ {{ entradas_mes|floatformat:2 }}</div>
@@ -149,7 +149,7 @@
                 </div>
             </div>
             
-            <div class="col-xl-3 col-md-6 mb-3">
+            <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
                 <div class="stats-card warning">
                     <div class="stats-label">Renegociações Ativas</div>
                     <div class="stats-number text-warning">{{ renegociacoes_ativas }}</div>
@@ -215,12 +215,6 @@
                     <i class="fas fa-file-invoice-dollar text-info"></i>
                     <span class="btn-title">Gestão de Parcelas</span>
                     <span class="btn-desc">Todas as parcelas do sistema</span>
-                </a>
-                
-                <a href="{% url 'financeiro:relatorio_fluxo_caixa' %}" class="module-btn">
-                    <i class="fas fa-cash-register text-success"></i>
-                    <span class="btn-title">Fluxo de Caixa</span>
-                    <span class="btn-desc">Entradas e previsões</span>
                 </a>
             </div>
         </div>

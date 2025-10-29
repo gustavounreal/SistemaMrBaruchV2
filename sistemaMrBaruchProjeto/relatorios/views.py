@@ -231,7 +231,7 @@ def relatorio_financeiro(request):
     context = {
         'em_breve': True,
         'titulo': 'Relatório Financeiro',
-        'descricao': 'Análise de contas a pagar, receber, fluxo de caixa e demonstrativos.',
+        'descricao': 'Análise de contas a pagar, receber e demonstrativos.',
     }
     return render(request, 'relatorios/relatorio_em_breve.html', context)
 

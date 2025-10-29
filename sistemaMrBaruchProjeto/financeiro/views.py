@@ -547,45 +547,6 @@ def relatorio_inadimplencia(request):
     return render(request, 'financeiro/relatorios/inadimplencia.html', context)
 
 
-@login_required
-def relatorio_fluxo_caixa(request):
-    """Relatório de fluxo de caixa"""
-    hoje = timezone.now().date()
-    mes = int(request.GET.get('mes', hoje.month))
-    ano = int(request.GET.get('ano', hoje.year))
-    
-    primeiro_dia = datetime(ano, mes, 1).date()
-    if mes == 12:
-        ultimo_dia = datetime(ano + 1, 1, 1).date() - timedelta(days=1)
-    else:
-        ultimo_dia = datetime(ano, mes + 1, 1).date() - timedelta(days=1)
-    
-    # Entradas (pagamentos recebidos)
-    entradas = Parcela.objects.filter(
-        status='paga',
-        data_pagamento__gte=primeiro_dia,
-        data_pagamento__lte=ultimo_dia
-    ).aggregate(total=Sum('valor'))['total'] or 0
-    
-    # Previsão (parcelas em aberto no período)
-    previsao = Parcela.objects.filter(
-        status='aberta',
-        data_vencimento__gte=primeiro_dia,
-        data_vencimento__lte=ultimo_dia
-    ).aggregate(total=Sum('valor'))['total'] or 0
-    
-    context = {
-        'mes': mes,
-        'ano': ano,
-        'entradas': entradas,
-        'previsao': previsao,
-        'primeiro_dia': primeiro_dia,
-        'ultimo_dia': ultimo_dia,
-    }
-    
-    return render(request, 'financeiro/relatorios/fluxo_caixa.html', context)
-
-
 # ============= Funções auxiliares (mantidas da versão original) =============
 
 from financeiro.models import ClienteAsaas

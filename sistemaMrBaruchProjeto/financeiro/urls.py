@@ -26,5 +26,4 @@ urlpatterns = [
     
     # Relatórios
     path('relatorios/inadimplencia/', views.relatorio_inadimplencia, name='relatorio_inadimplencia'),
-    path('relatorios/fluxo-caixa/', views.relatorio_fluxo_caixa, name='relatorio_fluxo_caixa'),
 ]

@@ -50,9 +50,12 @@
         
         .stats-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 1rem;
             margin-bottom: 2rem;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         .stats-card {
@@ -69,14 +72,14 @@
         .stats-card.total { border-left-color: #8b5cf6; }
         
         .stats-value {
-            font-size: 1.8rem;
+            font-size: 1.4rem;
             font-weight: bold;
             color: #333;
         }
         
         .stats-label {
             color: #6c757d;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -331,6 +334,11 @@
                             <div class="venda-info">
                                 <i class="fas fa-phone"></i> {{ parcela.venda.cliente.lead.telefone|default:"N/A" }}
                             </div>
+                            {% if parcela.venda.cliente.lead.cpf_cnpj %}
+                            <div class="venda-info">
+                                <i class="fas fa-id-card"></i> {{ parcela.venda.cliente.lead.cpf_cnpj }}
+                            </div>
+                            {% endif %}
                         </td>
                         <td>
                             <div class="cliente-info">Venda #{{ parcela.venda.id }}</div>
