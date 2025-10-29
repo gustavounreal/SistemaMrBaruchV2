@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Parcelas - Sistema Mr. Baruch</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        
+        main {
+            margin-left: 280px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        @media (max-width: 992px) {
+            main {
+                margin-left: 0;
+                padding: 1rem;
+            }
+        }
+        
+        .page-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .filter-section {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid #10b981;
+        }
+        
+        .stats-card.pagas { border-left-color: #10b981; }
+        .stats-card.abertas { border-left-color: #3b82f6; }
+        .stats-card.vencidas { border-left-color: #dc3545; }
+        .stats-card.total { border-left-color: #8b5cf6; }
+        
+        .stats-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .stats-label {
+            color: #6c757d;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+            white-space: nowrap;
+        }
+        
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+        
+        .table tbody tr:hover {
+            background: #f8f9fa;
+            transform: scale(1.01);
+        }
+        
+        .badge-status {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .badge-paga {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-aberta {
+            background: #cfe2ff;
+            color: #084298;
+        }
+        
+        .badge-vencida {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .badge-cancelada {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .cliente-info {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .venda-info {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .valor-destaque {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #10b981;
+        }
+        
+        .valor-vencida {
+            color: #dc3545;
+        }
+        
+        .btn-action {
+            padding: 5px 12px;
+            font-size: 0.85rem;
+            border-radius: 5px;
+            margin: 2px;
+        }
+        
+        .pagination-container {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .filter-badge {
+            display: inline-block;
+            padding: 8px 15px;
+            background: #e7f3ff;
+            border-radius: 20px;
+            margin-right: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box input {
+            padding-left: 40px;
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/sidebar.html' %}
+    
+    <main>
+        <!-- Cabeçalho -->
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1"><i class="fas fa-file-invoice-dollar text-success"></i> Gestão de Parcelas</h2>
+                    <p class="text-muted mb-0">Controle completo de todas as parcelas do sistema</p>
+                </div>
+                <a href="{% url 'financeiro:dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+        
+        <!-- Cards de Estatísticas -->
+        <div class="stats-row">
+            <div class="stats-card pagas">
+                <div class="stats-label">
+                    <i class="fas fa-check-circle"></i> Parcelas Pagas
+                </div>
+                <div class="stats-value text-success">{{ total_pagas|default:0 }}</div>
+                <small class="text-muted">R$ {{ valor_pagas|floatformat:2|default:"0,00" }}</small>
+            </div>
+            
+            <div class="stats-card abertas">
+                <div class="stats-label">
+                    <i class="fas fa-clock"></i> Em Aberto
+                </div>
+                <div class="stats-value text-primary">{{ total_abertas|default:0 }}</div>
+                <small class="text-muted">R$ {{ valor_abertas|floatformat:2|default:"0,00" }}</small>
+            </div>
+            
+            <div class="stats-card vencidas">
+                <div class="stats-label">
+                    <i class="fas fa-exclamation-triangle"></i> Vencidas
+                </div>
+                <div class="stats-value text-danger">{{ total_vencidas|default:0 }}</div>
+                <small class="text-muted">R$ {{ valor_vencidas|floatformat:2|default:"0,00" }}</small>
+            </div>
+            
+            <div class="stats-card total">
+                <div class="stats-label">
+                    <i class="fas fa-list"></i> Total de Parcelas
+                </div>
+                <div class="stats-value" style="color: #8b5cf6;">{{ parcelas.count|default:0 }}</div>
+                <small class="text-muted">todas as parcelas</small>
+            </div>
+        </div>
+        
+        <!-- Seção de Filtros -->
+        <div class="filter-section">
+            <h5 class="mb-3"><i class="fas fa-filter"></i> Filtros Avançados</h5>
+            
+            <!-- Filtro Rápido por Status -->
+            <div class="mb-3">
+                <strong>Status:</strong>
+                <a href="?status=todas" class="filter-badge {% if status_filtro == 'todas' %}bg-primary text-white{% endif %}">
+                    <i class="fas fa-list"></i> Todas
+                </a>
+                <a href="?status=paga" class="filter-badge {% if status_filtro == 'paga' %}bg-success text-white{% endif %}">
+                    <i class="fas fa-check-circle"></i> Pagas
+                </a>
+                <a href="?status=aberta" class="filter-badge {% if status_filtro == 'aberta' %}bg-primary text-white{% endif %}">
+                    <i class="fas fa-clock"></i> Em Aberto
+                </a>
+                <a href="?status=vencida" class="filter-badge {% if status_filtro == 'vencida' %}bg-danger text-white{% endif %}">
+                    <i class="fas fa-exclamation-triangle"></i> Vencidas
+                </a>
+            </div>
+            
+            <!-- Busca e Filtros Detalhados -->
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Buscar Cliente:</label>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="form-control" name="busca" placeholder="Nome do cliente..." value="{{ busca }}">
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Data Vencimento (De):</label>
+                    <input type="date" class="form-control" name="data_inicio" value="{{ data_inicio }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Data Vencimento (Até):</label>
+                    <input type="date" class="form-control" name="data_fim" value="{{ data_fim }}">
+                </div>
+                
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Tabela de Parcelas -->
+        <div class="table-container">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="fas fa-table"></i> Lista de Parcelas</h5>
+                <span class="badge bg-secondary">{{ parcelas.count }} parcela(s) encontrada(s)</span>
+            </div>
+            
+            {% if parcelas %}
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Cliente</th>
+                        <th>Venda / Serviço</th>
+                        <th class="text-center">Parcela</th>
+                        <th class="text-end">Valor</th>
+                        <th class="text-center">Vencimento</th>
+                        <th class="text-center">Pagamento</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for parcela in parcelas %}
+                    <tr>
+                        <td>{{ parcela.id }}</td>
+                        <td>
+                            <div class="cliente-info">
+                                <i class="fas fa-user-circle"></i> {{ parcela.venda.cliente.lead.nome_completo }}
+                            </div>
+                            <div class="venda-info">
+                                <i class="fas fa-phone"></i> {{ parcela.venda.cliente.lead.telefone|default:"N/A" }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="cliente-info">Venda #{{ parcela.venda.id }}</div>
+                            <div class="venda-info">{{ parcela.venda.servico.nome }}</div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-secondary">
+                                {{ parcela.numero_parcela }}/{{ parcela.venda.quantidade_parcelas }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <span class="valor-destaque {% if parcela.status == 'vencida' %}valor-vencida{% endif %}">
+                                R$ {{ parcela.valor|floatformat:2 }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <small>{{ parcela.data_vencimento|date:"d/m/Y" }}</small>
+                        </td>
+                        <td class="text-center">
+                            {% if parcela.data_pagamento %}
+                            <small class="text-success">
+                                <i class="fas fa-check"></i> {{ parcela.data_pagamento|date:"d/m/Y" }}
+                            </small>
+                            {% else %}
+                            <small class="text-muted">-</small>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if parcela.status == 'paga' %}
+                                <span class="badge-status badge-paga">
+                                    <i class="fas fa-check-circle"></i> Paga
+                                </span>
+                            {% elif parcela.status == 'vencida' %}
+                                <span class="badge-status badge-vencida">
+                                    <i class="fas fa-exclamation-triangle"></i> Vencida
+                                </span>
+                            {% elif parcela.status == 'aberta' %}
+                                <span class="badge-status badge-aberta">
+                                    <i class="fas fa-clock"></i> Em Aberto
+                                </span>
+                            {% else %}
+                                <span class="badge-status badge-cancelada">
+                                    <i class="fas fa-times-circle"></i> Cancelada
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <a href="{% url 'financeiro:detalhes_parcela' parcela.id %}" class="btn btn-info btn-action" title="Ver Detalhes">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% if parcela.status != 'paga' %}
+                            <button type="button" class="btn btn-success btn-action" onclick="marcarPaga({{ parcela.id }})" title="Marcar como Paga">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Nenhuma parcela encontrada com os filtros selecionados.
+            </div>
+            {% endif %}
+        </div>
+    </main>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function marcarPaga(parcelaId) {
+            if (confirm('Deseja marcar esta parcela como paga?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/financeiro/parcelas/${parcelaId}/marcar-paga/`;
+                
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                if (csrfToken) {
+                    form.innerHTML = csrfToken.outerHTML;
+                }
+                
+                const dataPagamento = document.createElement('input');
+                dataPagamento.type = 'hidden';
+                dataPagamento.name = 'data_pagamento';
+                dataPagamento.value = new Date().toISOString().split('T')[0];
+                form.appendChild(dataPagamento);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        // Highlight da linha selecionada
+        document.querySelectorAll('.table tbody tr').forEach(row => {
+            row.addEventListener('click', function(e) {
+                if (!e.target.closest('button') && !e.target.closest('a')) {
+                    this.style.background = '#e7f3ff';
+                    setTimeout(() => {
+                        this.style.background = '';
+                    }, 1000);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

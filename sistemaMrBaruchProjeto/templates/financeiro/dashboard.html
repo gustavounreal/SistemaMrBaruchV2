@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financeiro / Retenção - Sistema Mr. Baruch</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        
+        main {
+            margin-left: 280px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        @media (max-width: 992px) {
+            main {
+                margin-left: 0;
+                padding: 1rem;
+            }
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border-left: 4px solid;
+            height: 100%;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+        
+        .stats-card.danger { border-left-color: #dc3545; }
+        .stats-card.success { border-left-color: #28a745; }
+        .stats-card.warning { border-left-color: #ffc107; }
+        
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .stats-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .module-btn {
+            display: block;
+            width: 100%;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            text-align: left;
+            transition: all 0.3s ease;
+            border: 2px solid #e9ecef;
+            background: white;
+            color: #495057;
+            text-decoration: none;
+        }
+        
+        .module-btn:hover {
+            border-color: #10b981;
+            background: #f8f9fa;
+            transform: translateX(10px);
+            color: #10b981;
+            text-decoration: none;
+        }
+        
+        .module-btn i {
+            font-size: 1.8rem;
+            margin-right: 15px;
+            vertical-align: middle;
+        }
+        
+        .module-btn .btn-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .module-btn .btn-desc {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        
+        .page-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/sidebar.html' %}
+    
+    <main>
+        <!-- Cabeçalho -->
+        <div class="page-header">
+            <h2 class="mb-1"><i class="fas fa-chart-line text-success"></i> Financeiro / Retenção</h2>
+            <p class="text-muted mb-0">Gestão de entradas, inadimplência e renegociações</p>
+        </div>
+        
+        <!-- Cards de Estatísticas -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="stats-card danger">
+                    <div class="stats-label">Inadimplentes</div>
+                    <div class="stats-number text-danger">{{ total_inadimplentes }}</div>
+                    <small class="text-muted">Clientes com atraso +3 dias</small>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="stats-card danger">
+                    <div class="stats-label">Valor Inadimplente</div>
+                    <div class="stats-number text-danger">R$ {{ total_valor_inadimplencia|floatformat:2 }}</div>
+                    <small class="text-muted">Total em atraso</small>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="stats-card success">
+                    <div class="stats-label">Entradas do Mês</div>
+                    <div class="stats-number text-success">R$ {{ entradas_mes|floatformat:2 }}</div>
+                    <small class="text-muted">Pagamentos recebidos</small>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="stats-card warning">
+                    <div class="stats-label">Renegociações Ativas</div>
+                    <div class="stats-number text-warning">{{ renegociacoes_ativas }}</div>
+                    <small class="text-muted">Em andamento</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Módulos -->
+        <div class="row">
+            <!-- Retenção -->
+            <div class="col-lg-6 mb-4">
+                <h4 class="mb-3"><i class="fas fa-user-shield text-warning"></i> Retenção</h4>
+                
+                <a href="{% url 'financeiro:painel_retencao' %}" class="module-btn">
+                    <i class="fas fa-exclamation-triangle text-danger"></i>
+                    <span class="btn-title">Painel de Inadimplentes</span>
+                    <span class="btn-desc">Clientes com atraso superior a 3 dias</span>
+                </a>
+                
+                <a href="{% url 'financeiro:lista_inadimplentes' %}" class="module-btn">
+                    <i class="fas fa-list text-warning"></i>
+                    <span class="btn-title">Lista Completa de Inadimplentes</span>
+                    <span class="btn-desc">Filtros avançados por período e valor</span>
+                </a>
+                
+                <a href="{% url 'financeiro:relatorio_inadimplencia' %}" class="module-btn">
+                    <i class="fas fa-chart-bar text-info"></i>
+                    <span class="btn-title">Relatório de Inadimplência</span>
+                    <span class="btn-desc">Análise consolidada por período</span>
+                </a>
+            </div>
+            
+            <!-- Financeiro -->
+            <div class="col-lg-6 mb-4">
+                <h4 class="mb-3"><i class="fas fa-dollar-sign text-success"></i> Financeiro</h4>
+                
+                <a href="{% url 'financeiro:painel_entradas' %}" class="module-btn">
+                    <i class="fas fa-chart-line text-success"></i>
+                    <span class="btn-title">Painel de Entradas</span>
+                    <span class="btn-desc">Visão geral de recebimentos</span>
+                </a>
+                
+                <a href="{% url 'financeiro:entradas_diario' %}" class="module-btn">
+                    <i class="fas fa-calendar-day text-primary"></i>
+                    <span class="btn-title">Entradas Diário</span>
+                    <span class="btn-desc">Recebimentos do dia</span>
+                </a>
+                
+                <a href="{% url 'financeiro:entradas_semanal' %}" class="module-btn">
+                    <i class="fas fa-calendar-week text-primary"></i>
+                    <span class="btn-title">Entradas Semanal</span>
+                    <span class="btn-desc">Recebimentos da semana</span>
+                </a>
+                
+                <a href="{% url 'financeiro:entradas_mensal' %}" class="module-btn">
+                    <i class="fas fa-calendar-alt text-primary"></i>
+                    <span class="btn-title">Entradas Mensal</span>
+                    <span class="btn-desc">Recebimentos do mês</span>
+                </a>
+                
+                <a href="{% url 'financeiro:lista_parcelas' %}" class="module-btn">
+                    <i class="fas fa-file-invoice-dollar text-info"></i>
+                    <span class="btn-title">Gestão de Parcelas</span>
+                    <span class="btn-desc">Todas as parcelas do sistema</span>
+                </a>
+                
+                <a href="{% url 'financeiro:relatorio_fluxo_caixa' %}" class="module-btn">
+                    <i class="fas fa-cash-register text-success"></i>
+                    <span class="btn-title">Fluxo de Caixa</span>
+                    <span class="btn-desc">Entradas e previsões</span>
+                </a>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Atualizar estatísticas a cada 5 minutos
+        setInterval(function() {
+            location.reload();
+        }, 300000);
+    </script>
+</body>
+</html>

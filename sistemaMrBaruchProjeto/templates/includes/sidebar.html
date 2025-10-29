@@ -1,0 +1,393 @@
+{% comment %}
+Menu lateral para Financeiro/Retenção - Estilo Moderno
+{% endcomment %}
+<div id="sidebarFinanceiro" class="sidebar-financeiro">
+    <div class="sidebar-header">
+        <h3 class="sidebar-title">
+            <i class="fas fa-chart-line"></i>
+            <span class="sidebar-title-text">Financeiro</span>
+        </h3>
+    </div>
+    
+    <nav class="sidebar-menu">
+        <div class="menu-section">
+            <div class="menu-section-title">Principal</div>
+            <a href="{% url 'accounts:dashboard' %}" class="menu-item">
+                <i class="fas fa-home"></i>
+                <span class="menu-item-text">Dashboard Geral</span>
+            </a>
+            <a href="{% url 'financeiro:dashboard' %}" class="menu-item">
+                <i class="fas fa-chart-line"></i>
+                <span class="menu-item-text">Painel Financeiro</span>
+            </a>
+        </div>
+        
+        <div class="menu-section">
+            <div class="menu-section-title">Retenção</div>
+            <a href="{% url 'financeiro:painel_retencao' %}" class="menu-item">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span class="menu-item-text">Painel de Retenção</span>
+            </a>
+            <a href="{% url 'financeiro:lista_inadimplentes' %}" class="menu-item">
+                <i class="fas fa-list"></i>
+                <span class="menu-item-text">Lista Inadimplentes</span>
+            </a>
+            <a href="{% url 'financeiro:relatorio_inadimplencia' %}" class="menu-item">
+                <i class="fas fa-chart-bar"></i>
+                <span class="menu-item-text">Rel. Inadimplência</span>
+            </a>
+        </div>
+        
+        <div class="menu-section">
+            <div class="menu-section-title">Entradas</div>
+            <a href="{% url 'financeiro:painel_entradas' %}" class="menu-item">
+                <i class="fas fa-chart-line"></i>
+                <span class="menu-item-text">Painel de Entradas</span>
+            </a>
+            <a href="{% url 'financeiro:entradas_diario' %}" class="menu-item">
+                <i class="fas fa-calendar-day"></i>
+                <span class="menu-item-text">Entradas Diário</span>
+            </a>
+            <a href="{% url 'financeiro:entradas_semanal' %}" class="menu-item">
+                <i class="fas fa-calendar-week"></i>
+                <span class="menu-item-text">Entradas Semanal</span>
+            </a>
+            <a href="{% url 'financeiro:entradas_mensal' %}" class="menu-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span class="menu-item-text">Entradas Mensal</span>
+            </a>
+        </div>
+        
+        <div class="menu-section">
+            <div class="menu-section-title">Gestão</div>
+            <a href="{% url 'financeiro:lista_parcelas' %}" class="menu-item">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span class="menu-item-text">Parcelas</span>
+            </a>
+            <a href="{% url 'financeiro:relatorio_fluxo_caixa' %}" class="menu-item">
+                <i class="fas fa-cash-register"></i>
+                <span class="menu-item-text">Fluxo de Caixa</span>
+            </a>
+        </div>
+    </nav>
+    
+    <div class="sidebar-footer">
+        <div class="user-info">
+            <div class="user-avatar">
+                {{ user.username|slice:":1"|upper }}
+            </div>
+            <div class="user-details">
+                <div class="user-name">{{ user.username }}</div>
+                <div class="user-role">Financeiro</div>
+            </div>
+        </div>
+        <form id="sidebarLogoutForm" action="{% url 'accounts:logout_session' %}" method="POST" style="margin: 0;">
+            {% csrf_token %}
+            <button type="submit" class="btn-logout">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="btn-logout-text">Sair do Sistema</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Botão Toggle Mobile -->
+<button class="mobile-toggle" id="mobileToggle">
+    <i class="fas fa-bars"></i>
+</button>
+
+<style>
+/* ===== SIDEBAR FINANCEIRO - ESTILO MODERNO ===== */
+.sidebar-financeiro {
+    width: 280px;
+    background: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
+    color: white;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 4px 0 12px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+}
+
+.sidebar-financeiro::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-financeiro::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+/* Header */
+.sidebar-header {
+    padding: 1.75rem 1.5rem;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-title {
+    color: white;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sidebar-title i {
+    font-size: 1.5rem;
+}
+
+/* Menu */
+.sidebar-menu {
+    padding: 1.5rem 0;
+    padding-bottom: 200px;
+}
+
+.menu-section {
+    margin-bottom: 2rem;
+}
+
+.menu-section-title {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.9rem 1.5rem;
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    transition: all 0.25s ease;
+    border-left: 3px solid transparent;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.menu-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    border-left-color: #10b981;
+    padding-left: 1.7rem;
+}
+
+.menu-item.active {
+    background: rgba(16, 185, 129, 0.2);
+    color: white;
+    border-left-color: #10b981;
+    font-weight: 600;
+}
+
+.menu-item i {
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+
+/* Footer */
+.sidebar-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 280px;
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 10;
+    backdrop-filter: blur(5px);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-bottom: 1rem;
+}
+
+.user-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.user-details {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.user-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-role {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.btn-logout {
+    width: 100%;
+    padding: 0.7rem;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+    border-radius: 8px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.btn-logout:hover {
+    background: rgba(239, 68, 68, 0.25);
+    color: #fecaca;
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* Mobile Toggle */
+.mobile-toggle {
+    display: none !important;
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1001;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+/* Responsivo */
+@media (max-width: 992px) {
+    .sidebar-financeiro {
+        transform: translateX(-280px);
+    }
+    
+    .sidebar-financeiro.active {
+        transform: translateX(0);
+    }
+    
+    .sidebar-footer {
+        width: 280px;
+        left: 0;
+    }
+    
+    .mobile-toggle {
+        display: block !important;
+    }
+}
+
+@media (min-width: 993px) {
+    .mobile-toggle {
+        display: none !important;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('sidebarFinanceiro');
+    const mobileToggle = document.getElementById('mobileToggle');
+    const logoutForm = document.getElementById('sidebarLogoutForm');
+    
+    // Toggle Mobile Sidebar
+    if (mobileToggle) {
+        mobileToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('active');
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth <= 992) {
+                if (!sidebar.contains(e.target) && !mobileToggle.contains(e.target)) {
+                    sidebar.classList.remove('active');
+                }
+            }
+        });
+    }
+    
+    // Marcar link ativo
+    const currentPath = window.location.pathname;
+    document.querySelectorAll('.menu-item').forEach(link => {
+        if (link.getAttribute('href') === currentPath) {
+            link.classList.add('active');
+        }
+    });
+    
+    // Ajustar margem do conteúdo
+    function adjustMainSpacing() {
+        try {
+            const main = document.querySelector('main') || 
+                        document.querySelector('.main-content') ||
+                        document.querySelector('.dashboard-main');
+            
+            if (!main) return;
+            
+            if (window.innerWidth < 992) {
+                main.style.marginLeft = '';
+                return;
+            }
+            
+            const sidebarWidth = sidebar.offsetWidth || 280;
+            main.style.marginLeft = sidebarWidth + 'px';
+        } catch (e) {
+            console.warn('adjustMainSpacing error:', e);
+        }
+    }
+    
+    adjustMainSpacing();
+    
+    window.addEventListener('resize', function() {
+        clearTimeout(window._sidebarResizeTimeout);
+        window._sidebarResizeTimeout = setTimeout(adjustMainSpacing, 120);
+    });
+    
+    // Logout Handler
+    if (logoutForm) {
+        logoutForm.addEventListener('submit', function(e) {
+            try {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                localStorage.removeItem('token_expires');
+                localStorage.removeItem('user_data');
+            } catch (err) {
+                console.warn('Clear localStorage failed:', err);
+            }
+            return true;
+        });
+    }
+});
+</script>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Inadimplentes - Sistema Mr. Baruch</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: #f5f7fa; }
+        main { margin-left: 280px; padding: 2rem; min-height: 100vh; }
+        @media (max-width: 992px) { main { margin-left: 0; padding: 1rem; } }
+        .page-header { background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .inadimplente-card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; border-left: 5px solid #dc3545; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .cliente-nome { font-size: 1.2rem; font-weight: 600; color: #333; margin-bottom: 5px; }
+        .cliente-contato { font-size: 0.9rem; color: #666; }
+        .valor-divida { font-size: 1.5rem; font-weight: bold; color: #dc3545; }
+        .dias-atraso { display: inline-block; padding: 5px 15px; background: #dc3545; color: white; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+        .parcela-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #fff; border-radius: 5px; margin-bottom: 8px; border: 1px solid #e9ecef; }
+        .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
+        .btn-negociar { background: #28a745; color: white; padding: 8px 18px; border-radius: 8px; text-decoration: none; border: none; font-weight: 600; }
+        .btn-negociar:hover { background: #218838; color: white; }
+        .btn-historico { background: #17a2b8; color: white; padding: 8px 18px; border-radius: 8px; text-decoration: none; border: none; font-weight: 600; }
+        .btn-historico:hover { background: #138496; color: white; }
+        .filter-section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/sidebar.html' %}
+    <main>
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1"><i class="fas fa-user-slash text-danger"></i> Lista de Inadimplentes</h2>
+                    <p class="text-muted mb-0">Clientes com débitos em aberto</p>
+                </div>
+                <a href="{% url 'financeiro:painel_retencao' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+        
+        <!-- Filtros -->
+        <div class="filter-section">
+            <h5 class="mb-3"><i class="fas fa-filter"></i> Filtros</h5>
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="dias" class="form-label">Período de Atraso:</label>
+                    <select class="form-select" id="dias" name="dias">
+                        <option value="todos" {% if filtro_dias == 'todos' %}selected{% endif %}>Todos</option>
+                        <option value="3-7" {% if filtro_dias == '3-7' %}selected{% endif %}>3 a 7 dias</option>
+                        <option value="8-15" {% if filtro_dias == '8-15' %}selected{% endif %}>8 a 15 dias</option>
+                        <option value="16-30" {% if filtro_dias == '16-30' %}selected{% endif %}>16 a 30 dias</option>
+                        <option value="mais_30" {% if filtro_dias == 'mais_30' %}selected{% endif %}>Mais de 30 dias</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="valor_min" class="form-label">Valor Mínimo:</label>
+                    <input type="number" class="form-control" id="valor_min" name="valor_min" placeholder="Ex: 100.00" step="0.01" value="{{ filtro_valor_min }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="valor_max" class="form-label">Valor Máximo:</label>
+                    <input type="number" class="form-control" id="valor_max" name="valor_max" placeholder="Ex: 1000.00" step="0.01" value="{{ filtro_valor_max }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Resumo -->
+        {% if total_inadimplentes %}
+        <div class="alert alert-info mb-3">
+            <strong><i class="fas fa-info-circle"></i> Total: {{ total_inadimplentes }}</strong> cliente(s) inadimplente(s) encontrado(s)
+        </div>
+        {% endif %}
+        
+        <!-- Lista de Inadimplentes -->
+        {% if vendas_inadimplentes %}
+            {% for item in vendas_inadimplentes %}
+            <div class="inadimplente-card">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <div class="cliente-nome">
+                            <i class="fas fa-user-circle"></i> {{ item.venda.cliente.lead.nome_completo }}
+                        </div>
+                        <div class="cliente-contato">
+                            <i class="fas fa-phone"></i> {{ item.venda.cliente.lead.telefone|default:"Não informado" }}
+                            {% if item.venda.cliente.lead.email %}
+                            | <i class="fas fa-envelope"></i> {{ item.venda.cliente.lead.email }}
+                            {% endif %}
+                        </div>
+                        <div class="cliente-contato mt-1">
+                            <strong>Venda #{{ item.venda.id }}</strong> - {{ item.venda.servico.nome }}
+                        </div>
+                    </div>
+                    <div>
+                        <span class="dias-atraso">{{ item.dias_atraso }} dias de atraso</span>
+                    </div>
+                </div>
+                <div>
+                    <span class="valor-divida">R$ {{ item.valor_total|floatformat:2 }}</span>
+                    <small class="text-muted">({{ item.parcelas|length }} parcelas em atraso)</small>
+                </div>
+                <div class="mb-2 mt-2">
+                    <strong>Parcelas Vencidas:</strong>
+                    {% for parcela in item.parcelas %}
+                    <div class="parcela-item">
+                        <span>Parcela {{ parcela.numero_parcela }}</span>
+                        <span>R$ {{ parcela.valor|floatformat:2 }} - Venc: {{ parcela.data_vencimento|date:"d/m/Y" }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="action-buttons">
+                    <a href="{% url 'financeiro:renegociar_divida' item.venda.id %}" class="btn-negociar">
+                        <i class="fas fa-handshake"></i> Renegociar
+                    </a>
+                    <a href="{% url 'financeiro:historico_negociacoes' item.venda.id %}" class="btn-historico">
+                        <i class="fas fa-history"></i> Histórico
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> Nenhum cliente inadimplente encontrado!
+            </div>
+        {% endif %}
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

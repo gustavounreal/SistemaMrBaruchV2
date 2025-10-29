@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Renegociar Dívida - Sistema Mr. Baruch</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f7fa;
+    margin: 0;
+    padding: 0;
+}
+
+main {
+    margin-left: 280px;
+    padding: 2rem;
+    min-height: 100vh;
+}
+
+@media (max-width: 992px) {
+    main {
+        margin-left: 0;
+        padding: 1rem;
+    }
+}
+
+.page-header {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.renegociacao-form {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.cliente-header {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    border-left: 5px solid #dc3545;
+}
+
+.parcela-checkbox {
+    background: white;
+    border: 2px solid #e9ecef;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+.parcela-checkbox:hover {
+    border-color: #007bff;
+    background: #f8f9fa;
+}
+
+.parcela-checkbox input[type="checkbox"]:checked + label {
+    font-weight: bold;
+    color: #007bff;
+}
+
+.valor-calculado {
+    background: #e7f3ff;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 20px 0;
+    border-left: 4px solid #007bff;
+}
+
+.valor-destaque {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.form-section {
+    margin-bottom: 30px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.btn-calcular {
+    background: #17a2b8;
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-calcular:hover {
+    background: #138496;
+    transform: scale(1.05);
+}
+
+.btn-submit {
+    background: #28a745;
+    color: white;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+.btn-submit:hover {
+    background: #218838;
+    transform: scale(1.05);
+}
+    </style>
+</head>
+<body>
+    {% include 'includes/sidebar.html' %}
+    
+    <main>
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .cliente-header {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        border-left: 5px solid #dc3545;
+    }
+    
+    .parcela-checkbox {
+        background: white;
+        border: 2px solid #e9ecef;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .parcela-checkbox:hover {
+        border-color: #007bff;
+        background: #f8f9fa;
+    }
+    
+    .parcela-checkbox input[type="checkbox"]:checked + label {
+        font-weight: bold;
+        color: #007bff;
+    }
+    
+    .valor-calculado {
+        background: #e7f3ff;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+        border-left: 4px solid #007bff;
+    }
+    
+    .valor-destaque {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+    
+    .form-section {
+        margin-bottom: 30px;
+        padding-bottom: 30px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .form-section:last-child {
+        border-bottom: none;
+    }
+    
+    .btn-calcular {
+        background: #17a2b8;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-calcular:hover {
+        background: #138496;
+        transform: scale(1.05);
+    }
+    
+    .btn-submit {
+        background: #28a745;
+        color: white;
+        padding: 15px 40px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-submit:hover {
+        background: #218838;
+        transform: scale(1.05);
+    }
+    </style>
+</head>
+<body>
+    {% include 'includes/sidebar.html' %}
+    
+    <main>
+        <!-- Cabeçalho -->
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1"><i class="fas fa-handshake text-success"></i> Renegociar Dívida</h2>
+                    <p class="text-muted mb-0">Proposta de renegociação de débitos</p>
+                </div>
+                <a href="{% url 'financeiro:painel_retencao' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+    
+    <!-- Informações do Cliente -->
+    <div class="cliente-header">
+        <h4 class="mb-3"><i class="fas fa-user-circle"></i> {{ venda.lead.nome_completo }}</h4>
+        <div class="row">
+            <div class="col-md-4">
+                <strong>Telefone:</strong> {{ venda.lead.telefone|default:"Não informado" }}
+            </div>
+            <div class="col-md-4">
+                <strong>Email:</strong> {{ venda.lead.email|default:"Não informado" }}
+            </div>
+            <div class="col-md-4">
+                <strong>Venda #{{ venda.id }}</strong> - {{ venda.servico.nome }}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Formulário de Renegociação -->
+    <form method="POST" id="formRenegociacao" class="renegociacao-form">
+        {% csrf_token %}
+        
+        <!-- Seção 1: Seleção de Parcelas -->
+        <div class="form-section">
+            <h5 class="mb-3"><i class="fas fa-file-invoice"></i> Parcelas para Renegociar</h5>
+            <p class="text-muted">Selecione as parcelas que farão parte da renegociação:</p>
+            
+            {% for parcela in parcelas_pendentes %}
+            <div class="parcela-checkbox">
+                <div class="form-check">
+                    <input 
+                        class="form-check-input parcela-item" 
+                        type="checkbox" 
+                        name="parcelas_selecionadas" 
+                        value="{{ parcela.id }}"
+                        data-valor="{{ parcela.valor }}"
+                        id="parcela{{ parcela.id }}"
+                        checked
+                    >
+                    <label class="form-check-label w-100 d-flex justify-content-between" for="parcela{{ parcela.id }}">
+                        <span>
+                            <strong>Parcela {{ parcela.numero_parcela }}</strong>
+                            {% if parcela.status == 'vencida' %}
+                            <span class="badge badge-danger ml-2">Vencida</span>
+                            {% else %}
+                            <span class="badge badge-warning ml-2">Em Aberto</span>
+                            {% endif %}
+                        </span>
+                        <span>
+                            <strong>R$ {{ parcela.valor|floatformat:2 }}</strong>
+                            - Venc: {{ parcela.data_vencimento|date:"d/m/Y" }}
+                        </span>
+                    </label>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <div class="alert alert-info mt-3">
+                <strong>Total Selecionado:</strong> <span id="totalSelecionado">R$ {{ valor_total_pendente|floatformat:2 }}</span>
+            </div>
+        </div>
+        
+        <!-- Seção 2: Tipo de Renegociação -->
+        <div class="form-section">
+            <h5 class="mb-3"><i class="fas fa-cogs"></i> Tipo de Renegociação</h5>
+            
+            <div class="form-group">
+                <label for="tipo_renegociacao">Escolha o tipo de renegociação:</label>
+                <select class="form-control" id="tipo_renegociacao" name="tipo_renegociacao" required>
+                    <option value="desconto">Desconto sobre o Valor</option>
+                    <option value="nova_parcela">Novo Parcelamento</option>
+                    <option value="prorrogacao">Prorrogação de Vencimento</option>
+                    <option value="combinada">Renegociação Combinada</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Seção 3: Condições da Negociação -->
+        <div class="form-section">
+            <h5 class="mb-3"><i class="fas fa-percentage"></i> Condições da Negociação</h5>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="percentual_desconto">Percentual de Desconto (%):</label>
+                        <input 
+                            type="number" 
+                            class="form-control" 
+                            id="percentual_desconto" 
+                            name="percentual_desconto" 
+                            min="0" 
+                            max="100" 
+                            step="0.01"
+                            value="0"
+                        >
+                        <small class="form-text text-muted">Digite 0 para não aplicar desconto</small>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="numero_novas_parcelas">Número de Novas Parcelas:</label>
+                        <input 
+                            type="number" 
+                            class="form-control" 
+                            id="numero_novas_parcelas" 
+                            name="numero_novas_parcelas" 
+                            min="1" 
+                            max="24" 
+                            value="1"
+                            required
+                        >
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="data_primeira_parcela">Data da 1ª Parcela:</label>
+                        <input 
+                            type="date" 
+                            class="form-control" 
+                            id="data_primeira_parcela" 
+                            name="data_primeira_parcela" 
+                            required
+                        >
+                    </div>
+                </div>
+            </div>
+            
+            <button type="button" class="btn btn-calcular" onclick="calcularRenegociacao()">
+                <i class="fas fa-calculator"></i> Calcular Nova Proposta
+            </button>
+        </div>
+        
+        <!-- Seção 4: Resultado do Cálculo -->
+        <div class="valor-calculado" id="resultadoCalculo" style="display: none;">
+            <h5 class="mb-3"><i class="fas fa-chart-line"></i> Resultado da Negociação</h5>
+            
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <small class="text-muted d-block">Valor Original</small>
+                    <span class="valor-destaque" id="valorOriginal">R$ 0,00</span>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted d-block">Desconto</small>
+                    <span class="valor-destaque text-danger" id="valorDesconto">R$ 0,00</span>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted d-block">Novo Total</small>
+                    <span class="valor-destaque text-success" id="novoTotal">R$ 0,00</span>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted d-block">Valor por Parcela</small>
+                    <span class="valor-destaque" id="valorParcela">R$ 0,00</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seção 5: Observações -->
+        <div class="form-section">
+            <h5 class="mb-3"><i class="fas fa-comment"></i> Observações</h5>
+            
+            <div class="form-group">
+                <label for="observacoes">Detalhes da negociação:</label>
+                <textarea 
+                    class="form-control" 
+                    id="observacoes" 
+                    name="observacoes" 
+                    rows="4"
+                    placeholder="Ex: Cliente aceitou proposta por telefone. Prometeu pagamento da primeira parcela em até 5 dias..."
+                ></textarea>
+            </div>
+        </div>
+        
+        <!-- Botões de Ação -->
+        <div class="text-center">
+            <button type="submit" class="btn btn-submit">
+                <i class="fas fa-save"></i> Criar Proposta de Renegociação
+            </button>
+            </div>
+        </form>
+    </main>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Definir data mínima como hoje
+        document.getElementById('data_primeira_parcela').min = new Date().toISOString().split('T')[0];
+        
+        // Atualizar total selecionado
+        function atualizarTotalSelecionado() {
+            let total = 0;
+            document.querySelectorAll('.parcela-item:checked').forEach(checkbox => {
+                total += parseFloat(checkbox.dataset.valor);
+            });
+            document.getElementById('totalSelecionado').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+        }
+        
+        document.querySelectorAll('.parcela-item').forEach(checkbox => {
+            checkbox.addEventListener('change', atualizarTotalSelecionado);
+        });
+        
+        // Calcular renegociação
+        function calcularRenegociacao() {
+            let valorOriginal = 0;
+            document.querySelectorAll('.parcela-item:checked').forEach(checkbox => {
+                valorOriginal += parseFloat(checkbox.dataset.valor);
+            });
+            
+            const percentualDesconto = parseFloat(document.getElementById('percentual_desconto').value) || 0;
+            const numeroParcelas = parseInt(document.getElementById('numero_novas_parcelas').value) || 1;
+            
+            const valorDesconto = (valorOriginal * percentualDesconto) / 100;
+            const novoTotal = valorOriginal - valorDesconto;
+            const valorParcela = novoTotal / numeroParcelas;
+            
+            // Exibir resultados
+            document.getElementById('valorOriginal').textContent = 'R$ ' + valorOriginal.toFixed(2).replace('.', ',');
+            document.getElementById('valorDesconto').textContent = 'R$ ' + valorDesconto.toFixed(2).replace('.', ',');
+            document.getElementById('novoTotal').textContent = 'R$ ' + novoTotal.toFixed(2).replace('.', ',');
+            document.getElementById('valorParcela').textContent = 'R$ ' + valorParcela.toFixed(2).replace('.', ',');
+            
+            document.getElementById('resultadoCalculo').style.display = 'block';
+            
+            // Scroll suave até o resultado
+            document.getElementById('resultadoCalculo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        // Validação do formulário
+        document.getElementById('formRenegociacao').addEventListener('submit', function(e) {
+            const parcelasSelecionadas = document.querySelectorAll('.parcela-item:checked').length;
+            
+            if (parcelasSelecionadas === 0) {
+                e.preventDefault();
+                alert('Selecione pelo menos uma parcela para renegociar!');
+                return false;
+            }
+            
+            if (!confirm('Confirma a criação desta proposta de renegociação?')) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>

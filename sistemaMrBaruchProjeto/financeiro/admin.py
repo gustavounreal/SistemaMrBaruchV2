@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Parcela, Comissao, PixLevantamento, PixEntrada, ClienteAsaas
+from .models import (
+    Parcela, Comissao, PixLevantamento, PixEntrada, ClienteAsaas,
+    Renegociacao, HistoricoContatoRetencao
+)
 
 @admin.register(PixEntrada)
 class PixEntradaAdmin(admin.ModelAdmin):
@@ -44,4 +47,50 @@ class ClienteAsaasAdmin(admin.ModelAdmin):
     list_display = ('lead', 'asaas_customer_id', 'data_criacao')
     search_fields = ('lead__nome_completo', 'asaas_customer_id')
     readonly_fields = ('asaas_customer_id', 'data_criacao')
+
+@admin.register(Renegociacao)
+class RenegociacaoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'venda', 'tipo_renegociacao', 'valor_novo_total', 'status', 'data_criacao', 'responsavel')
+    list_filter = ('status', 'tipo_renegociacao', 'data_criacao')
+    search_fields = ('venda__id', 'venda__lead__nome_completo', 'responsavel__username')
+    readonly_fields = ('data_criacao', 'data_atualizacao', 'data_efetivacao')
+    filter_horizontal = ('parcelas_original',)
+    
+    fieldsets = (
+        ('Informações da Venda', {
+            'fields': ('venda', 'tipo_renegociacao', 'status', 'responsavel')
+        }),
+        ('Dívida Original', {
+            'fields': ('parcelas_original', 'valor_total_divida')
+        }),
+        ('Nova Negociação', {
+            'fields': (
+                'valor_desconto', 'percentual_desconto', 'valor_novo_total',
+                'numero_novas_parcelas', 'data_primeira_parcela'
+            )
+        }),
+        ('Controle ASAAS', {
+            'fields': ('asaas_ids_cancelados', 'asaas_ids_novos'),
+            'classes': ('collapse',)
+        }),
+        ('Observações e Datas', {
+            'fields': ('observacoes', 'data_criacao', 'data_atualizacao', 'data_efetivacao')
+        }),
+    )
+
+@admin.register(HistoricoContatoRetencao)
+class HistoricoContatoRetencaoAdmin(admin.ModelAdmin):
+    list_display = ('venda', 'tipo_contato', 'resultado', 'data_contato', 'responsavel', 'data_proxima_tentativa')
+    list_filter = ('tipo_contato', 'resultado', 'data_contato')
+    search_fields = ('venda__id', 'venda__lead__nome_completo', 'responsavel__username', 'observacoes')
+    readonly_fields = ('data_contato',)
+    
+    fieldsets = (
+        ('Informações do Contato', {
+            'fields': ('venda', 'renegociacao', 'tipo_contato', 'resultado')
+        }),
+        ('Detalhes', {
+            'fields': ('observacoes', 'responsavel', 'data_contato', 'data_proxima_tentativa')
+        }),
+    )
 

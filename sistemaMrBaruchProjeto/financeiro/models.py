@@ -148,4 +148,100 @@ class PixEntrada(models.Model):
 
     def __str__(self):
         return f"PIX Entrada Venda #{self.venda.id} - R$ {self.valor} - {self.status_pagamento}"
+
+
+class Renegociacao(models.Model):
+    """
+    Histórico de renegociações de dívidas
+    """
+    STATUS_CHOICES = [
+        ('em_negociacao', 'Em Negociação'),
+        ('aceita', 'Aceita pelo Cliente'),
+        ('recusada', 'Recusada pelo Cliente'),
+        ('efetivada', 'Efetivada no ASAAS'),
+        ('cancelada', 'Cancelada'),
+    ]
+    
+    TIPO_CHOICES = [
+        ('desconto', 'Desconto sobre Parcelas'),
+        ('nova_parcela', 'Nova Parcelamento'),
+        ('prorrogacao', 'Prorrogação de Vencimento'),
+        ('combinada', 'Renegociação Combinada'),
+    ]
+    
+    venda = models.ForeignKey('vendas.Venda', on_delete=models.CASCADE, related_name='renegociacoes')
+    tipo_renegociacao = models.CharField(max_length=20, choices=TIPO_CHOICES, default='desconto')
+    
+    # Dados da Dívida Original
+    parcelas_original = models.ManyToManyField('Parcela', related_name='renegociacoes_original', blank=True)
+    valor_total_divida = models.DecimalField(max_digits=10, decimal_places=2, help_text='Valor total da dívida original')
+    
+    # Dados da Nova Negociação
+    valor_desconto = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text='Valor de desconto concedido')
+    percentual_desconto = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text='% de desconto')
+    valor_novo_total = models.DecimalField(max_digits=10, decimal_places=2, help_text='Novo valor total após negociação')
+    numero_novas_parcelas = models.IntegerField(default=1, help_text='Quantidade de novas parcelas')
+    data_primeira_parcela = models.DateField(help_text='Vencimento da primeira parcela renegociada')
+    
+    # Controle
+    responsavel = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='renegociacoes_financeiro')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='em_negociacao')
+    observacoes = models.TextField(blank=True, help_text='Observações sobre a negociação')
+    
+    # Timestamps
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    data_atualizacao = models.DateTimeField(auto_now=True)
+    data_efetivacao = models.DateTimeField(null=True, blank=True, help_text='Quando a renegociação foi efetivada no ASAAS')
+    
+    # Controle ASAAS
+    asaas_ids_cancelados = models.TextField(blank=True, help_text='IDs das cobranças canceladas no ASAAS (JSON)')
+    asaas_ids_novos = models.TextField(blank=True, help_text='IDs das novas cobranças no ASAAS (JSON)')
+    
+    class Meta:
+        verbose_name = 'Renegociação'
+        verbose_name_plural = 'Renegociações'
+        ordering = ['-data_criacao']
+        
+    def __str__(self):
+        return f"Renegociação Venda #{self.venda.id} - {self.get_status_display()}"
+
+
+class HistoricoContatoRetencao(models.Model):
+    """
+    Registro de contatos feitos pela equipe de retenção
+    """
+    TIPO_CONTATO_CHOICES = [
+        ('telefone', 'Telefone'),
+        ('whatsapp', 'WhatsApp'),
+        ('email', 'E-mail'),
+        ('sms', 'SMS'),
+    ]
+    
+    RESULTADO_CHOICES = [
+        ('contato_sucesso', 'Contato com Sucesso'),
+        ('nao_atendeu', 'Não Atendeu'),
+        ('promessa_pagamento', 'Promessa de Pagamento'),
+        ('negociacao_iniciada', 'Negociação Iniciada'),
+        ('recusa_negociacao', 'Recusa de Negociação'),
+        ('numero_invalido', 'Número Inválido'),
+    ]
+    
+    venda = models.ForeignKey('vendas.Venda', on_delete=models.CASCADE, related_name='historico_retencao')
+    renegociacao = models.ForeignKey(Renegociacao, on_delete=models.SET_NULL, null=True, blank=True, related_name='contatos')
+    
+    tipo_contato = models.CharField(max_length=20, choices=TIPO_CONTATO_CHOICES)
+    resultado = models.CharField(max_length=30, choices=RESULTADO_CHOICES)
+    observacoes = models.TextField(help_text='Detalhes do contato')
+    
+    responsavel = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='contatos_retencao')
+    data_contato = models.DateTimeField(auto_now_add=True)
+    data_proxima_tentativa = models.DateField(null=True, blank=True, help_text='Agendamento para próximo contato')
+    
+    class Meta:
+        verbose_name = 'Histórico de Contato - Retenção'
+        verbose_name_plural = 'Históricos de Contato - Retenção'
+        ordering = ['-data_contato']
+        
+    def __str__(self):
+        return f"{self.get_tipo_contato_display()} - Venda #{self.venda.id} - {self.get_resultado_display()}"
         

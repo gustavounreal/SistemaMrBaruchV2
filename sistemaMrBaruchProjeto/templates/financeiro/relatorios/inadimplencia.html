@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Inadimplência - Sistema Mr. Baruch</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        
+        main {
+            margin-left: 280px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        @media (max-width: 992px) {
+            main {
+                margin-left: 0;
+                padding: 1rem;
+            }
+        }
+        
+        .page-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid #dc3545;
+        }
+        
+        .stats-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        
+        .stats-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .relatorio-table {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .badge-danger {
+            background: #dc3545;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+        }
+        
+        .badge-warning {
+            background: #ffc107;
+            color: #000;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+        }
+        
+        .btn-action {
+            padding: 5px 12px;
+            font-size: 0.85rem;
+            border-radius: 5px;
+        }
+        
+        .filter-section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/sidebar.html' %}
+    
+    <main>
+        <!-- Cabeçalho -->
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1"><i class="fas fa-chart-bar text-danger"></i> Relatório de Inadimplência</h2>
+                    <p class="text-muted mb-0">Análise detalhada de débitos em aberto</p>
+                </div>
+                <a href="{% url 'financeiro:dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+        
+        <!-- Cards de Estatísticas -->
+        <div class="stats-row">
+            <div class="stats-card">
+                <div class="stats-label">
+                    <i class="fas fa-users"></i> Total de Inadimplentes
+                </div>
+                <div class="stats-value">{{ total_inadimplentes|default:0 }}</div>
+                <small class="text-muted">clientes com débitos</small>
+            </div>
+            
+            <div class="stats-card" style="border-left-color: #ffc107;">
+                <div class="stats-label">
+                    <i class="fas fa-money-bill-wave"></i> Valor Total em Aberto
+                </div>
+                <div class="stats-value" style="color: #ffc107;">R$ {{ valor_total_inadimplente|floatformat:2|default:"0,00" }}</div>
+                <small class="text-muted">soma de todos os débitos</small>
+            </div>
+            
+            <div class="stats-card" style="border-left-color: #17a2b8;">
+                <div class="stats-label">
+                    <i class="fas fa-file-invoice"></i> Parcelas Vencidas
+                </div>
+                <div class="stats-value" style="color: #17a2b8;">{{ total_parcelas_vencidas|default:0 }}</div>
+                <small class="text-muted">parcelas em atraso</small>
+            </div>
+            
+            <div class="stats-card" style="border-left-color: #6c757d;">
+                <div class="stats-label">
+                    <i class="fas fa-calendar-times"></i> Atraso Médio
+                </div>
+                <div class="stats-value" style="color: #6c757d;">{{ atraso_medio|default:0 }}</div>
+                <small class="text-muted">dias de atraso</small>
+            </div>
+        </div>
+        
+        <!-- Filtros (opcional) -->
+        <div class="filter-section">
+            <h5 class="mb-3"><i class="fas fa-filter"></i> Filtros</h5>
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label for="data_inicio" class="form-label">Data Início:</label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="data_fim" class="form-label">Data Fim:</label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Tabela de Inadimplentes -->
+        <div class="relatorio-table">
+            <h5 class="mb-3"><i class="fas fa-table"></i> Detalhamento por Cliente</h5>
+            
+            {% if vendas_inadimplentes %}
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Venda</th>
+                        <th>Contato</th>
+                        <th class="text-center">Parcelas Vencidas</th>
+                        <th class="text-end">Valor em Aberto</th>
+                        <th class="text-center">Dias de Atraso</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in vendas_inadimplentes %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.venda.cliente.lead.nome_completo }}</strong>
+                        </td>
+                        <td>
+                            #{{ item.venda.id }}<br>
+                            <small class="text-muted">{{ item.venda.servico.nome }}</small>
+                        </td>
+                        <td>
+                            <small>
+                                <i class="fas fa-phone"></i> {{ item.venda.cliente.lead.telefone|default:"N/A" }}<br>
+                                {% if item.venda.cliente.lead.email %}
+                                <i class="fas fa-envelope"></i> {{ item.venda.cliente.lead.email }}
+                                {% endif %}
+                            </small>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-danger">{{ item.parcelas|length }}</span>
+                        </td>
+                        <td class="text-end">
+                            <strong class="text-danger">R$ {{ item.valor_total|floatformat:2 }}</strong>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge {% if item.dias_atraso > 30 %}badge-danger{% else %}badge-warning{% endif %}">
+                                {{ item.dias_atraso }} dias
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <a href="{% url 'financeiro:renegociar_divida' item.venda.id %}" class="btn btn-success btn-action" title="Renegociar">
+                                <i class="fas fa-handshake"></i>
+                            </a>
+                            <a href="{% url 'financeiro:historico_negociacoes' item.venda.id %}" class="btn btn-info btn-action" title="Histórico">
+                                <i class="fas fa-history"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> Nenhum cliente inadimplente encontrado no período selecionado!
+            </div>
+            {% endif %}
+        </div>
+    </main>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

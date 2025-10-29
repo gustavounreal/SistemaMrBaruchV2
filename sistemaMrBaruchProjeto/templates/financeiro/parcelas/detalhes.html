@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes da Parcela #{{ parcela.id }} - Sistema Mr. Baruch</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        
+        main {
+            margin-left: 280px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        @media (max-width: 992px) {
+            main {
+                margin-left: 0;
+                padding: 1rem;
+            }
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            color: white;
+        }
+        
+        .info-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .info-card h5 {
+            border-bottom: 2px solid #10b981;
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.25rem;
+            color: #333;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .info-value {
+            color: #333;
+            text-align: right;
+        }
+        
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .status-paga {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-aberta {
+            background: #cfe2ff;
+            color: #084298;
+        }
+        
+        .status-vencida {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-cancelada {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .valor-destaque {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #10b981;
+        }
+        
+        .valor-vencida {
+            color: #dc3545;
+        }
+        
+        .timeline-item {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #10b981;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-action {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        
+        .alert-info-custom {
+            background: #e7f3ff;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .cliente-destaque {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .cliente-avatar {
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #667eea;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/sidebar.html' %}
+    
+    <main>
+        <!-- Cabeçalho -->
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-file-invoice"></i> Parcela #{{ parcela.id }}
+                    </h2>
+                    <p class="mb-0 opacity-75">Detalhamento completo da parcela</p>
+                </div>
+                <a href="{% url 'financeiro:lista_parcelas' %}" class="btn btn-light">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+        
+        <!-- Informações do Cliente -->
+        <div class="cliente-destaque">
+            <div class="d-flex align-items-center">
+                <div class="cliente-avatar me-3">
+                    {{ parcela.venda.cliente.lead.nome_completo|slice:":1"|upper }}
+                </div>
+                <div class="flex-grow-1">
+                    <h4 class="mb-1">{{ parcela.venda.cliente.lead.nome_completo }}</h4>
+                    <p class="mb-0 opacity-75">
+                        <i class="fas fa-phone"></i> {{ parcela.venda.cliente.lead.telefone|default:"Não informado" }}
+                        {% if parcela.venda.cliente.lead.email %}
+                        | <i class="fas fa-envelope"></i> {{ parcela.venda.cliente.lead.email }}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- Coluna Esquerda -->
+            <div class="col-lg-8">
+                <!-- Informações da Parcela -->
+                <div class="info-card">
+                    <h5><i class="fas fa-info-circle text-primary"></i> Informações da Parcela</h5>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Número da Parcela:</span>
+                        <span class="info-value">
+                            <strong>{{ parcela.numero_parcela }} de {{ parcela.venda.quantidade_parcelas }}</strong>
+                        </span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Valor:</span>
+                        <span class="info-value">
+                            <span class="valor-destaque {% if parcela.status == 'vencida' %}valor-vencida{% endif %}" style="font-size: 1.5rem;">
+                                R$ {{ parcela.valor|floatformat:2 }}
+                            </span>
+                        </span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value">
+                            {% if parcela.status == 'paga' %}
+                                <span class="status-badge status-paga">
+                                    <i class="fas fa-check-circle"></i> Paga
+                                </span>
+                            {% elif parcela.status == 'vencida' %}
+                                <span class="status-badge status-vencida">
+                                    <i class="fas fa-exclamation-triangle"></i> Vencida
+                                </span>
+                            {% elif parcela.status == 'aberta' %}
+                                <span class="status-badge status-aberta">
+                                    <i class="fas fa-clock"></i> Em Aberto
+                                </span>
+                            {% else %}
+                                <span class="status-badge status-cancelada">
+                                    <i class="fas fa-times-circle"></i> Cancelada
+                                </span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Data de Vencimento:</span>
+                        <span class="info-value">
+                            <i class="fas fa-calendar"></i> {{ parcela.data_vencimento|date:"d/m/Y (l)" }}
+                        </span>
+                    </div>
+                    
+                    {% if parcela.data_pagamento %}
+                    <div class="info-row">
+                        <span class="info-label">Data de Pagamento:</span>
+                        <span class="info-value text-success">
+                            <i class="fas fa-check"></i> {{ parcela.data_pagamento|date:"d/m/Y (l)" }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if parcela.status == 'vencida' %}
+                    <div class="info-row">
+                        <span class="info-label">Dias em Atraso:</span>
+                        <span class="info-value">
+                            <span class="badge bg-danger">
+                                {{ parcela.dias_atraso }} dia(s)
+                            </span>
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Informações da Venda -->
+                <div class="info-card">
+                    <h5><i class="fas fa-shopping-cart text-success"></i> Informações da Venda</h5>
+                    
+                    <div class="info-row">
+                        <span class="info-label">ID da Venda:</span>
+                        <span class="info-value">
+                            <strong>#{{ parcela.venda.id }}</strong>
+                        </span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Serviço:</span>
+                        <span class="info-value">{{ parcela.venda.servico.nome }}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Valor Total da Venda:</span>
+                        <span class="info-value">
+                            <strong>R$ {{ parcela.venda.valor_total|floatformat:2 }}</strong>
+                        </span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Quantidade de Parcelas:</span>
+                        <span class="info-value">{{ parcela.venda.quantidade_parcelas }}x</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Data da Venda:</span>
+                        <span class="info-value">
+                            <i class="fas fa-calendar"></i> {{ parcela.venda.data_venda|date:"d/m/Y" }}
+                        </span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Consultor Responsável:</span>
+                        <span class="info-value">
+                            <i class="fas fa-user-tie"></i> {{ parcela.venda.consultor.get_full_name|default:parcela.venda.consultor.username }}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Ações -->
+                {% if parcela.status != 'paga' %}
+                <div class="info-card">
+                    <h5><i class="fas fa-cogs text-warning"></i> Ações Disponíveis</h5>
+                    
+                    <form method="POST" action="{% url 'financeiro:marcar_parcela_paga' parcela.id %}" onsubmit="return confirmarPagamento()">
+                        {% csrf_token %}
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-6">
+                                <label class="form-label">Data do Pagamento:</label>
+                                <input type="date" class="form-control" name="data_pagamento" value="{{ hoje|date:'Y-m-d' }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-success w-100 btn-action">
+                                    <i class="fas fa-check-circle"></i> Marcar como Paga
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Coluna Direita -->
+            <div class="col-lg-4">
+                <!-- Resumo Rápido -->
+                <div class="info-card">
+                    <h5><i class="fas fa-chart-pie text-info"></i> Resumo</h5>
+                    
+                    <div class="text-center py-3">
+                        <div class="mb-3">
+                            {% if parcela.status == 'paga' %}
+                                <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                                <p class="mt-2 mb-0 text-success"><strong>Parcela Paga</strong></p>
+                            {% elif parcela.status == 'vencida' %}
+                                <i class="fas fa-exclamation-triangle text-danger" style="font-size: 4rem;"></i>
+                                <p class="mt-2 mb-0 text-danger"><strong>Parcela Vencida</strong></p>
+                            {% elif parcela.status == 'aberta' %}
+                                <i class="fas fa-clock text-primary" style="font-size: 4rem;"></i>
+                                <p class="mt-2 mb-0 text-primary"><strong>Aguardando Pagamento</strong></p>
+                            {% else %}
+                                <i class="fas fa-times-circle text-secondary" style="font-size: 4rem;"></i>
+                                <p class="mt-2 mb-0 text-secondary"><strong>Parcela Cancelada</strong></p>
+                            {% endif %}
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="valor-destaque {% if parcela.status == 'vencida' %}valor-vencida{% endif %}">
+                            R$ {{ parcela.valor|floatformat:2 }}
+                        </div>
+                        <small class="text-muted">Valor da Parcela</small>
+                    </div>
+                </div>
+                
+                <!-- Progresso da Venda -->
+                <div class="info-card">
+                    <h5><i class="fas fa-tasks text-purple"></i> Progresso da Venda</h5>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Parcelas Pagas</span>
+                            <span class="fw-bold">{{ parcela.venda.parcelas_pagas }} / {{ parcela.venda.quantidade_parcelas }}</span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ parcela.venda.percentual_pago }}%">
+                                {{ parcela.venda.percentual_pago|floatformat:0 }}%
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Valor Pago:</span>
+                        <span class="info-value text-success">
+                            R$ {{ parcela.venda.valor_pago|floatformat:2 }}
+                        </span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Valor Pendente:</span>
+                        <span class="info-value text-danger">
+                            R$ {{ parcela.venda.valor_pendente|floatformat:2 }}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Links Rápidos -->
+                <div class="info-card">
+                    <h5><i class="fas fa-link text-warning"></i> Links Rápidos</h5>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'vendas:detalhes_venda' parcela.venda.id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-shopping-cart"></i> Ver Venda Completa
+                        </a>
+                        <a href="{% url 'financeiro:lista_parcelas' %}?busca={{ parcela.venda.cliente.lead.nome_completo }}" class="btn btn-outline-info">
+                            <i class="fas fa-search"></i> Outras Parcelas do Cliente
+                        </a>
+                        <a href="{% url 'financeiro:painel_retencao' %}" class="btn btn-outline-warning">
+                            <i class="fas fa-exclamation-circle"></i> Painel de Retenção
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function confirmarPagamento() {
+            return confirm('Confirma o registro do pagamento desta parcela?');
+        }
+        
+        // Auto-focus no campo de data quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            const dataInput = document.querySelector('input[name="data_pagamento"]');
+            if (dataInput) {
+                // Define a data de hoje como padrão
+                const hoje = new Date().toISOString().split('T')[0];
+                dataInput.value = hoje;
+            }
+        });
+    </script>
+</body>
+</html>

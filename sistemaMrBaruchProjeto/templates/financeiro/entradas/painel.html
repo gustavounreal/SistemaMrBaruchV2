@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entradas PIX - Sistema Mr. Baruch</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        
+        main {
+            margin-left: 280px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        @media (max-width: 992px) {
+            main {
+                margin-left: 0;
+                padding: 1rem;
+            }
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            color: white;
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid #10b981;
+            transition: all 0.3s ease;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        
+        .stats-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #10b981;
+        }
+        
+        .stats-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .quick-access-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            color: inherit;
+        }
+        
+        .quick-access-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            color: #10b981;
+        }
+        
+        .quick-access-card i {
+            font-size: 2.5rem;
+            color: #10b981;
+        }
+        
+        .quick-access-card h5 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .quick-access-card p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/sidebar.html' %}
+    
+    <main>
+        <!-- Cabeçalho -->
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1"><i class="fas fa-hand-holding-usd"></i> Entradas PIX</h2>
+                    <p class="mb-0 opacity-75">Pagamentos iniciais de vendas (entrada via PIX)</p>
+                </div>
+                <a href="{% url 'financeiro:dashboard' %}" class="btn btn-light">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+        
+        <!-- Cards de Estatísticas -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="stats-card" style="border-left-color: #10b981;">
+                    <div class="stats-label">
+                        <i class="fas fa-calendar-alt"></i> Entradas Este Mês
+                    </div>
+                    <div class="stats-value" style="color: #10b981;">
+                        R$ {{ entradas_mes_valor|floatformat:2 }}
+                    </div>
+                    <small class="text-muted">{{ entradas_mes_qtd }} PIX recebido(s)</small>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <div class="stats-card" style="border-left-color: #3b82f6;">
+                    <div class="stats-label">
+                        <i class="fas fa-calendar-day"></i> Entradas Hoje
+                    </div>
+                    <div class="stats-value" style="color: #3b82f6;">
+                        R$ {{ entradas_hoje_valor|floatformat:2 }}
+                    </div>
+                    <small class="text-muted">{{ entradas_hoje_qtd }} PIX recebido(s)</small>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <div class="stats-card" style="border-left-color: #f59e0b;">
+                    <div class="stats-label">
+                        <i class="fas fa-clock"></i> PIX Pendentes
+                    </div>
+                    <div class="stats-value" style="color: #f59e0b;">
+                        R$ {{ entradas_pendentes_valor|floatformat:2 }}
+                    </div>
+                    <small class="text-muted">{{ entradas_pendentes_qtd }} aguardando pagamento</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Acesso Rápido -->
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <a href="{% url 'financeiro:entradas_diario' %}" class="quick-access-card">
+                    <i class="fas fa-calendar-day"></i>
+                    <div>
+                        <h5>Entradas de Hoje</h5>
+                        <p>PIX recebidos hoje</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4 mb-3">
+                <a href="{% url 'financeiro:entradas_semanal' %}" class="quick-access-card">
+                    <i class="fas fa-calendar-week"></i>
+                    <div>
+                        <h5>Esta Semana</h5>
+                        <p>Últimos 7 dias</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4 mb-3">
+                <a href="{% url 'financeiro:entradas_mensal' %}" class="quick-access-card">
+                    <i class="fas fa-calendar-alt"></i>
+                    <div>
+                        <h5>Este Mês</h5>
+                        <p>Relatório mensal completo</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Alerta Informativo -->
+        <div class="alert alert-info mt-4">
+            <div class="d-flex align-items-start">
+                <i class="fas fa-info-circle fa-2x me-3 text-info"></i>
+                <div>
+                    <h5 class="alert-heading">Sobre Entradas PIX</h5>
+                    <p class="mb-2">Este painel exibe apenas os <strong>pagamentos de entrada via PIX</strong> (pagamento inicial da venda).</p>
+                    <hr>
+                    <p class="mb-0">
+                        Para gerenciar as <strong>parcelas mensais subsequentes</strong>, acesse o 
+                        <a href="{% url 'financeiro:lista_parcelas' %}" class="alert-link">
+                            <i class="fas fa-file-invoice-dollar"></i> Painel de Gestão de Parcelas
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
