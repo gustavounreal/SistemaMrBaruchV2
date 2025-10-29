@@ -560,7 +560,12 @@ function carregarPix(id) {
         .then(res => res.json())
         .then(data => {
             console.log('Resposta do PIX:', data);
+            console.log('data.success:', data.success);
+            console.log('data.message:', data.message);
+            console.log('data.pix_copia_cola:', data.pix_copia_cola);
+            
             if (data.success) {
+                console.log('PIX gerado com sucesso! Inserindo no DOM...');
                 document.getElementById('pixContent').innerHTML = `
                     <div class="mb-3 text-start">
                         <label class="form-label">Valor do PIX</label>
@@ -574,10 +579,16 @@ function carregarPix(id) {
                         <div class="input-group">
                             <span class="input-group-text bg-success text-white"><i class="bi bi-clipboard"></i></span>
                             <input id="pixCode" class="form-control fixed-value" value="${data.pix_copia_cola}" readonly>
-                            <button class="btn btn-outline-secondary" onclick="copiarPix()">Copiar</button>
+                            <button type="button" class="btn btn-outline-success" onclick="event.preventDefault(); copiarCodigoPix();">
+                                <i class="bi bi-clipboard-check"></i> Copiar
+                            </button>
                         </div>
                     </div>
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle"></i> Clique no botão acima para copiar o código PIX
+                    </div>
                 `;
+                console.log('Conteúdo do PIX inserido no DOM');
             } else {
                 const mensagemErro = data.message || 'Erro ao gerar PIX.';
                 console.error('Erro do servidor:', mensagemErro);
@@ -591,11 +602,55 @@ function carregarPix(id) {
         .finally(() => hideLoading());
 }
 
-function copiarPix() {
+function copiarCodigoPix() {
     const input = document.getElementById('pixCode');
-    input.select();
-    document.execCommand('copy');
-    showAlert('Código PIX copiado!', 'success');
+    if (!input) {
+        showAlert('Campo do PIX não encontrado', 'danger');
+        return;
+    }
+    
+    const pixCode = input.value;
+    
+    // Tenta usar a API moderna de clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pixCode)
+            .then(() => {
+                showAlert('✓ Código PIX copiado com sucesso!', 'success');
+                // Muda o botão temporariamente para dar feedback visual
+                const btn = event.target.closest('button');
+                if (btn) {
+                    const textoOriginal = btn.innerHTML;
+                    btn.innerHTML = '<i class="bi bi-check-circle"></i> Copiado!';
+                    btn.classList.remove('btn-outline-success');
+                    btn.classList.add('btn-success');
+                    setTimeout(() => {
+                        btn.innerHTML = textoOriginal;
+                        btn.classList.remove('btn-success');
+                        btn.classList.add('btn-outline-success');
+                    }, 2000);
+                }
+            })
+            .catch(err => {
+                console.error('Erro ao copiar:', err);
+                // Fallback para método antigo
+                copiarComExecCommand(input);
+            });
+    } else {
+        // Fallback para navegadores antigos
+        copiarComExecCommand(input);
+    }
+}
+
+function copiarComExecCommand(input) {
+    try {
+        input.select();
+        input.setSelectionRange(0, 99999); // Para mobile
+        document.execCommand('copy');
+        showAlert('✓ Código PIX copiado com sucesso!', 'success');
+    } catch (err) {
+        console.error('Erro ao copiar:', err);
+        showAlert('Erro ao copiar. Selecione e copie manualmente (Ctrl+C)', 'warning');
+    }
 }
 
     function copiarPix() {
