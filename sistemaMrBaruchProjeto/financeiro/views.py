@@ -391,6 +391,7 @@ def entradas_mensal(request):
 def lista_parcelas(request):
     """Lista todas as parcelas com filtros"""
     from django.db.models import Sum, Count, Q
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
     from datetime import datetime
     
     status_filtro = request.GET.get('status', 'todas')
@@ -419,6 +420,17 @@ def lista_parcelas(request):
     
     parcelas = parcelas.order_by('-data_vencimento')
     
+    # Paginação
+    paginator = Paginator(parcelas, 20)  # 20 parcelas por página
+    page = request.GET.get('page', 1)
+    
+    try:
+        parcelas_paginadas = paginator.page(page)
+    except PageNotAnInteger:
+        parcelas_paginadas = paginator.page(1)
+    except EmptyPage:
+        parcelas_paginadas = paginator.page(paginator.num_pages)
+    
     # Calcular estatísticas
     todas_parcelas = Parcela.objects.all()
     
@@ -438,7 +450,7 @@ def lista_parcelas(request):
     )
     
     context = {
-        'parcelas': parcelas,
+        'parcelas': parcelas_paginadas,
         'status_filtro': status_filtro,
         'busca': busca,
         'data_inicio': data_inicio,

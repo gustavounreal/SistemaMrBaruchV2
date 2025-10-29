@@ -197,6 +197,35 @@
             transform: translateY(-50%);
             color: #6c757d;
         }
+        
+        /* Estilos da Paginação */
+        .pagination {
+            gap: 5px;
+        }
+        
+        .pagination .page-link {
+            color: #10b981;
+            border: 1px solid #dee2e6;
+            padding: 8px 12px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .pagination .page-link:hover {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+        
+        .pagination .page-item.active .page-link {
+            background: #10b981;
+            border-color: #10b981;
+            color: white;
+        }
+        
+        .pagination .page-link i {
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
@@ -305,7 +334,7 @@
         <div class="table-container">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="mb-0"><i class="fas fa-table"></i> Lista de Parcelas</h5>
-                <span class="badge bg-secondary">{{ parcelas.count }} parcela(s) encontrada(s)</span>
+                <span class="badge bg-secondary">{{ parcelas.paginator.count }} parcela(s) encontrada(s)</span>
             </div>
             
             {% if parcelas %}
@@ -399,6 +428,57 @@
                     {% endfor %}
                 </tbody>
             </table>
+            
+            <!-- Paginação -->
+            {% if parcelas.has_other_pages %}
+            <nav aria-label="Navegação de páginas" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if parcelas.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if status_filtro != 'todas' %}&status={{ status_filtro }}{% endif %}{% if busca %}&busca={{ busca }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ parcelas.previous_page_number }}{% if status_filtro != 'todas' %}&status={{ status_filtro }}{% endif %}{% if busca %}&busca={{ busca }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in parcelas.paginator.page_range %}
+                        {% if parcelas.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > parcelas.number|add:'-3' and num < parcelas.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if status_filtro != 'todas' %}&status={{ status_filtro }}{% endif %}{% if busca %}&busca={{ busca }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if parcelas.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ parcelas.next_page_number }}{% if status_filtro != 'todas' %}&status={{ status_filtro }}{% endif %}{% if busca %}&busca={{ busca }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ parcelas.paginator.num_pages }}{% if status_filtro != 'todas' %}&status={{ status_filtro }}{% endif %}{% if busca %}&busca={{ busca }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+                
+                <div class="text-center text-muted small">
+                    Página {{ parcelas.number }} de {{ parcelas.paginator.num_pages }} - 
+                    Exibindo {{ parcelas.start_index }} a {{ parcelas.end_index }} de {{ parcelas.paginator.count }} parcela(s)
+                </div>
+            </nav>
+            {% endif %}
+            
             {% else %}
             <div class="alert alert-info">
                 <i class="fas fa-info-circle"></i> Nenhuma parcela encontrada com os filtros selecionados.
