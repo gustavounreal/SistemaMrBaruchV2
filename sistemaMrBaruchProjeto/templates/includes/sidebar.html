@@ -65,6 +65,22 @@ Menu lateral para Financeiro/Retenção - Estilo Moderno
                 <span class="menu-item-text">Parcelas</span>
             </a>
         </div>
+        
+        <div class="menu-section">
+            <div class="menu-section-title">Jurídico</div>
+            <a href="{% url 'juridico:painel_distratos' %}" class="menu-item">
+                <i class="fas fa-file-contract"></i>
+                <span class="menu-item-text">Painel de Distratos</span>
+            </a>
+            <a href="{% url 'juridico:lista_multas_vencidas' %}" class="menu-item">
+                <i class="fas fa-exclamation-circle"></i>
+                <span class="menu-item-text">Multas Vencidas</span>
+            </a>
+            <a href="{% url 'juridico:painel_processos' %}" class="menu-item">
+                <i class="fas fa-gavel"></i>
+                <span class="menu-item-text">Processos Jurídicos</span>
+            </a>
+        </div>
     </nav>
     
     <div class="sidebar-footer">

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multas Vencidas - Sistema Mr. Baruch</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        
+        main {
+            margin-left: 280px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        @media (max-width: 992px) {
+            main {
+                margin-left: 0;
+                padding: 1rem;
+            }
+        }
+        
+        .page-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            color: #374151;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .filter-btn:hover {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+        
+        .filter-btn.active {
+            border-color: #10b981;
+            background: #10b981;
+            color: white;
+        }
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stats-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid #dc2626;
+        }
+        
+        .stats-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #dc2626;
+        }
+        
+        .stats-label {
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            margin-top: 0.5rem;
+        }
+        
+        .multa-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 5px solid #dc2626;
+        }
+        
+        .multa-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+        
+        .cliente-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+        
+        .cliente-nome {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .dias-vencido {
+            background: #dc2626;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .multa-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .info-item i {
+            color: #6b7280;
+        }
+        
+        .valor-multa {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #dc2626;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn-imprimir {
+            background: #3b82f6;
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+        }
+        
+        .btn-imprimir:hover {
+            background: #2563eb;
+            color: white;
+        }
+        
+        .btn-juridico {
+            background: #10b981;
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+        }
+        
+        .btn-juridico:hover {
+            background: #059669;
+            color: white;
+        }
+        
+        .filter-custom {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: none;
+        }
+        
+        .filter-custom.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/sidebar.html' %}
+    
+    <main>
+        <!-- Cabeçalho -->
+        <div class="page-header">
+            <h2><i class="fas fa-exclamation-circle text-danger"></i> Multas de Distrato Vencidas</h2>
+            <p class="text-muted mb-0">Distratos com multas vencidas aguardando pagamento ou envio ao jurídico</p>
+        </div>
+        
+        <!-- Filtros Rápidos -->
+        <div class="filter-buttons">
+            <a href="?periodo=hoje" class="filter-btn {% if request.GET.periodo == 'hoje' %}active{% endif %}">
+                <i class="fas fa-calendar-day"></i> Hoje
+            </a>
+            <a href="?periodo=semana" class="filter-btn {% if request.GET.periodo == 'semana' %}active{% endif %}">
+                <i class="fas fa-calendar-week"></i> Esta Semana
+            </a>
+            <a href="?periodo=mes" class="filter-btn {% if request.GET.periodo == 'mes' %}active{% endif %}">
+                <i class="fas fa-calendar-alt"></i> Este Mês
+            </a>
+            <button class="filter-btn" onclick="toggleCustomFilter()">
+                <i class="fas fa-filter"></i> Período Customizado
+            </button>
+            <a href="{% url 'juridico:lista_multas_vencidas' %}" class="filter-btn">
+                <i class="fas fa-redo"></i> Limpar Filtros
+            </a>
+        </div>
+        
+        <!-- Filtro Customizado -->
+        <div class="filter-custom" id="customFilter">
+            <form method="GET" class="row g-3">
+                <input type="hidden" name="periodo" value="customizado">
+                <div class="col-md-4">
+                    <label class="form-label">Data Início</label>
+                    <input type="date" name="data_inicio" class="form-control" value="{{ request.GET.data_inicio }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Data Fim</label>
+                    <input type="date" name="data_fim" class="form-control" value="{{ request.GET.data_fim }}" required>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Aplicar Filtro
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Estatísticas -->
+        <div class="stats-row">
+            <div class="stats-card">
+                <div class="stats-value">{{ total_multas_vencidas }}</div>
+                <div class="stats-label">Total Multas Vencidas</div>
+            </div>
+            <div class="stats-card">
+                <div class="stats-value">R$ {{ total_valor_multas|floatformat:2 }}</div>
+                <div class="stats-label">Valor Total</div>
+            </div>
+            <div class="stats-card">
+                <div class="stats-value">{{ media_dias_vencido|floatformat:0 }}</div>
+                <div class="stats-label">Média Dias Vencido</div>
+            </div>
+        </div>
+        
+        <!-- Lista de Multas Vencidas -->
+        {% if distratos %}
+            {% for distrato in distratos %}
+            <div class="multa-card">
+                <div class="cliente-header">
+                    <div>
+                        <div class="cliente-nome">{{ distrato.venda.cliente.lead.nome }}</div>
+                        <small class="text-muted">
+                            <i class="fas fa-phone"></i> {{ distrato.venda.cliente.lead.telefone }}
+                            | <i class="fas fa-hashtag"></i> Distrato: {{ distrato.numero_distrato }}
+                        </small>
+                    </div>
+                    <div class="dias-vencido">
+                        {{ distrato.dias_multa_vencida }} dias vencida
+                    </div>
+                </div>
+                
+                <div class="multa-info">
+                    <div class="info-item">
+                        <i class="fas fa-file-invoice"></i>
+                        <div>
+                            <small class="text-muted">Venda</small>
+                            <div><strong>{{ distrato.venda.numero_venda }}</strong></div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-dollar-sign"></i>
+                        <div>
+                            <small class="text-muted">Valor da Multa</small>
+                            <div class="valor-multa">R$ {{ distrato.valor_multa|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-calendar"></i>
+                        <div>
+                            <small class="text-muted">Vencimento</small>
+                            <div><strong>{{ distrato.data_vencimento_multa|date:"d/m/Y" }}</strong></div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <small class="text-muted">Solicitado em</small>
+                            <div><strong>{{ distrato.data_solicitacao|date:"d/m/Y" }}</strong></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <a href="{% url 'juridico:gerar_contrato' distrato.venda.id %}" target="_blank" class="btn btn-imprimir">
+                        <i class="fas fa-print"></i> Imprimir Contrato
+                    </a>
+                    <form method="POST" action="{% url 'juridico:enviar_distrato_juridico' distrato.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-juridico" onclick="return confirm('Confirma envio ao Jurídico?\n\nUm processo jurídico será criado automaticamente.')">
+                            <i class="fas fa-gavel"></i> Enviar ao Jurídico
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+            <h4>Nenhuma multa vencida encontrada</h4>
+            <p class="text-muted">Não há distratos com multas vencidas no período selecionado.</p>
+        </div>
+        {% endif %}
+    </main>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function toggleCustomFilter() {
+            const filter = document.getElementById('customFilter');
+            filter.classList.toggle('show');
+        }
+        
+        // Mostrar filtro customizado se já estiver ativo
+        {% if request.GET.periodo == 'customizado' %}
+            document.getElementById('customFilter').classList.add('show');
+        {% endif %}
+    </script>
+</body>
+</html>

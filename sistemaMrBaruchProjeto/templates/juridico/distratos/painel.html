@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Distratos - Sistema Mr. Baruch</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        
+        main {
+            margin-left: 280px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        @media (max-width: 992px) {
+            main {
+                margin-left: 0;
+                padding: 1rem;
+            }
+        }
+        
+        .page-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stats-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid #10b981;
+        }
+        
+        .stats-card.solicitados { border-left-color: #3b82f6; }
+        .stats-card.em_acordo { border-left-color: #f59e0b; }
+        .stats-card.recusados { border-left-color: #ef4444; }
+        .stats-card.multas_geradas { border-left-color: #8b5cf6; }
+        .stats-card.multas_vencidas { border-left-color: #dc2626; }
+        .stats-card.enviados { border-left-color: #10b981; }
+        
+        .stats-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .stats-label {
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            margin-top: 0.5rem;
+        }
+        
+        .filter-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .badge-status {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .badge-solicitado { background: #dbeafe; color: #1e40af; }
+        .badge-acordo_em_andamento { background: #fef3c7; color: #92400e; }
+        .badge-acordo_aceito { background: #d1fae5; color: #065f46; }
+        .badge-acordo_recusado { background: #fee2e2; color: #991b1b; }
+        .badge-multa_gerada { background: #ede9fe; color: #5b21b6; }
+        .badge-multa_vencida { background: #fecaca; color: #7f1d1d; }
+        .badge-enviado_juridico { background: #d1fae5; color: #047857; }
+        
+        .btn-action {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            margin-right: 0.3rem;
+        }
+        
+        .btn-acordo { background: #f59e0b; color: white; border: none; }
+        .btn-acordo:hover { background: #d97706; color: white; }
+        
+        .btn-multa { background: #8b5cf6; color: white; border: none; }
+        .btn-multa:hover { background: #7c3aed; color: white; }
+        
+        .btn-juridico { background: #10b981; color: white; border: none; }
+        .btn-juridico:hover { background: #059669; color: white; }
+    </style>
+</head>
+<body>
+    {% include 'includes/sidebar.html' %}
+    
+    <main>
+        <!-- Cabeçalho -->
+        <div class="page-header">
+            <h2><i class="fas fa-file-contract text-primary"></i> Painel de Distratos</h2>
+            <p class="text-muted mb-0">Gestão de quebra de contratos e tentativas de acordo</p>
+        </div>
+        
+        <!-- Cards de Estatísticas -->
+        <div class="stats-row">
+            <div class="stats-card solicitados">
+                <div class="stats-value">{{ stats.solicitados }}</div>
+                <div class="stats-label">Solicitados</div>
+            </div>
+            <div class="stats-card em_acordo">
+                <div class="stats-value">{{ stats.em_acordo }}</div>
+                <div class="stats-label">Em Negociação</div>
+            </div>
+            <div class="stats-card recusados">
+                <div class="stats-value">{{ stats.recusados }}</div>
+                <div class="stats-label">Acordos Recusados</div>
+            </div>
+            <div class="stats-card multas_geradas">
+                <div class="stats-value">{{ stats.multas_geradas }}</div>
+                <div class="stats-label">Multas Geradas</div>
+            </div>
+            <div class="stats-card multas_vencidas">
+                <div class="stats-value">{{ stats.multas_vencidas }}</div>
+                <div class="stats-label">Multas Vencidas</div>
+            </div>
+            <div class="stats-card enviados">
+                <div class="stats-value">{{ stats.enviados_juridico }}</div>
+                <div class="stats-label">Enviados ao Jurídico</div>
+            </div>
+        </div>
+        
+        <!-- Filtros -->
+        <div class="filter-section">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="SOLICITADO" {% if request.GET.status == 'SOLICITADO' %}selected{% endif %}>Solicitado</option>
+                        <option value="ACORDO_EM_ANDAMENTO" {% if request.GET.status == 'ACORDO_EM_ANDAMENTO' %}selected{% endif %}>Acordo em Andamento</option>
+                        <option value="ACORDO_ACEITO" {% if request.GET.status == 'ACORDO_ACEITO' %}selected{% endif %}>Acordo Aceito</option>
+                        <option value="ACORDO_RECUSADO" {% if request.GET.status == 'ACORDO_RECUSADO' %}selected{% endif %}>Acordo Recusado</option>
+                        <option value="MULTA_GERADA" {% if request.GET.status == 'MULTA_GERADA' %}selected{% endif %}>Multa Gerada</option>
+                        <option value="MULTA_VENCIDA" {% if request.GET.status == 'MULTA_VENCIDA' %}selected{% endif %}>Multa Vencida</option>
+                        <option value="ENVIADO_JURIDICO" {% if request.GET.status == 'ENVIADO_JURIDICO' %}selected{% endif %}>Enviado ao Jurídico</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Buscar Cliente</label>
+                    <input type="text" name="busca" class="form-control" placeholder="Nome ou telefone" value="{{ request.GET.busca }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Data Início</label>
+                    <input type="date" name="data_inicio" class="form-control" value="{{ request.GET.data_inicio }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Data Fim</label>
+                    <input type="date" name="data_fim" class="form-control" value="{{ request.GET.data_fim }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Tabela de Distratos -->
+        <div class="table-container">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Cliente</th>
+                        <th>Venda</th>
+                        <th>Status</th>
+                        <th>Valor Multa</th>
+                        <th>Vencimento Multa</th>
+                        <th>Data Solicitação</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for distrato in distratos %}
+                    <tr>
+                        <td><strong>{{ distrato.numero_distrato }}</strong></td>
+                        <td>
+                            <div>{{ distrato.venda.cliente.lead.nome }}</div>
+                            <small class="text-muted">{{ distrato.venda.cliente.lead.telefone }}</small>
+                        </td>
+                        <td>{{ distrato.venda.numero_venda }}</td>
+                        <td>
+                            <span class="badge-status badge-{{ distrato.status|lower }}">
+                                {{ distrato.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if distrato.valor_multa %}
+                                R$ {{ distrato.valor_multa|floatformat:2 }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if distrato.data_vencimento_multa %}
+                                {{ distrato.data_vencimento_multa|date:"d/m/Y" }}
+                                {% if distrato.multa_vencida %}
+                                    <br><small class="text-danger">({{ distrato.dias_multa_vencida }} dias vencida)</small>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ distrato.data_solicitacao|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            {% if distrato.status == 'SOLICITADO' %}
+                                <button class="btn btn-action btn-acordo" data-bs-toggle="modal" data-bs-target="#modalAcordo{{ distrato.id }}">
+                                    <i class="fas fa-handshake"></i> Tentativa Acordo
+                                </button>
+                            {% elif distrato.status == 'ACORDO_RECUSADO' %}
+                                <button class="btn btn-action btn-multa" data-bs-toggle="modal" data-bs-target="#modalMulta{{ distrato.id }}">
+                                    <i class="fas fa-file-invoice-dollar"></i> Gerar Multa
+                                </button>
+                            {% elif distrato.status == 'MULTA_VENCIDA' %}
+                                <form method="POST" action="{% url 'juridico:enviar_distrato_juridico' distrato.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-action btn-juridico" onclick="return confirm('Confirma envio ao Jurídico?')">
+                                        <i class="fas fa-gavel"></i> Enviar ao Jurídico
+                                    </button>
+                                </form>
+                            {% elif distrato.status == 'ENVIADO_JURIDICO' %}
+                                <span class="badge bg-success">Já enviado</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Modal Tentativa de Acordo -->
+                    <div class="modal fade" id="modalAcordo{{ distrato.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Tentativa de Acordo - {{ distrato.numero_distrato }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="POST" action="{% url 'juridico:registrar_tentativa_acordo' distrato.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-body">
+                                        <p><strong>Cliente:</strong> {{ distrato.venda.cliente.lead.nome }}</p>
+                                        <p><strong>Venda:</strong> {{ distrato.venda.numero_venda }}</p>
+                                        <hr>
+                                        <div class="mb-3">
+                                            <label class="form-label">Resultado da Tentativa</label>
+                                            <select name="aceito" class="form-select" required>
+                                                <option value="">Selecione...</option>
+                                                <option value="true">Acordo Aceito</option>
+                                                <option value="false">Acordo Recusado</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Observações</label>
+                                            <textarea name="observacao" class="form-control" rows="3"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-primary">Registrar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Modal Gerar Multa -->
+                    <div class="modal fade" id="modalMulta{{ distrato.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Gerar Multa - {{ distrato.numero_distrato }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="POST" action="{% url 'juridico:gerar_multa_distrato' distrato.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-body">
+                                        <p><strong>Cliente:</strong> {{ distrato.venda.cliente.lead.nome }}</p>
+                                        <p><strong>Venda:</strong> {{ distrato.venda.numero_venda }}</p>
+                                        <hr>
+                                        <div class="mb-3">
+                                            <label class="form-label">Valor da Multa</label>
+                                            <input type="number" name="valor_multa" class="form-control" step="0.01" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Data de Vencimento</label>
+                                            <input type="date" name="data_vencimento_multa" class="form-control" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Observações</label>
+                                            <textarea name="observacao" class="form-control" rows="3"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-primary">Gerar Multa</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">Nenhum distrato encontrado</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

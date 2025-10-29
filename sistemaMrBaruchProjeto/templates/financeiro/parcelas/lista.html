@@ -423,6 +423,11 @@
                                 <i class="fas fa-check"></i>
                             </button>
                             {% endif %}
+                            {% if parcela.status == 'vencida' %}
+                            <a href="{% url 'juridico:solicitar_distrato' parcela.venda.id %}" class="btn btn-warning btn-action" title="Solicitar Distrato" onclick="return confirm('Deseja solicitar distrato para esta venda?\n\nCliente: {{ parcela.venda.cliente.lead.nome }}\nVenda: {{ parcela.venda.numero_venda }}')">
+                                <i class="fas fa-file-contract"></i>
+                            </a>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
