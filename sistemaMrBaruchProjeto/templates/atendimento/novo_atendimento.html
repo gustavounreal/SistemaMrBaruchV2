@@ -503,6 +503,7 @@ function validarCNPJ(cnpj) {
     // Se lead já existe, usar o ID dele
     if (leadEncontrado) {
         leadId = leadEncontrado.id;
+        console.log('Lead já existe, ID:', leadId);
         showStep(2);
         carregarPix(leadId);
         return;
@@ -524,25 +525,41 @@ function validarCNPJ(cnpj) {
     })
     .then(res => res.json())
     .then(data => {
+        console.log('Resposta do salvar-lead:', data);
         if (data.success) {
             leadId = data.lead_id;
+            console.log('Lead salvo com sucesso, ID:', leadId);
             showAlert('Lead cadastrado com sucesso!', 'success');
             showStep(2); // Transição para a etapa 2
             carregarPix(leadId); // Carrega os dados do PIX
         } else {
+            console.error('Erro ao salvar lead:', data.message);
             showAlert(data.message || 'Erro ao salvar lead', 'danger');
         }
     })
-    .catch(() => showAlert('Erro de conexão. Tente novamente.', 'danger'))
+    .catch(err => {
+        console.error('Erro na requisição de salvar lead:', err);
+        showAlert('Erro de conexão. Tente novamente.', 'danger');
+    })
     .finally(() => hideLoading());
 }
 
 // Etapa 2 → carrega dados do PIX
 function carregarPix(id) {
+    console.log('carregarPix chamado com ID:', id);
+    
+    if (!id) {
+        console.error('ID do lead não fornecido!');
+        showAlert('Erro: ID do lead não identificado', 'danger');
+        document.getElementById('pixContent').innerHTML = `<div class="alert alert-danger">ID do lead não identificado. Volte e tente novamente.</div>`;
+        return;
+    }
+    
     showLoading('Gerando PIX...', 'Conectando ao Asaas...');
     fetch(`/atendimento/api/gerar-pix/${id}/`)
         .then(res => res.json())
         .then(data => {
+            console.log('Resposta do PIX:', data);
             if (data.success) {
                 document.getElementById('pixContent').innerHTML = `
                     <div class="mb-3 text-start">
@@ -562,10 +579,15 @@ function carregarPix(id) {
                     </div>
                 `;
             } else {
-                document.getElementById('pixContent').innerHTML = `<div class="alert alert-danger">Erro ao gerar PIX.</div>`;
+                const mensagemErro = data.message || 'Erro ao gerar PIX.';
+                console.error('Erro do servidor:', mensagemErro);
+                document.getElementById('pixContent').innerHTML = `<div class="alert alert-danger"><strong>Erro:</strong> ${mensagemErro}</div>`;
             }
         })
-        .catch(() => document.getElementById('pixContent').innerHTML = `<div class="alert alert-danger">Falha de conexão.</div>`)
+        .catch(err => {
+            console.error('Erro na requisição:', err);
+            document.getElementById('pixContent').innerHTML = `<div class="alert alert-danger">Falha de conexão com o servidor.</div>`;
+        })
         .finally(() => hideLoading());
 }
 
