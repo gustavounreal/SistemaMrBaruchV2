@@ -6,6 +6,7 @@ from datetime import date
 from vendas.models import Venda
 from financeiro.models import Parcela
 from .models import LinkCurto, ClickLinkCurto
+from core.services import ConfiguracaoService
 
 
 @login_required
@@ -15,14 +16,26 @@ def area_captador(request):
     """
     captador = request.user
     
+    # Obter configurações do sistema
+    whatsapp_numero = ConfiguracaoService.obter_config('CAPTADOR_WHATSAPP_NUMERO', '5511978891213')
+    whatsapp_mensagem = ConfiguracaoService.obter_config('CAPTADOR_WHATSAPP_MENSAGEM', 'Olá! Fui indicado por um captador.')
+    percentual_comissao_config = ConfiguracaoService.obter_config('CAPTADOR_COMISSAO_PERCENTUAL', 20)
+    
     # Criar ou recuperar link curto do captador
     link_curto, created = LinkCurto.objects.get_or_create(
         captador=captador,
         defaults={
             'codigo': LinkCurto.gerar_codigo_unico(),
-            'url_completa': f"https://wa.me/5511978891213?text=Olá! Fui indicado pelo captador ID: {captador.id}"
+            'url_completa': f"https://wa.me/{whatsapp_numero}?text={whatsapp_mensagem} ID: {captador.id}"
         }
     )
+    
+    # Se o link já existe, atualizar a URL caso as configurações tenham mudado
+    if not created:
+        nova_url = f"https://wa.me/{whatsapp_numero}?text={whatsapp_mensagem} ID: {captador.id}"
+        if link_curto.url_completa != nova_url:
+            link_curto.url_completa = nova_url
+            link_curto.save(update_fields=['url_completa'])
     
     # Buscar todas as vendas onde o captador foi indicado
     vendas = Venda.objects.filter(captador=captador).select_related('cliente__lead', 'servico')
@@ -31,8 +44,8 @@ def area_captador(request):
     total_vendas = vendas.count()
     valor_total_indicacoes = vendas.aggregate(total=Sum('valor_total'))['total'] or 0
     
-    # Comissão (20% do valor total das vendas)
-    percentual_comissao = 0.20
+    # Comissão (percentual configurável do valor total das vendas)
+    percentual_comissao = percentual_comissao_config / 100  # Converter de % para decimal
     comissao_total = valor_total_indicacoes * percentual_comissao
     
     # Buscar todas as parcelas das vendas do captador

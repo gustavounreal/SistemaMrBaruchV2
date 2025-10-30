@@ -95,6 +95,26 @@ def painel_configuracoes(request):
                 'valor_padrao': '0.50',
             },
         ],
+        'captadores': [
+            {
+                'chave': 'CAPTADOR_WHATSAPP_NUMERO',
+                'descricao': 'Número WhatsApp para links de indicação (formato: 5511978891213)',
+                'tipo': 'TEXTO',
+                'valor_padrao': '5511978891213',
+            },
+            {
+                'chave': 'CAPTADOR_WHATSAPP_MENSAGEM',
+                'descricao': 'Mensagem padrão do link de indicação',
+                'tipo': 'TEXTO',
+                'valor_padrao': 'Olá! Fui indicado por um captador.',
+            },
+            {
+                'chave': 'CAPTADOR_COMISSAO_PERCENTUAL',
+                'descricao': 'Percentual de comissão dos captadores (%)',
+                'tipo': 'NUMERO',
+                'valor_padrao': '20',
+            },
+        ],
         'lead_acompanhamento': [
             {
                 'chave': 'FOLLOWUP_INTERVALO_PADRAO_DIAS',
