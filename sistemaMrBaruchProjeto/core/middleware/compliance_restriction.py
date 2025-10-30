@@ -35,6 +35,7 @@ class ComplianceRestrictionMiddleware(MiddlewareMixin):
             '/accounts/logout-session/',
             '/juridico/',  # Acesso completo ao módulo jurídico (integração)
             '/juridico/api/',
+            '/clientes/',  # Permitir área do cliente
         ]
 
         # Permitir sempre paths públicos

@@ -24,6 +24,9 @@ urlpatterns = [
     # Confirmação de venda cadastrada
     path('<int:venda_id>/confirmacao/', views.confirmacao_venda, name='confirmacao_venda'),
     
+    # Gerar credenciais do cliente (AJAX)
+    path('<int:venda_id>/gerar-credenciais/', views.gerar_credenciais_cliente, name='gerar_credenciais_cliente'),
+    
     # Gerar orçamento PDF
     path('<int:venda_id>/orcamento/', views.gerar_orcamento_pdf, name='gerar_orcamento_pdf'),
     

@@ -63,10 +63,10 @@
                                     <form id="loginForm" novalidate class="mb-4">
                                         {% csrf_token %}
                                         <div class="mb-3 position-relative">
-                                            <label for="login_email" class="form-label fw-semibold">E-mail</label>
+                                            <label for="login_email" class="form-label fw-semibold">E-mail ou Usuário</label>
                                             <div class="input-group">
-                                                <span class="input-group-text"><i class="bi bi-envelope text-primary"></i></span>
-                                                <input type="email" id="login_email" name="email" class="form-control form-control-lg rounded-end-3" placeholder="Digite seu e-mail" required autocomplete="email" aria-required="true">
+                                                <span class="input-group-text"><i class="bi bi-person text-primary"></i></span>
+                                                <input type="text" id="login_email" name="email" class="form-control form-control-lg rounded-end-3" placeholder="Digite seu e-mail ou usuário" required autocomplete="username" aria-required="true">
                                             </div>
                                         </div>
                                         <div class="mb-3 position-relative">
@@ -495,8 +495,9 @@ class AuthForms {
     }
 
     validateLoginData(data) {
-        if (!AuthUtils.validateEmail(data.email)) {
-            AuthUtils.showAlert('Por favor, insira um e-mail válido.');
+        // Aceita email ou username - valida apenas se não está vazio
+        if (!data.email || data.email.trim().length < 3) {
+            AuthUtils.showAlert('Por favor, insira seu e-mail ou usuário (mínimo 3 caracteres).');
             return false;
         }
         
@@ -554,14 +555,26 @@ class AuthForms {
     }
 
     bindRealTimeValidation() {
-    // Validação de e-mail em tempo real
-        document.getElementById('register_email').addEventListener('blur', (e) => {
-            if (e.target.value && !AuthUtils.validateEmail(e.target.value)) {
-                this.showFieldError(e.target, 'E-mail inválido');
+    // Validação de login_email (aceita email ou username)
+        document.getElementById('login_email').addEventListener('blur', (e) => {
+            if (e.target.value && e.target.value.trim().length < 3) {
+                this.showFieldError(e.target, 'Mínimo 3 caracteres');
             } else {
                 this.clearFieldError(e.target);
             }
         });
+        
+    // Validação de e-mail em tempo real (apenas no registro)
+        const registerEmail = document.getElementById('register_email');
+        if (registerEmail) {
+            registerEmail.addEventListener('blur', (e) => {
+                if (e.target.value && !AuthUtils.validateEmail(e.target.value)) {
+                    this.showFieldError(e.target, 'E-mail inválido');
+                } else {
+                    this.clearFieldError(e.target);
+                }
+            });
+        }
 
     // Validação de confirmação de senha em tempo real
         document.getElementById('password2').addEventListener('blur', (e) => {

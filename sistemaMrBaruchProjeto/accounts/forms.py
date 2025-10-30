@@ -7,11 +7,11 @@ from .models import User, DadosUsuario
 User = get_user_model()
 
 class LoginForm(AuthenticationForm):
-    username = forms.EmailField(
-        label="E-mail",
-        widget=forms.EmailInput(attrs={
+    username = forms.CharField(
+        label="E-mail ou Usuário",
+        widget=forms.TextInput(attrs={
             'class': 'form-control form-control-lg',
-            'placeholder': 'seu@email.com',
+            'placeholder': 'seu@email.com ou usuário',
             'id': 'email',
             'autofocus': True
         })
@@ -35,17 +35,27 @@ class LoginForm(AuthenticationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['username'].label = "E-mail"
+        self.fields['username'].label = "E-mail ou Usuário"
         
-    def clean_username(self):
-        email = self.cleaned_data.get('username')
-        if email:
-            try:
-                user = User.objects.get(email=email)
-                return user.username  # Retorna username para compatibilidade
-            except User.DoesNotExist:
-                raise ValidationError("E-mail não encontrado.")
-        return email
+    def clean(self):
+        username = self.cleaned_data.get('username')
+        password = self.cleaned_data.get('password')
+
+        if username and password:
+            self.user_cache = authenticate(
+                self.request,
+                username=username,
+                password=password
+            )
+            if self.user_cache is None:
+                raise ValidationError(
+                    "E-mail/usuário ou senha incorretos.",
+                    code='invalid_login',
+                )
+            else:
+                self.confirm_login_allowed(self.user_cache)
+
+        return self.cleaned_data
 
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(

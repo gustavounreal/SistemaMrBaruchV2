@@ -79,35 +79,43 @@ def google_auth(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_api(request):
-    """Login tradicional via API"""
-    email = request.data.get('email')
+    """Login tradicional via API - aceita email ou username"""
+    print("="*80)
+    print("🔐 LOGIN_API CHAMADO")
+    print(f"Method: {request.method}")
+    print(f"Data: {request.data}")
+    print("="*80)
+    
+    email = request.data.get('email')  # Pode ser email OU username
     password = request.data.get('password')
     remember_me = request.data.get('remember_me', False)
 
     if not email or not password:
-        return Response({'error': 'E-mail e senha são obrigatórios'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'E-mail/usuário e senha são obrigatórios'}, status=status.HTTP_400_BAD_REQUEST)
 
-    try:
-        user = User.objects.get(email=email)
-        user = authenticate(request, username=user.username, password=password)
+    # Usa authenticate que aceita email OU username via EmailBackend
+    user = authenticate(request, username=email, password=password)
+    
+    print(f"Authenticate result: {user}")
 
-        if user:
-            if user.ativo:
-                refresh = RefreshToken.for_user(user)
-                refresh.set_exp(lifetime=timedelta(hours=16))
+    if user:
+        if user.ativo:
+            refresh = RefreshToken.for_user(user)
+            refresh.set_exp(lifetime=timedelta(hours=16))
+            
+            print(f"✅ Login bem-sucedido: {user.username}")
 
-                return Response({
-                    'access_token': str(refresh.access_token),
-                    'refresh_token': str(refresh),
-                    'user': UserSerializer(user).data
-                })
-            else:
-                return Response({'error': 'Conta desativada'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({
+                'access_token': str(refresh.access_token),
+                'refresh_token': str(refresh),
+                'user': UserSerializer(user).data
+            })
         else:
-            return Response({'error': 'Senha incorreta'}, status=status.HTTP_401_UNAUTHORIZED)
-
-    except User.DoesNotExist:
-        return Response({'error': 'E-mail não encontrado'}, status=status.HTTP_404_NOT_FOUND)
+            print(f"❌ Conta desativada: {user.username}")
+            return Response({'error': 'Conta desativada'}, status=status.HTTP_401_UNAUTHORIZED)
+    else:
+        print(f"❌ Credenciais inválidas para: {email}")
+        return Response({'error': 'E-mail/usuário ou senha incorretos'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 @api_view(['POST'])

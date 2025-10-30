@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.db import transaction
 from django.db import models as django_models
@@ -10,6 +11,9 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from decimal import Decimal
 from .forms import UserForm, ConsultorForm
 from accounts.models import DadosUsuario
+
+# Obtém o modelo User customizado
+User = get_user_model()
 
 
 # Funções auxiliares de permissão
@@ -1633,6 +1637,9 @@ def exibir_pix_entrada(request, venda_id):
 @user_passes_test(is_consultor_or_admin)
 def confirmacao_venda(request, venda_id):
     """Página de confirmação após cadastro completo da venda"""
+    from django.contrib.auth.models import Group
+    from .models import ProgressoServico
+    
     venda = get_object_or_404(
         Venda.objects.select_related('cliente', 'servico', 'consultor', 'captador'),
         id=venda_id
@@ -1641,6 +1648,109 @@ def confirmacao_venda(request, venda_id):
     print("="*80)
     print(f"📋 CONFIRMAÇÃO DE VENDA #{venda_id}")
     print(f"Valor da Entrada: R$ {venda.valor_entrada}")
+    
+    # ==========================================
+    # CRIAR USUÁRIO AUTOMÁTICO PARA O CLIENTE
+    # ==========================================
+    usuario_criado = False
+    username_gerado = None
+    senha_gerada = None
+    usuario_ja_existe = False
+    
+    try:
+        # Verifica se o cliente já tem usuário portal criado
+        if venda.cliente.usuario_portal:
+            usuario_ja_existe = True
+            username_gerado = venda.cliente.usuario_portal.username
+            # Busca o lead para pegar a senha original
+            if hasattr(venda.cliente, 'lead') and venda.cliente.lead and venda.cliente.lead.cpf_cnpj:
+                lead = venda.cliente.lead
+                cpf_limpo = lead.cpf_cnpj.replace('.', '').replace('-', '').replace('/', '')
+                if '/' in lead.cpf_cnpj:
+                    senha_gerada = lead.cpf_cnpj.split('/')[0].replace('.', '').replace('-', '')
+                else:
+                    senha_gerada = cpf_limpo
+            print(f"ℹ️ Cliente já possui usuário portal: {username_gerado}")
+        else:
+            # Busca o lead relacionado
+            lead = None
+            if hasattr(venda.cliente, 'lead') and venda.cliente.lead:
+                lead = venda.cliente.lead
+            
+            if lead and lead.cpf_cnpj:
+                # Gera username: nome + dígitos do CPF (aumenta até encontrar único)
+                cpf_limpo = lead.cpf_cnpj.replace('.', '').replace('-', '').replace('/', '')
+                nome_usuario = lead.nome_completo.split()[0].lower() if lead.nome_completo else 'cliente'
+                
+                # Gera senha: CPF ou CNPJ completo
+                if '/' in lead.cpf_cnpj:
+                    # CNPJ
+                    senha_gerada = lead.cpf_cnpj.split('/')[0].replace('.', '').replace('-', '')
+                else:
+                    # CPF
+                    senha_gerada = cpf_limpo
+                
+                # Tenta criar username único incrementando dígitos do CPF
+                username_base = nome_usuario
+                digitos_usados = 3
+                tentativas = 0
+                max_tentativas = len(cpf_limpo)
+                
+                while tentativas < max_tentativas:
+                    username_gerado = f"{username_base}{cpf_limpo[:digitos_usados]}"
+                    
+                    if not User.objects.filter(username=username_gerado).exists():
+                        # Username único encontrado, cria o usuário
+                        user = User.objects.create_user(
+                            username=username_gerado,
+                            password=senha_gerada,
+                            email=lead.email or '',
+                            first_name=lead.nome_completo.split()[0] if lead.nome_completo else '',
+                            is_active=True
+                        )
+                        
+                        # Adiciona ao grupo 'cliente'
+                        grupo_cliente, created = Group.objects.get_or_create(name='cliente')
+                        user.groups.add(grupo_cliente)
+                        
+                        # Salva referência ao usuário no cliente
+                        venda.cliente.usuario_portal = user
+                        venda.cliente.save()
+                        
+                        usuario_criado = True
+                        print(f"✅ Usuário criado: {username_gerado} (usando {digitos_usados} dígitos)")
+                        print(f"   Senha: {senha_gerada}")
+                        break
+                    else:
+                        # Username já existe, tenta com mais dígitos
+                        digitos_usados += 1
+                        tentativas += 1
+                        print(f"⚠️ Username {username_gerado} já existe, tentando com {digitos_usados} dígitos...")
+                
+                if not usuario_criado and tentativas >= max_tentativas:
+                    print(f"❌ Não foi possível criar username único após {tentativas} tentativas")
+    except Exception as e:
+        print(f"⚠️ Erro ao criar usuário do cliente: {e}")
+    
+    # ==========================================
+    # CRIAR PROGRESSO DO SERVIÇO
+    # ==========================================
+    try:
+        # Cria ou busca o progresso do serviço
+        progresso, criado = ProgressoServico.objects.get_or_create(
+            venda=venda,
+            defaults={
+                'etapa_atual': 0,  # Etapa 1 - Atendimento Iniciado
+                'data_etapa_1': timezone.now()
+            }
+        )
+        
+        if criado:
+            print(f"✅ Progresso do serviço criado: Etapa 1")
+        else:
+            print(f"ℹ️ Progresso do serviço já existe")
+    except Exception as e:
+        print(f"⚠️ Erro ao criar progresso do serviço: {e}")
     
     # Busca PIX de entrada se existir
     from financeiro.models import PixEntrada
@@ -1673,6 +1783,10 @@ def confirmacao_venda(request, venda_id):
         'venda': venda,
         'pix_entrada': pix_entrada,
         'pre_venda': pre_venda,
+        'usuario_criado': usuario_criado,
+        'usuario_ja_existe': usuario_ja_existe,
+        'username_gerado': username_gerado,
+        'senha_gerada': senha_gerada,
     }
     
     print(f"📤 Contexto sendo enviado para o template:")
@@ -1682,6 +1796,110 @@ def confirmacao_venda(request, venda_id):
     print("="*80)
     
     return render(request, 'vendas/confirmacao_venda.html', context)
+
+
+@login_required
+@user_passes_test(is_consultor_or_admin)
+def gerar_credenciais_cliente(request, venda_id):
+    """Gera credenciais de acesso ao portal do cliente via AJAX"""
+    from django.contrib.auth.models import Group
+    from .models import ProgressoServico
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método não permitido'}, status=405)
+    
+    venda = get_object_or_404(
+        Venda.objects.select_related('cliente', 'cliente__lead'),
+        id=venda_id
+    )
+    
+    # Verifica se já existe usuário
+    if venda.cliente.usuario_portal:
+        return JsonResponse({
+            'success': False,
+            'error': 'Cliente já possui usuário portal criado',
+            'username': venda.cliente.usuario_portal.username
+        })
+    
+    try:
+        # Busca o lead relacionado
+        lead = None
+        if hasattr(venda.cliente, 'lead') and venda.cliente.lead:
+            lead = venda.cliente.lead
+        
+        if not lead or not lead.cpf_cnpj:
+            return JsonResponse({
+                'success': False,
+                'error': 'Lead ou CPF/CNPJ não encontrado'
+            })
+        
+        # Gera username: nome + dígitos do CPF (aumenta até encontrar único)
+        cpf_limpo = lead.cpf_cnpj.replace('.', '').replace('-', '').replace('/', '')
+        nome_usuario = lead.nome_completo.split()[0].lower() if lead.nome_completo else 'cliente'
+        
+        # Gera senha: CPF ou CNPJ completo
+        if '/' in lead.cpf_cnpj:
+            senha_gerada = lead.cpf_cnpj.split('/')[0].replace('.', '').replace('-', '')
+        else:
+            senha_gerada = cpf_limpo
+        
+        # Tenta criar username único incrementando dígitos do CPF
+        username_base = nome_usuario
+        digitos_usados = 3
+        tentativas = 0
+        max_tentativas = len(cpf_limpo)
+        username_gerado = None
+        
+        while tentativas < max_tentativas:
+            username_gerado = f"{username_base}{cpf_limpo[:digitos_usados]}"
+            
+            if not User.objects.filter(username=username_gerado).exists():
+                # Username único encontrado, cria o usuário
+                user = User.objects.create_user(
+                    username=username_gerado,
+                    password=senha_gerada,
+                    email=lead.email or '',
+                    first_name=lead.nome_completo.split()[0] if lead.nome_completo else '',
+                    is_active=True
+                )
+                
+                # Adiciona ao grupo 'cliente'
+                grupo_cliente, created = Group.objects.get_or_create(name='cliente')
+                user.groups.add(grupo_cliente)
+                
+                # Salva referência ao usuário no cliente
+                venda.cliente.usuario_portal = user
+                venda.cliente.save()
+                
+                # Cria progresso do serviço se não existir
+                ProgressoServico.objects.get_or_create(
+                    venda=venda,
+                    defaults={
+                        'etapa_atual': 0,
+                        'data_etapa_1': timezone.now()
+                    }
+                )
+                
+                return JsonResponse({
+                    'success': True,
+                    'username': username_gerado,
+                    'senha': senha_gerada,
+                    'message': f'Credenciais criadas com sucesso! (usando {digitos_usados} dígitos)'
+                })
+            else:
+                digitos_usados += 1
+                tentativas += 1
+        
+        return JsonResponse({
+            'success': False,
+            'error': f'Não foi possível criar username único após {tentativas} tentativas'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Erro ao criar credenciais: {str(e)}'
+        })
 
 
 @login_required

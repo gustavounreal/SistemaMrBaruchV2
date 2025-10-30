@@ -21,6 +21,7 @@ class ConsultorRestrictionMiddleware(MiddlewareMixin):
             '/accounts/api/',
             '/static/',
             '/media/',
+            '/clientes/',  # Área do cliente sempre permitida
         ]
 
             # URLs permitidas para usuários do grupo 'comercial1' (consultores)
@@ -58,15 +59,37 @@ class ConsultorRestrictionMiddleware(MiddlewareMixin):
         # Se o usuário for superuser ou do grupo 'admin', não aplicar restrição
         try:
             is_admin = user.is_superuser or user.groups.filter(name='admin').exists()
+            print(f"[ConsultorRestriction] is_superuser: {user.is_superuser}, has_admin_group: {user.groups.filter(name='admin').exists()}")
+            print(f"[ConsultorRestriction] is_admin: {is_admin}")
             if is_admin:
+                print(f"[ConsultorRestriction] Liberado para admin: {request.path}")
                 return None
-        except Exception:
+        except Exception as e:
+            print(f"[ConsultorRestriction] Erro ao verificar admin: {e}")
+            pass
+
+        # Se o usuário for do grupo 'cliente', permitir acesso apenas à área do cliente
+        try:
+            is_cliente = user.groups.filter(name='cliente').exists()
+            print(f"[ConsultorRestriction] is_cliente: {is_cliente}")
+            if is_cliente:
+                # Clientes só podem acessar /clientes/area/ e rotas públicas
+                if request.path.startswith('/clientes/'):
+                    print(f"[ConsultorRestriction] Liberado para cliente: {request.path}")
+                    return None
+                # Se tentar acessar outra área, redireciona para área do cliente
+                print(f"[ConsultorRestriction] Cliente tentando acessar área restrita, redirecionando...")
+                return redirect('/clientes/area/')
+        except Exception as e:
+            print(f"[ConsultorRestriction] Erro ao verificar cliente: {e}")
             pass
 
         # Se o usuário for do grupo 'consultor', aplicar a restrição
         try:
             is_consultor = user.groups.filter(name='comercial1').exists()  # Atualizado de 'consultor' para 'comercial1'
-        except Exception:
+            print(f"[ConsultorRestriction] is_consultor: {is_consultor}")
+        except Exception as e:
+            print(f"[ConsultorRestriction] Erro ao verificar consultor: {e}")
             is_consultor = False
 
         if is_consultor:

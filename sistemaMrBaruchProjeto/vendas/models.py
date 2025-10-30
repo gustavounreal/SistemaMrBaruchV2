@@ -637,3 +637,100 @@ class HistoricoRepescagem(models.Model):
     
     def __str__(self):
         return f"{self.get_tipo_interacao_display()} - {self.repescagem.lead.nome_completo} - {self.data_interacao.strftime('%d/%m/%Y %H:%M')}"
+
+
+class ProgressoServico(models.Model):
+    """
+    Controla o progresso do serviço contratado pelo cliente
+    Usado na área do cliente para visualização do andamento
+    """
+    ETAPAS_CHOICES = [
+        (0, 'Etapa 1 - Atendimento Iniciado'),
+        (20, 'Etapa 2 - Elaboração e Protocolo'),
+        (40, 'Etapa 3 - Análise e Retorno'),
+        (60, 'Etapa 4 - Monitoramento'),
+        (80, 'Etapa 5 - Conclusão das Atualizações'),
+        (100, 'Etapa 6 - Encerramento Final'),
+    ]
+    
+    venda = models.OneToOneField(
+        Venda,
+        on_delete=models.CASCADE,
+        related_name='progresso_servico'
+    )
+    
+    # Progresso atual
+    etapa_atual = models.IntegerField(
+        choices=ETAPAS_CHOICES,
+        default=0,
+        help_text="Etapa atual do serviço (0, 20, 40, 60, 80, 100)"
+    )
+    
+    # Datas de cada etapa
+    data_etapa_1 = models.DateTimeField(null=True, blank=True, help_text="Atendimento Iniciado")
+    data_etapa_2 = models.DateTimeField(null=True, blank=True, help_text="Elaboração e Protocolo")
+    data_etapa_3 = models.DateTimeField(null=True, blank=True, help_text="Análise e Retorno")
+    data_etapa_4 = models.DateTimeField(null=True, blank=True, help_text="Monitoramento")
+    data_etapa_5 = models.DateTimeField(null=True, blank=True, help_text="Conclusão das Atualizações")
+    data_etapa_6 = models.DateTimeField(null=True, blank=True, help_text="Encerramento Final")
+    
+    # Observações administrativas (não visível ao cliente)
+    observacoes_internas = models.TextField(
+        blank=True,
+        help_text="Observações internas sobre o andamento"
+    )
+    
+    # Timestamps
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    data_atualizacao = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Progresso do Serviço"
+        verbose_name_plural = "Progressos dos Serviços"
+        ordering = ['-data_atualizacao']
+    
+    def __str__(self):
+        return f"Progresso Venda #{self.venda.id} - {self.etapa_atual}%"
+    
+    def get_proxima_atualizacao(self):
+        """Calcula a data da próxima atualização prevista (15 dias após última atualização)"""
+        if self.data_atualizacao:
+            from datetime import timedelta
+            return self.data_atualizacao.date() + timedelta(days=15)
+        return None
+    
+    def get_etapa_info(self):
+        """Retorna informações da etapa atual"""
+        etapas_info = {
+            0: {
+                'titulo': 'Etapa 1 — Atendimento Iniciado e Preparação da Defesa',
+                'status': '✅ Concluído',
+                'descricao': 'Seu atendimento foi iniciado e nossos especialistas já elaboraram o resumo técnico do caso.'
+            },
+            20: {
+                'titulo': 'Etapa 2 — Elaboração e Protocolo da Defesa (15 dias)',
+                'status': '⚙️ Em andamento',
+                'descricao': 'Nossa equipe elabora a defesa administrativa personalizada e encaminha aos órgãos de proteção ao crédito.'
+            },
+            40: {
+                'titulo': 'Etapa 3 — Análise e Retorno dos Órgãos (30 dias)',
+                'status': '⚙️ Em andamento',
+                'descricao': 'As defesas protocoladas estão sendo analisadas pelos órgãos competentes.'
+            },
+            60: {
+                'titulo': 'Etapa 4 — Monitoramento das Atualizações (45 dias)',
+                'status': '🔄 Em andamento',
+                'descricao': 'Monitoramento constante dos sistemas de crédito para identificar eventuais alterações.'
+            },
+            80: {
+                'titulo': 'Etapa 5 — Conclusão das Atualizações (60 dias)',
+                'status': '🔄 Em andamento',
+                'descricao': 'Grande parte das respostas já foram recebidas. Atuando sobre os casos pendentes.'
+            },
+            100: {
+                'titulo': 'Etapa 6 — Encerramento e Confirmação Final (90 dias)',
+                'status': '🏁 Concluído',
+                'descricao': 'Validação final das atualizações e comunicação de encerramento do atendimento.'
+            }
+        }
+        return etapas_info.get(self.etapa_atual, etapas_info[0])

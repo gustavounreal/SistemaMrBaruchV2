@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Boletos - {{ cliente.lead.nome_completo|default:request.user.username }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .boletos-container {
+            max-width: 100%;
+            margin: 0 auto;
+            background-color: #fff;
+            min-height: 100vh;
+        }
+        
+        .header-boletos {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 25px 20px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header-boletos::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,261.3C672,256,768,224,864,224C960,224,1056,256,1152,250.7C1248,245,1344,203,1392,181.3L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>');
+            background-size: cover;
+            background-position: bottom;
+            opacity: 0.1;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header-boletos h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .header-boletos p {
+            opacity: 0.9;
+            margin: 5px 0;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .header-boletos i {
+            margin-right: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: white;
+            border-bottom: 2px solid #e5e7eb;
+            padding: 0 15px;
+            gap: 10px;
+            overflow-x: auto;
+        }
+        
+        .nav-tab {
+            padding: 15px 20px;
+            color: #6b7280;
+            text-decoration: none;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .nav-tab:hover {
+            color: #10b981;
+            background: #f0fdf4;
+        }
+        
+        .nav-tab.active {
+            color: #10b981;
+            border-bottom-color: #10b981;
+        }
+        
+        .nav-tab i {
+            margin-right: 8px;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 0 15px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eaeaea;
+        }
+        
+        .section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section h3 i {
+            margin-right: 10px;
+            color: #10b981;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #10b981;
+            transition: transform 0.2s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .stat-card.warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left-color: #f59e0b;
+        }
+        
+        .stat-card.danger {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left-color: #ef4444;
+        }
+        
+        .stat-card.info {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border-left-color: #3b82f6;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .stat-label i {
+            margin-right: 8px;
+            font-size: 1.2rem;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #10b981;
+        }
+        
+        .stat-card.warning .stat-value {
+            color: #f59e0b;
+        }
+        
+        .stat-card.danger .stat-value {
+            color: #ef4444;
+        }
+        
+        .stat-card.info .stat-value {
+            color: #3b82f6;
+        }
+        
+        .progress-bar-payment {
+            height: 24px;
+            background: #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .progress-fill-payment {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: width 0.5s ease;
+        }
+        
+        .boleto-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .boleto-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .boleto-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background: #10b981;
+        }
+        
+        .boleto-item.vencida::before {
+            background: #ef4444;
+        }
+        
+        .boleto-item.paga::before {
+            background: #059669;
+        }
+        
+        .boleto-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+        
+        .boleto-numero {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .boleto-status {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .boleto-status i {
+            margin-right: 6px;
+        }
+        
+        .status-paga {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-vencida {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .status-aberta {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .boleto-info {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+        
+        .info-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .info-label i {
+            margin-right: 8px;
+            color: #10b981;
+        }
+        
+        .info-value {
+            font-weight: 600;
+            color: #333;
+            font-size: 1rem;
+        }
+        
+        .info-value.destaque {
+            font-size: 1.3rem;
+            color: #10b981;
+        }
+        
+        .info-value.vencido {
+            color: #ef4444;
+        }
+        
+        .boleto-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        .btn-primary {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: #10b981;
+            border: 2px solid #10b981;
+        }
+        
+        .btn-outline:hover {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .alert-box {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .alert-box i {
+            margin-right: 12px;
+            font-size: 1.3rem;
+            margin-top: 2px;
+        }
+        
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+        
+        .state-message {
+            text-align: center;
+            padding: 50px 30px;
+        }
+        
+        .state-message i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .state-message h3 {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+            justify-content: center;
+        }
+        
+        .state-message p {
+            color: #999;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-size: 0.9rem;
+            border-top: 1px solid #eaeaea;
+            margin-top: 30px;
+        }
+        
+        .codigo-barras {
+            background: #f9fafb;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #333;
+            word-break: break-all;
+            border: 1px dashed #d1d5db;
+            margin: 10px 0;
+        }
+        
+        .dias-atraso {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        
+        .dias-atraso i {
+            margin-right: 6px;
+        }
+        
+        @media (min-width: 768px) {
+            .boletos-container {
+                max-width: 850px;
+                margin: 20px auto;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+            }
+            
+            .header-boletos {
+                padding: 30px;
+                margin-bottom: 0;
+            }
+            
+            .header-boletos h1 {
+                font-size: 2.2rem;
+            }
+            
+            .section {
+                padding: 25px;
+                margin: 0 20px 25px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .boleto-info {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (min-width: 992px) {
+            .boletos-container {
+                max-width: 1000px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="boletos-container">
+        {% if sem_perfil or erro_geral %}
+        <!-- Mensagem de Erro -->
+        <div class="header-boletos">
+            <div class="header-content">
+                <h1>Meus Boletos</h1>
+            </div>
+        </div>
+        <div class="section state-message">
+            <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
+            <h3>{% if sem_perfil %}Perfil Não Encontrado{% else %}Erro ao Carregar{% endif %}</h3>
+            <p>{{ mensagem }}</p>
+            <a href="{% url 'clientes:area_cliente' %}" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Voltar para Área do Cliente
+            </a>
+        </div>
+        
+        {% elif sem_servicos %}
+        <!-- Sem Serviços -->
+        <div class="header-boletos">
+            <div class="header-content">
+                <h1>Meus Boletos</h1>
+                <p><i class="fas fa-file-invoice-dollar"></i> Gerenciamento de Pagamentos</p>
+            </div>
+        </div>
+        <div class="section state-message">
+            <i class="fas fa-inbox" style="color: #10b981;"></i>
+            <h3>Nenhum Boleto Disponível</h3>
+            <p>Ainda não há boletos registrados para sua conta.<br>Assim que as parcelas forem geradas, você poderá visualizá-las aqui.</p>
+            <a href="{% url 'clientes:area_cliente' %}" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Voltar para Área do Cliente
+            </a>
+        </div>
+        
+        {% else %}
+        <!-- Cabeçalho -->
+        <div class="header-boletos">
+            <div class="header-content">
+                <h1>Meus Boletos</h1>
+                <p><i class="fas fa-user"></i> {{ cliente.lead.nome_completo }}</p>
+                <p><i class="fas fa-briefcase"></i> {{ venda.servico.nome }}</p>
+            </div>
+        </div>
+        
+        <!-- Navegação -->
+        <div class="nav-tabs">
+            <a href="{% url 'clientes:area_cliente' %}" class="nav-tab">
+                <i class="fas fa-chart-line"></i> Progresso
+            </a>
+            <a href="{% url 'clientes:boletos_cliente' %}" class="nav-tab active">
+                <i class="fas fa-file-invoice-dollar"></i> Boletos
+            </a>
+        </div>
+        
+        <!-- Estatísticas -->
+        <div class="section">
+            <h3><i class="fas fa-chart-bar"></i> Resumo de Pagamentos</h3>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">
+                        <i class="fas fa-list"></i>
+                        Total de Parcelas
+                    </div>
+                    <div class="stat-value">{{ total_parcelas }}</div>
+                </div>
+                
+                <div class="stat-card info">
+                    <div class="stat-label">
+                        <i class="fas fa-check-circle"></i>
+                        Parcelas Pagas
+                    </div>
+                    <div class="stat-value">{{ parcelas_pagas }}</div>
+                </div>
+                
+                {% if parcelas_vencidas > 0 %}
+                <div class="stat-card danger">
+                    <div class="stat-label">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Parcelas Vencidas
+                    </div>
+                    <div class="stat-value">{{ parcelas_vencidas }}</div>
+                </div>
+                {% endif %}
+                
+                <div class="stat-card warning">
+                    <div class="stat-label">
+                        <i class="fas fa-clock"></i>
+                        Parcelas em Aberto
+                    </div>
+                    <div class="stat-value">{{ parcelas_abertas }}</div>
+                </div>
+            </div>
+            
+            <div class="alert-box alert-info">
+                <i class="fas fa-info-circle"></i>
+                <div>
+                    <strong>Valor Total:</strong> R$ {{ valor_total|floatformat:2 }}<br>
+                    <strong>Valor Pago:</strong> R$ {{ valor_pago|floatformat:2 }}<br>
+                    <strong>Valor Pendente:</strong> R$ {{ valor_pendente|floatformat:2 }}
+                </div>
+            </div>
+            
+            <div class="progress-bar-payment">
+                <div class="progress-fill-payment" style="width: {{ percentual_pago|floatformat:0 }}%;">
+                    {{ percentual_pago|floatformat:1 }}% Pago
+                </div>
+            </div>
+        </div>
+        
+        <!-- Alertas -->
+        {% if parcelas_vencidas > 0 %}
+        <div class="section">
+            <div class="alert-box alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                <div>
+                    <strong>Atenção!</strong> Você possui {{ parcelas_vencidas }} parcela{{ parcelas_vencidas|pluralize }} vencida{{ parcelas_vencidas|pluralize }}.<br>
+                    Entre em contato com o financeiro para regularizar sua situação.
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Lista de Boletos -->
+        <div class="section">
+            <h3><i class="fas fa-file-invoice"></i> Detalhes das Parcelas</h3>
+            
+            {% for parcela in parcelas %}
+            <div class="boleto-item {% if parcela.status == 'vencida' %}vencida{% elif parcela.status == 'paga' %}paga{% endif %}">
+                <div class="boleto-header">
+                    <div class="boleto-numero">
+                        <i class="fas fa-hashtag"></i> Parcela {{ parcela.numero_parcela }}/{{ total_parcelas }}
+                    </div>
+                    <div class="boleto-status {% if parcela.status == 'paga' %}status-paga{% elif parcela.status == 'vencida' %}status-vencida{% else %}status-aberta{% endif %}">
+                        {% if parcela.status == 'paga' %}
+                            <i class="fas fa-check-circle"></i> Paga
+                        {% elif parcela.status == 'vencida' %}
+                            <i class="fas fa-exclamation-triangle"></i> Vencida
+                        {% else %}
+                            <i class="fas fa-clock"></i> Em Aberto
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="boleto-info">
+                    <div class="info-item">
+                        <span class="info-label">
+                            <i class="fas fa-dollar-sign"></i> Valor
+                        </span>
+                        <span class="info-value destaque {% if parcela.status == 'vencida' %}vencido{% endif %}">
+                            R$ {{ parcela.valor|floatformat:2 }}
+                        </span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">
+                            <i class="fas fa-calendar-alt"></i> Vencimento
+                        </span>
+                        <span class="info-value">
+                            {{ parcela.data_vencimento|date:"d/m/Y" }}
+                        </span>
+                    </div>
+                    
+                    {% if parcela.data_pagamento %}
+                    <div class="info-item">
+                        <span class="info-label">
+                            <i class="fas fa-calendar-check"></i> Data Pagamento
+                        </span>
+                        <span class="info-value">
+                            {{ parcela.data_pagamento|date:"d/m/Y" }}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if parcela.status == 'vencida' and parcela.dias_atraso > 0 %}
+                <div class="dias-atraso">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Vencido há {{ parcela.dias_atraso }} dia{{ parcela.dias_atraso|pluralize }}
+                </div>
+                {% endif %}
+                
+                {% if parcela.codigo_barras %}
+                <div style="margin-top: 15px;">
+                    <strong style="color: #666; font-size: 0.9rem;">Código de Barras:</strong>
+                    <div class="codigo-barras">{{ parcela.codigo_barras }}</div>
+                </div>
+                {% endif %}
+                
+                <div class="boleto-actions">
+                    {% if parcela.url_boleto and parcela.status != 'paga' %}
+                    <a href="{{ parcela.url_boleto }}" target="_blank" class="btn btn-primary">
+                        <i class="fas fa-download"></i> Baixar Boleto
+                    </a>
+                    {% elif parcela.status == 'paga' %}
+                    <button class="btn btn-secondary" disabled>
+                        <i class="fas fa-check"></i> Pagamento Confirmado
+                    </button>
+                    {% else %}
+                    <button class="btn btn-secondary" disabled>
+                        <i class="fas fa-hourglass-half"></i> Boleto em Processamento
+                    </button>
+                    {% endif %}
+                    
+                    {% if parcela.codigo_barras %}
+                    <button class="btn btn-outline" onclick="copiarCodigoBarras('{{ parcela.codigo_barras }}', this)">
+                        <i class="fas fa-copy"></i> Copiar Código
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Rodapé -->
+        <div class="footer">
+            <p>© 2025 Mr. Baruch - Todos os direitos reservados</p>
+            <p>Dúvidas sobre pagamentos? Entre em contato com nosso financeiro</p>
+        </div>
+    </div>
+
+    <script>
+        function copiarCodigoBarras(codigo, button) {
+            navigator.clipboard.writeText(codigo).then(() => {
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+                button.style.background = '#10b981';
+                button.style.color = 'white';
+                button.style.borderColor = '#10b981';
+                
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.style.background = 'transparent';
+                    button.style.color = '#10b981';
+                    button.style.borderColor = '#10b981';
+                }, 2000);
+            }).catch(err => {
+                alert('Erro ao copiar código de barras');
+                console.error('Erro:', err);
+            });
+        }
+    </script>
+</body>
+</html>

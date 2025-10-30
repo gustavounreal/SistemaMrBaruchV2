@@ -226,7 +226,32 @@
             <!-- Coluna Direita: Ações -->
             <div class="card">
                 <h3>Ações Rápidas</h3>
+                
+                {% if usuario_criado or usuario_ja_existe %}
+                <div class="alert alert-success" id="credenciaisAlert" style="margin-bottom: 15px; padding: 15px; border-radius: 8px; background: #d4edda; border-left: 4px solid #28a745;">
+                    <strong><i class="bi bi-check-circle"></i> Acesso à Área do Cliente {% if usuario_criado %}Criado{% else %}Disponível{% endif %}!</strong><br>
+                    <small style="display: block; margin-top: 8px;">
+                        <strong>Usuário:</strong> <span id="usernameDisplay">{{ username_gerado }}</span><br>
+                        <strong>Senha:</strong> <span id="senhaDisplay">{{ senha_gerada }}</span><br>
+                        <em>Compartilhe essas informações com o cliente para que ele possa acompanhar o serviço.</em>
+                    </small>
+                </div>
+                {% else %}
+                <div class="alert alert-warning" id="semCredenciaisAlert" style="margin-bottom: 15px; padding: 15px; border-radius: 8px; background: #fff3cd; border-left: 4px solid #ffc107;">
+                    <strong><i class="bi bi-exclamation-triangle"></i> Credenciais Pendentes</strong><br>
+                    <small style="display: block; margin-top: 8px;">
+                        Clique no botão abaixo para gerar as credenciais de acesso do cliente.
+                    </small>
+                </div>
+                {% endif %}
+                
                 <div class="botoes">
+                    {% if not usuario_criado and not usuario_ja_existe %}
+                    <button class="btn btn-sucesso" id="btnGerarCredenciais" style="width: 100%; margin-bottom: 10px;">
+                        <i class="bi bi-person-plus"></i> Gerar Credenciais de Acesso
+                    </button>
+                    {% endif %}
+                    
                     <a href="{% url 'vendas:gerar_orcamento_pdf' venda.id %}" target="_blank" class="btn btn-sucesso">
                         <i class="bi bi-file-earmark-pdf"></i> Gerar Orçamento
                     </a>
@@ -296,6 +321,76 @@
                     const whatsappUrl = `https://wa.me/${tel}?text=${encodeURIComponent(message)}`;
                     window.open(whatsappUrl, '_blank');
                 });
+            }
+
+            // Gerar Credenciais via AJAX
+            const btnGerarCredenciais = document.getElementById('btnGerarCredenciais');
+            if (btnGerarCredenciais) {
+                btnGerarCredenciais.addEventListener('click', function() {
+                    const btn = this;
+                    const originalHTML = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Gerando...';
+                    
+                    fetch("{% url 'vendas:gerar_credenciais_cliente' venda.id %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Atualizar alertas
+                            const semCredenciaisAlert = document.getElementById('semCredenciaisAlert');
+                            if (semCredenciaisAlert) {
+                                semCredenciaisAlert.outerHTML = `
+                                    <div class="alert alert-success" id="credenciaisAlert" style="margin-bottom: 15px; padding: 15px; border-radius: 8px; background: #d4edda; border-left: 4px solid #28a745;">
+                                        <strong><i class="bi bi-check-circle"></i> Acesso à Área do Cliente Criado!</strong><br>
+                                        <small style="display: block; margin-top: 8px;">
+                                            <strong>Usuário:</strong> <span id="usernameDisplay">${data.username}</span><br>
+                                            <strong>Senha:</strong> <span id="senhaDisplay">${data.senha}</span><br>
+                                            <em>Compartilhe essas informações com o cliente para que ele possa acompanhar o serviço.</em>
+                                        </small>
+                                    </div>
+                                `;
+                            }
+                            
+                            // Remover botão
+                            btn.remove();
+                            
+                            // Mostrar mensagem de sucesso
+                            alert('✅ ' + data.message + '\n\nUsuário: ' + data.username + '\nSenha: ' + data.senha);
+                        } else {
+                            alert('❌ Erro: ' + data.error);
+                            btn.disabled = false;
+                            btn.innerHTML = originalHTML;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        alert('❌ Erro ao gerar credenciais. Tente novamente.');
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
+                    });
+                });
+            }
+            
+            // Função para pegar CSRF token
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
             }
         });
     </script>

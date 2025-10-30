@@ -30,6 +30,16 @@ class Cliente(models.Model):
     # Relacionamentos e controle
     captador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='clientes_captados')
     consultor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='clientes_consultor')
+    
+    # Usuário para acesso à área do cliente
+    usuario_portal = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cliente_portal',
+        help_text="Usuário criado automaticamente para acesso à área do cliente"
+    )
 
     # Status do processo
     cadastro_completo = models.BooleanField(default=False)

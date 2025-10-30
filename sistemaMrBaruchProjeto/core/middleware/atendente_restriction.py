@@ -35,6 +35,7 @@ class AtendenteRestrictionMiddleware(MiddlewareMixin):
             '/atendimento/api/',  # Permite todas as APIs de atendimento
             '/accounts/perfil-atendente/',
             '/accounts/logout-session/',
+            '/clientes/',  # Permitir área do cliente
         ]
 
         # Permitir sempre paths públicos
