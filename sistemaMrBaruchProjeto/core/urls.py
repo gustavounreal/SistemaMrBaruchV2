@@ -23,4 +23,9 @@ urlpatterns = [
    # Logs de Webhooks
    path('webhook/logs/', views.webhook_logs, name='webhook_logs'),
    path('webhook/logs/<int:log_id>/', views.webhook_log_detalhe, name='webhook_log_detalhe'),
+   
+   # Gerenciamento de Webhooks Pendentes
+   path('webhook/resend-pending/', views.resend_pending_webhooks, name='resend_pending_webhooks'),
+   path('webhook/statistics/', views.webhook_statistics, name='webhook_statistics'),
+   path('webhook/list-pending/', views.list_pending_webhooks, name='list_pending_webhooks'),
 ]

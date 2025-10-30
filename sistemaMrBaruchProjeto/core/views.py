@@ -1173,3 +1173,117 @@ def webhook_log_detalhe(request, log_id):
     }
     
     return render(request, 'core/webhook_log_detalhe.html', context)
+
+
+@login_required
+@permission_required('core.change_configuracaosistema')
+def resend_pending_webhooks(request):
+    """
+    Busca e reenvia todos os webhooks pendentes do Asaas
+    """
+    from .asaas_webhook_manager import AsaasWebhookManager
+    import json
+    
+    if request.method == 'POST':
+        try:
+            # Inicializar gerenciador de webhooks
+            webhook_manager = AsaasWebhookManager()
+            
+            # Obter limite (padrão 100)
+            max_webhooks = int(request.POST.get('max_webhooks', 100))
+            
+            # Reenviar webhooks pendentes
+            result = webhook_manager.resend_all_pending(max_webhooks=max_webhooks)
+            
+            if result['success']:
+                succeeded = result['succeeded']
+                failed = result['failed']
+                processed = result['processed']
+                total_pending = result['total_pending']
+                has_more = result.get('has_more', False)
+                
+                if processed == 0:
+                    messages.info(
+                        request,
+                        '✅ Nenhum webhook pendente encontrado no momento.'
+                    )
+                else:
+                    # Criar mensagem detalhada
+                    msg = f'✅ Processados {processed} webhooks: {succeeded} reenviados com sucesso, {failed} falharam.'
+                    
+                    if has_more:
+                        msg += f' (Ainda existem mais webhooks pendentes, total: {total_pending})'
+                    
+                    messages.success(request, msg)
+                    
+                    # Se houver falhas, listar detalhes
+                    if failed > 0:
+                        failed_webhooks = [r for r in result['results'] if not r['success']]
+                        details = '<br>'.join([
+                            f"• Webhook {r['webhook_id']} ({r.get('event', 'unknown')}): {r.get('error', 'Erro desconhecido')}"
+                            for r in failed_webhooks[:5]  # Mostrar apenas os 5 primeiros
+                        ])
+                        messages.warning(request, f'Falhas detectadas:<br>{details}')
+            else:
+                messages.error(
+                    request,
+                    f'❌ Erro ao processar webhooks: {result.get("error", "Erro desconhecido")}'
+                )
+        
+        except Exception as e:
+            messages.error(
+                request,
+                f'❌ Erro inesperado ao reenviar webhooks: {str(e)}'
+            )
+    
+    return redirect('core:painel_configuracoes')
+
+
+@login_required
+@permission_required('core.change_configuracaosistema')
+def webhook_statistics(request):
+    """
+    Retorna estatísticas dos webhooks em JSON
+    """
+    from .asaas_webhook_manager import AsaasWebhookManager
+    
+    try:
+        webhook_manager = AsaasWebhookManager()
+        stats = webhook_manager.get_statistics()
+        
+        return JsonResponse(stats)
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
+@permission_required('core.change_configuracaosistema')
+def list_pending_webhooks(request):
+    """
+    Lista webhooks pendentes em JSON
+    """
+    from .asaas_webhook_manager import AsaasWebhookManager
+    
+    try:
+        webhook_manager = AsaasWebhookManager()
+        
+        limit = int(request.GET.get('limit', 50))
+        offset = int(request.GET.get('offset', 0))
+        
+        result = webhook_manager.list_webhooks(
+            status='PENDING',
+            limit=limit,
+            offset=offset
+        )
+        
+        return JsonResponse(result)
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

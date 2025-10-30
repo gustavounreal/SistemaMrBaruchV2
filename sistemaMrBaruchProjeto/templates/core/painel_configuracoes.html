@@ -68,7 +68,13 @@
                 <h4 class="fw-bold mb-0"><i class="bi bi-person-plus me-2 text-primary"></i>Jornada: Lead</h4>
                 <p class="text-muted small mb-0">Separe as configurações por etapa da jornada</p>
               </div>
-              <div class="col-auto">
+              <div class="col-auto d-flex gap-2">
+                <button type="button" class="btn btn-outline-success btn-sm rounded-pill" id="btnResendWebhooks">
+                  <i class="bi bi-arrow-clockwise"></i> Reenviar Webhooks Pendentes
+                </button>
+                <button type="button" class="btn btn-outline-info btn-sm rounded-pill" id="btnWebhookStats">
+                  <i class="bi bi-graph-up"></i> Estatísticas
+                </button>
                 <form method="post" class="d-inline">
                   {% csrf_token %}
                   <input type="hidden" name="acao" value="testar_asaas">
@@ -606,6 +612,225 @@
           console.error(err);
           alert('Erro na requisição');
         });
+      });
+    }
+
+    // ==================== GERENCIAMENTO DE WEBHOOKS PENDENTES ====================
+    
+    // Botão Reenviar Webhooks
+    const btnResendWebhooks = document.getElementById('btnResendWebhooks');
+    if (btnResendWebhooks) {
+      btnResendWebhooks.addEventListener('click', function() {
+        // Modal de confirmação com opções
+        const modalHtml = `
+        <div class="modal fade" id="webhookResendModal" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg rounded-4">
+              <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                  <i class="bi bi-arrow-clockwise me-2"></i>Reenviar Webhooks Pendentes
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <p class="mb-3">
+                  Esta ação irá buscar e reenviar todos os webhooks que estão pendentes no Asaas.
+                </p>
+                <div class="alert alert-info mb-3">
+                  <i class="bi bi-info-circle me-2"></i>
+                  <strong>O que são webhooks pendentes?</strong><br>
+                  São notificações que o Asaas tentou enviar mas não conseguiu entregar ao nosso sistema.
+                </div>
+                <div class="mb-3">
+                  <label for="maxWebhooks" class="form-label">Máximo de webhooks a processar:</label>
+                  <select class="form-select" id="maxWebhooks">
+                    <option value="50">50 webhooks</option>
+                    <option value="100" selected>100 webhooks</option>
+                    <option value="200">200 webhooks</option>
+                    <option value="500">500 webhooks</option>
+                  </select>
+                  <div class="form-text">Limite recomendado: 100 para não sobrecarregar o sistema</div>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="confirmResend">
+                  <label class="form-check-label" for="confirmResend">
+                    Confirmo que desejo reenviar os webhooks pendentes
+                  </label>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnConfirmResend" disabled>
+                  <i class="bi bi-arrow-clockwise me-1"></i>Reenviar Agora
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+        
+        // Inserir modal no DOM
+        const modalContainer = document.createElement('div');
+        modalContainer.innerHTML = modalHtml;
+        document.body.appendChild(modalContainer);
+        
+        const modalEl = document.getElementById('webhookResendModal');
+        const modal = new bootstrap.Modal(modalEl);
+        
+        // Habilitar botão ao confirmar
+        const confirmCheck = document.getElementById('confirmResend');
+        const btnConfirm = document.getElementById('btnConfirmResend');
+        
+        confirmCheck.addEventListener('change', function() {
+          btnConfirm.disabled = !this.checked;
+        });
+        
+        // Processar reenvio
+        btnConfirm.addEventListener('click', function() {
+          const maxWebhooks = document.getElementById('maxWebhooks').value;
+          
+          // Mostrar loading
+          btnConfirm.disabled = true;
+          btnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processando...';
+          
+          // Criar form e submeter
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = "{% url 'core:resend_pending_webhooks' %}";
+          
+          const csrfInput = document.createElement('input');
+          csrfInput.type = 'hidden';
+          csrfInput.name = 'csrfmiddlewaretoken';
+          csrfInput.value = document.querySelector('input[name=csrfmiddlewaretoken]').value;
+          
+          const maxInput = document.createElement('input');
+          maxInput.type = 'hidden';
+          maxInput.name = 'max_webhooks';
+          maxInput.value = maxWebhooks;
+          
+          form.appendChild(csrfInput);
+          form.appendChild(maxInput);
+          document.body.appendChild(form);
+          form.submit();
+        });
+        
+        // Limpar ao fechar
+        modalEl.addEventListener('hidden.bs.modal', function() {
+          modalContainer.remove();
+        });
+        
+        modal.show();
+      });
+    }
+    
+    // Botão Estatísticas
+    const btnWebhookStats = document.getElementById('btnWebhookStats');
+    if (btnWebhookStats) {
+      btnWebhookStats.addEventListener('click', function() {
+        // Mostrar loading
+        btnWebhookStats.disabled = true;
+        const originalText = btnWebhookStats.innerHTML;
+        btnWebhookStats.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Carregando...';
+        
+        // Buscar estatísticas
+        fetch("{% url 'core:webhook_statistics' %}")
+          .then(r => r.json())
+          .then(data => {
+            btnWebhookStats.disabled = false;
+            btnWebhookStats.innerHTML = originalText;
+            
+            if (data.success) {
+              // Criar modal com estatísticas
+              const modalHtml = `
+              <div class="modal fade" id="webhookStatsModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                  <div class="modal-content shadow-lg rounded-4">
+                    <div class="modal-header bg-info text-white">
+                      <h5 class="modal-title">
+                        <i class="bi bi-graph-up me-2"></i>Estatísticas de Webhooks
+                      </h5>
+                      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                      <div class="row g-3">
+                        <div class="col-6">
+                          <div class="card text-center border-warning">
+                            <div class="card-body">
+                              <h2 class="display-4 text-warning mb-0">${data.pending || 0}</h2>
+                              <p class="text-muted mb-0">Pendentes</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-6">
+                          <div class="card text-center border-success">
+                            <div class="card-body">
+                              <h2 class="display-4 text-success mb-0">${data.sent || 0}</h2>
+                              <p class="text-muted mb-0">Enviados</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-6">
+                          <div class="card text-center border-danger">
+                            <div class="card-body">
+                              <h2 class="display-4 text-danger mb-0">${data.error || 0}</h2>
+                              <p class="text-muted mb-0">Com Erro</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-6">
+                          <div class="card text-center border-primary">
+                            <div class="card-body">
+                              <h2 class="display-4 text-primary mb-0">${data.total || 0}</h2>
+                              <p class="text-muted mb-0">Total</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      ${data.pending > 0 ? `
+                      <div class="alert alert-warning mt-3 mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Existem <strong>${data.pending}</strong> webhooks pendentes que podem ser reenviados.
+                      </div>
+                      ` : `
+                      <div class="alert alert-success mt-3 mb-0">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Nenhum webhook pendente no momento!
+                      </div>
+                      `}
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                      ${data.pending > 0 ? `
+                      <button type="button" class="btn btn-success" onclick="document.getElementById('btnResendWebhooks').click(); bootstrap.Modal.getInstance(document.getElementById('webhookStatsModal')).hide();">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Reenviar Pendentes
+                      </button>
+                      ` : ''}
+                    </div>
+                  </div>
+                </div>
+              </div>`;
+              
+              const statsContainer = document.createElement('div');
+              statsContainer.innerHTML = modalHtml;
+              document.body.appendChild(statsContainer);
+              
+              const statsModalEl = document.getElementById('webhookStatsModal');
+              const statsModal = new bootstrap.Modal(statsModalEl);
+              
+              statsModalEl.addEventListener('hidden.bs.modal', function() {
+                statsContainer.remove();
+              });
+              
+              statsModal.show();
+            } else {
+              alert('Erro ao carregar estatísticas: ' + (data.error || 'Erro desconhecido'));
+            }
+          })
+          .catch(err => {
+            btnWebhookStats.disabled = false;
+            btnWebhookStats.innerHTML = originalText;
+            console.error(err);
+            alert('Erro na conexão ao buscar estatísticas');
+          });
       });
     }
 

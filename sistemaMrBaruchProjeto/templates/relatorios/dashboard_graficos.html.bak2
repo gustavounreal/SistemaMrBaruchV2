@@ -1,0 +1,2557 @@
+<!DOCTYPE html><!DOCTYPE html>
+
+<html lang="pt-BR"><html lang="pt-BR">
+
+<head><head>
+
+  <meta charset="UTF-8">  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Dashboard de Métricas - Gráficos</title>  <title>Dashboard de Métricas - Gráficos</title>
+
+        
+
+    <!-- Bootstrap 5 -->    <!-- Bootstrap 5 -->
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+        
+
+    <!-- Bootstrap Icons -->    <!-- Bootstrap Icons -->
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+        
+
+    <!-- Google Fonts - Poppins -->    <!-- Google Fonts - Poppins -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+        
+
+    <!-- Chart.js -->    <!-- Chart.js -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+
+    <style>    
+
+        :root {    <style>
+
+            --primary: #FF6B35;        :root {
+
+            --primary-dark: #E55A2B;            /* Cores principais - Tema Escuro */
+
+            --secondary: #6A5ACD;            --primary: #FF6B35;     /* Laranja vibrante */
+
+            --accent: #4A90E2;            --primary-dark: #E55A2B;
+
+            --accent-light: #5DA8FF;            --secondary: #6A5ACD;    /* Roxo azulado */
+
+            --dark-bg: #0F0F1A;            --accent: #4A90E2;       /* Azul moderno */
+
+            --dark-card: #1A1A2E;            --accent-light: #5DA8FF;
+
+            --dark-card-hover: #22223A;            
+
+            --dark-border: #2A2A45;            /* Cores do tema escuro */
+
+            --text-primary: #FFFFFF;            --dark-bg: #0F0F1A;
+
+            --text-secondary: #B8B8D0;            --dark-card: #1A1A2E;
+
+            --text-muted: #8A8AA8;            --dark-card-hover: #22223A;
+
+            --success: #2ECC71;            --dark-border: #2A2A45;
+
+            --warning: #F39C12;            --text-primary: #FFFFFF;
+
+            --danger: #E74C3C;            --text-secondary: #B8B8D0;
+
+            --info: #3498DB;            --text-muted: #8A8AA8;
+
+            --gradient-orange-purple: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);            
+
+        }            /* Cores de status */
+
+                    --success: #2ECC71;
+
+        [data-theme="light"] {            --warning: #F39C12;
+
+            --dark-bg: #F8F9FA;            --danger: #E74C3C;
+
+            --dark-card: #FFFFFF;            --info: #3498DB;
+
+            --dark-card-hover: #F0F2F5;            
+
+            --dark-border: #E1E5E9;            /* Gradientes */
+
+            --text-primary: #2D3748;            --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+
+            --text-secondary: #4A5568;            --gradient-secondary: linear-gradient(135deg, var(--secondary) 0%, #8A6FDF 100%);
+
+            --text-muted: #718096;            --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+
+        }            --gradient-orange-purple: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+
+                    --gradient-blue-purple: linear-gradient(135deg, var(--accent) 0%, var(--secondary) 100%);
+
+        * {        }
+
+            margin: 0;        
+
+            padding: 0;        /* Tema Claro */
+
+            box-sizing: border-box;        [data-theme="light"] {
+
+            font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;            --dark-bg: #F8F9FA;
+
+        }            --dark-card: #FFFFFF;
+
+                    --dark-card-hover: #F0F2F5;
+
+        body {            --dark-border: #E1E5E9;
+
+            background-color: var(--dark-bg);            --text-primary: #2D3748;
+
+            color: var(--text-primary);            --text-secondary: #4A5568;
+
+            min-height: 100vh;            --text-muted: #718096;
+
+        }        }
+
+                
+
+        .theme-toggle {        * {
+
+            position: fixed;            margin: 0;
+
+            top: 20px;            padding: 0;
+
+            right: 20px;            box-sizing: border-box;
+
+            z-index: 1000;            font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+
+            background: var(--dark-card);            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+
+            border: 1px solid var(--dark-border);        }
+
+            border-radius: 50px;        
+
+            padding: 10px 15px;        body {
+
+            display: flex;            background-color: var(--dark-bg);
+
+            align-items: center;            color: var(--text-primary);
+
+            gap: 10px;            min-height: 100vh;
+
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);            overflow-x: hidden;
+
+            cursor: pointer;        }
+
+        }        
+
+                /* ==================== TOGGLE THEME ==================== */
+
+        .dashboard-container {        .theme-toggle {
+
+            background: var(--dark-card);            position: fixed;
+
+            border-radius: 24px;            top: 20px;
+
+            padding: 2.5rem;            right: 20px;
+
+            margin: 2rem auto;            z-index: 1000;
+
+            max-width: 1600px;            background: var(--dark-card);
+
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);            border: 1px solid var(--dark-border);
+
+            border: 1px solid var(--dark-border);            border-radius: 50px;
+
+        }            padding: 10px 15px;
+
+                    display: flex;
+
+        .dashboard-container::before {            align-items: center;
+
+            content: '';            gap: 10px;
+
+            position: absolute;            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+
+            top: 0;            cursor: pointer;
+
+            left: 0;        }
+
+            width: 100%;        
+
+            height: 6px;        .theme-toggle i {
+
+            background: var(--gradient-orange-purple);            font-size: 1.2rem;
+
+        }            color: var(--text-secondary);
+
+                }
+
+        .page-header {        
+
+            text-align: center;        .theme-toggle .toggle-text {
+
+            margin-bottom: 3rem;            font-size: 0.9rem;
+
+            padding-bottom: 2rem;            font-weight: 600;
+
+            border-bottom: 1px solid var(--dark-border);            color: var(--text-primary);
+
+        }        }
+
+                
+
+        .page-header h1 {        /* ==================== CONTAINER PRINCIPAL ==================== */
+
+            font-size: 3rem;        .dashboard-container {
+
+            font-weight: 900;            background: var(--dark-card);
+
+            background: var(--gradient-orange-purple);            border-radius: 24px;
+
+            -webkit-background-clip: text;            padding: 2.5rem;
+
+            -webkit-text-fill-color: transparent;            margin: 2rem auto;
+
+            margin-bottom: 1rem;            max-width: 1600px;
+
+        }            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+
+                    border: 1px solid var(--dark-border);
+
+        .kpi-card {            animation: fadeInUp 0.8s ease-out;
+
+            background: var(--dark-card);            position: relative;
+
+            color: var(--text-primary);            overflow: hidden;
+
+            border-radius: 20px;        }
+
+            padding: 2rem 1.5rem;        
+
+            text-align: center;        .dashboard-container::before {
+
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);            content: '';
+
+            transition: all 0.4s ease;            position: absolute;
+
+            height: 100%;            top: 0;
+
+            border: 1px solid var(--dark-border);            left: 0;
+
+        }            width: 100%;
+
+                    height: 6px;
+
+        .kpi-card:hover {            background: var(--gradient-orange-purple);
+
+            transform: translateY(-10px);        }
+
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);        
+
+        }        @keyframes fadeInUp {
+
+                    from {
+
+        .kpi-card i {                opacity: 0;
+
+            font-size: 2.5rem;                transform: translateY(30px);
+
+            margin-bottom: 1rem;            }
+
+            display: block;            to {
+
+        }                opacity: 1;
+
+                        transform: translateY(0);
+
+        .kpi-card h2 {            }
+
+            font-size: 2.5rem;        }
+
+            font-weight: 800;        
+
+            margin-bottom: 0.5rem;        /* ==================== PAGE HEADER ==================== */
+
+        }        .page-header {
+
+                    text-align: center;
+
+        .kpi-card p {            margin-bottom: 3rem;
+
+            font-size: 1rem;            padding-bottom: 2rem;
+
+            font-weight: 600;            border-bottom: 1px solid var(--dark-border);
+
+            text-transform: uppercase;            position: relative;
+
+        }        }
+
+                
+
+        .chart-card {        .page-header h1 {
+
+            background: var(--dark-card);            font-size: 3.5rem;
+
+            border-radius: 20px;            font-weight: 900;
+
+            padding: 2rem;            background: var(--gradient-orange-purple);
+
+            margin-bottom: 2rem;            -webkit-background-clip: text;
+
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);            -webkit-text-fill-color: transparent;
+
+            border: 1px solid var(--dark-border);            background-clip: text;
+
+            min-height: 400px;            margin-bottom: 1rem;
+
+        }            letter-spacing: -2px;
+
+                }
+
+        .chart-title {        
+
+            font-size: 1.5rem;        .page-header p {
+
+            font-weight: 700;            font-size: 1.1rem;
+
+            margin-bottom: 0.5rem;            color: var(--text-secondary);
+
+            color: var(--text-primary);            font-weight: 500;
+
+            display: flex;        }
+
+            align-items: center;        
+
+            gap: 0.5rem;        .page-header i {
+
+        }            font-size: 4rem;
+
+                    animation: pulse 2s ease-in-out infinite;
+
+        .chart-subtitle {            background: var(--gradient-orange-purple);
+
+            font-size: 0.9rem;            -webkit-background-clip: text;
+
+            color: var(--text-muted);            -webkit-text-fill-color: transparent;
+
+            margin-bottom: 1.5rem;            background-clip: text;
+
+        }        }
+
+                
+
+        .chart-container {        @keyframes pulse {
+
+            position: relative;            0%, 100% { transform: scale(1); }
+
+            height: 350px;            50% { transform: scale(1.1); }
+
+            width: 100%;        }
+
+        }        
+
+                /* ==================== KPI CARDS ==================== */
+
+        .chart-small .chart-container {        .kpi-card {
+
+            height: 300px;            background: var(--dark-card);
+
+        }            color: var(--text-primary);
+
+                    border-radius: 20px;
+
+        .btn-back {            padding: 2rem 1.5rem;
+
+            background: var(--gradient-orange-purple);            text-align: center;
+
+            color: white;            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+
+            border: none;            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+            padding: 12px 30px;            height: 100%;
+
+            border-radius: 50px;            position: relative;
+
+            font-weight: 600;            overflow: hidden;
+
+            text-decoration: none;            border: 1px solid var(--dark-border);
+
+            display: inline-flex;        }
+
+            align-items: center;        
+
+            gap: 10px;        .kpi-card::before {
+
+        }            content: '';
+
+                    position: absolute;
+
+        .btn-back:hover {            top: 0;
+
+            transform: translateY(-3px);            left: 0;
+
+            color: white;            width: 100%;
+
+        }            height: 100%;
+
+                    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%);
+
+        .gradient-bg-1 { background: linear-gradient(135deg, #FF6B35 0%, #E55A2B 100%); color: white; }            opacity: 0;
+
+        .gradient-bg-2 { background: linear-gradient(135deg, #6A5ACD 0%, #8A6FDF 100%); color: white; }            transition: opacity 0.4s ease;
+
+        .gradient-bg-3 { background: linear-gradient(135deg, #4A90E2 0%, #5DA8FF 100%); color: white; }        }
+
+        .gradient-bg-4 { background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%); color: white; }        
+
+        .gradient-bg-5 { background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%); color: white; }        .kpi-card:hover {
+
+        .gradient-bg-6 { background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%); color: white; }            transform: translateY(-10px) scale(1.02);
+
+                    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+
+        .gradient-bg-1 p, .gradient-bg-1 i,            border-color: var(--primary);
+
+        .gradient-bg-2 p, .gradient-bg-2 i,        }
+
+        .gradient-bg-3 p, .gradient-bg-3 i,        
+
+        .gradient-bg-4 p, .gradient-bg-4 i,        .kpi-card:hover::before {
+
+        .gradient-bg-5 p, .gradient-bg-5 i,            opacity: 1;
+
+        .gradient-bg-6 p, .gradient-bg-6 i {        }
+
+            color: white !important;        
+
+        }        .kpi-card i {
+
+    </style>            font-size: 2.5rem;
+
+</head>            margin-bottom: 1rem;
+
+<body>            display: block;
+
+    <div class="theme-toggle" id="themeToggle">            animation: iconFloat 3s ease-in-out infinite;
+
+        <i class="bi bi-moon-fill" id="themeIcon"></i>        }
+
+        <span class="toggle-text" id="themeText">Modo Escuro</span>        
+
+    </div>        @keyframes iconFloat {
+
+            0%, 100% { transform: translateY(0px); }
+
+    <div class="dashboard-container">            50% { transform: translateY(-10px); }
+
+        <div class="page-header">        }
+
+            <h1><i class="bi bi-graph-up-arrow"></i> Dashboard de Métricas</h1>        
+
+            <p>Análise visual completa de todas as métricas do sistema</p>        .kpi-card h2 {
+
+            <a href="/relatorios/painel_relatorios/" class="btn btn-back mt-3">            font-size: 3rem;
+
+                <i class="bi bi-arrow-left-circle"></i> Voltar ao Painel            font-weight: 800;
+
+            </a>            margin-bottom: 0.5rem;
+
+        </div>            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+            letter-spacing: -1px;
+
+        <!-- KPIs -->        }
+
+        <div class="row mb-4">        
+
+            <div class="col-md-4 mb-3">        .kpi-card p {
+
+                <div class="kpi-card gradient-bg-1">            font-size: 0.95rem;
+
+                    <i class="bi bi-people-fill"></i>            opacity: 0.95;
+
+                    <h2>{{ kpis.total_leads|default:"0" }}</h2>            margin: 0;
+
+                    <p>Total de Leads</p>            font-weight: 500;
+
+                </div>            text-transform: uppercase;
+
+            </div>            letter-spacing: 0.5px;
+
+            <div class="col-md-4 mb-3">            color: var(--text-secondary);
+
+                <div class="kpi-card gradient-bg-2">        }
+
+                    <i class="bi bi-check-circle-fill"></i>        
+
+                    <h2>{{ kpis.total_vendas|default:"0" }}</h2>        /* ==================== CHART CARDS ==================== */
+
+                    <p>Vendas Fechadas</p>        .chart-card {
+
+                </div>            background: var(--dark-card);
+
+            </div>            border-radius: 20px;
+
+            <div class="col-md-4 mb-3">            padding: 2rem;
+
+                <div class="kpi-card gradient-bg-3">            margin-bottom: 2rem;
+
+                    <i class="bi bi-percent"></i>            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+
+                    <h2>{{ kpis.taxa_conversao_geral|default:"0" }}%</h2>            border: 1px solid var(--dark-border);
+
+                    <p>Taxa de Conversão</p>            transition: all 0.4s ease;
+
+                </div>            position: relative;
+
+            </div>            overflow: hidden;
+
+        </div>        }
+
+        
+
+        <div class="row mb-4">        .chart-card::after {
+
+            <div class="col-md-4 mb-3">            content: '';
+
+                <div class="kpi-card gradient-bg-4">            position: absolute;
+
+                    <i class="bi bi-currency-dollar"></i>            top: 0;
+
+                    <h2>R$ {{ kpis.receita_total|floatformat:2|default:"0.00" }}</h2>            left: 0;
+
+                    <p>Receita Total</p>            width: 6px;
+
+                </div>            height: 0%;
+
+            </div>            background: var(--gradient-orange-purple);
+
+            <div class="col-md-4 mb-3">            transition: height 0.4s ease;
+
+                <div class="kpi-card gradient-bg-5">        }
+
+                    <i class="bi bi-cart-check-fill"></i>        
+
+                    <h2>R$ {{ kpis.ticket_medio|floatformat:2|default:"0.00" }}</h2>        .chart-card:hover {
+
+                    <p>Ticket Médio</p>            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.25);
+
+                </div>            border-color: var(--primary);
+
+            </div>            transform: translateY(-5px);
+
+            <div class="col-md-4 mb-3">        }
+
+                <div class="kpi-card gradient-bg-6">        
+
+                    <i class="bi bi-calendar-check"></i>        .chart-card:hover::after {
+
+                    <h2>{{ kpis.leads_mes_atual|default:"0" }}</h2>            height: 100%;
+
+                    <p>Leads Este Mês</p>        }
+
+                </div>        
+
+            </div>        .chart-title {
+
+        </div>            font-size: 1.4rem;
+
+            font-weight: 700;
+
+        <!-- Gráficos -->            color: var(--text-primary);
+
+        <div class="row">            margin-bottom: 0.5rem;
+
+            <div class="col-lg-8 mb-4">            padding-bottom: 1rem;
+
+                <div class="chart-card">            border-bottom: 1px solid var(--dark-border);
+
+                    <h3 class="chart-title"><i class="bi bi-graph-up"></i> Evolução de Leads por Mês</h3>            display: flex;
+
+                    <p class="chart-subtitle">Crescimento mensal de leads captados</p>            align-items: center;
+
+                    <div class="chart-container">            gap: 0.5rem;
+
+                        <canvas id="chartLeadsPorMes"></canvas>        }
+
+                    </div>        
+
+                </div>        .chart-title i {
+
+            </div>            font-size: 1.6rem;
+
+            <div class="col-lg-4 mb-4">        }
+
+                <div class="chart-card chart-small">        
+
+                    <h3 class="chart-title"><i class="bi bi-funnel-fill"></i> Funil de Conversão</h3>        .chart-subtitle {
+
+                    <p class="chart-subtitle">Etapas do processo</p>            font-size: 0.9rem;
+
+                    <div class="chart-container">            color: var(--text-secondary);
+
+                        <canvas id="chartFunil"></canvas>            margin-top: -0.5rem;
+
+                    </div>            margin-bottom: 1.5rem;
+
+                </div>            font-weight: 500;
+
+            </div>        }
+
+        </div>        
+
+        /* ==================== BUTTON BACK ==================== */
+
+        <div class="row">        .btn-back {
+
+            <div class="col-lg-4 mb-4">            background: var(--gradient-orange-purple);
+
+                <div class="chart-card chart-small">            color: white;
+
+                    <h3 class="chart-title"><i class="bi bi-pie-chart-fill"></i> Leads por Status</h3>            border: none;
+
+                    <p class="chart-subtitle">Distribuição atual</p>            padding: 1rem 2.5rem;
+
+                    <div class="chart-container">            border-radius: 50px;
+
+                        <canvas id="chartStatus"></canvas>            font-weight: 700;
+
+                    </div>            font-size: 1rem;
+
+                </div>            transition: all 0.3s ease;
+
+            </div>            box-shadow: 0 8px 20px rgba(255, 107, 53, 0.3);
+
+            <div class="col-lg-4 mb-4">            text-transform: uppercase;
+
+                <div class="chart-card chart-small">            letter-spacing: 1px;
+
+                    <h3 class="chart-title"><i class="bi bi-diagram-3-fill"></i> Leads por Origem</h3>            text-decoration: none;
+
+                    <p class="chart-subtitle">Canais de captação</p>            display: inline-flex;
+
+                    <div class="chart-container">            align-items: center;
+
+                        <canvas id="chartOrigem"></canvas>            gap: 0.5rem;
+
+                    </div>        }
+
+                </div>        
+
+            </div>        .btn-back:hover {
+
+            <div class="col-lg-4 mb-4">            transform: translateY(-3px);
+
+                <div class="chart-card chart-small">            box-shadow: 0 12px 30px rgba(255, 107, 53, 0.4);
+
+                    <h3 class="chart-title"><i class="bi bi-credit-card-fill"></i> Status PIX</h3>            color: white;
+
+                    <p class="chart-subtitle">Situação dos pagamentos</p>        }
+
+                    <div class="chart-container">        
+
+                        <canvas id="chartPix"></canvas>        .btn-back:active {
+
+                    </div>            transform: translateY(-1px);
+
+                </div>        }
+
+            </div>        
+
+        </div>        /* ==================== CHART CONTAINERS ==================== */
+
+        .chart-card {
+
+        <div class="row">            position: relative;
+
+            <div class="col-lg-8 mb-4">        }
+
+                <div class="chart-card">        
+
+                    <h3 class="chart-title"><i class="bi bi-cash-stack"></i> Receita Mensal</h3>        .chart-container {
+
+                    <p class="chart-subtitle">Faturamento dos últimos 12 meses</p>            position: relative;
+
+                    <div class="chart-container">            height: 400px;
+
+                        <canvas id="chartReceita"></canvas>            width: 100%;
+
+                    </div>            padding: 1rem 0;
+
+                </div>        }
+
+            </div>        
+
+            <div class="col-lg-4 mb-4">        .chart-small .chart-container {
+
+                <div class="chart-card chart-small">            height: 320px;
+
+                    <h3 class="chart-title"><i class="bi bi-calendar3"></i> Parcelas por Status</h3>        }
+
+                    <p class="chart-subtitle">Situação das parcelas</p>        
+
+                    <div class="chart-container">        canvas {
+
+                        <canvas id="chartParcelas"></canvas>            display: block;
+
+                    </div>            width: 100% !important;
+
+                </div>            height: 100% !important;
+
+            </div>            max-width: 100%;
+
+        </div>        }
+
+        
+
+        <div class="row">        /* ==================== GRADIENTES DOS KPIs ==================== */
+
+            <div class="col-lg-6 mb-4">        .gradient-bg-1 { 
+
+                <div class="chart-card">            background: var(--gradient-primary);
+
+                    <h3 class="chart-title"><i class="bi bi-trophy-fill"></i> Top 10 Captadores</h3>            color: white;
+
+                    <p class="chart-subtitle">Mais leads captados</p>        }
+
+                    <div class="chart-container">        .gradient-bg-1 p,
+
+                        <canvas id="chartCaptadores"></canvas>        .gradient-bg-1 i {
+
+                    </div>            color: white !important;
+
+                </div>        }
+
+            </div>        
+
+            <div class="col-lg-6 mb-4">        .gradient-bg-2 { 
+
+                <div class="chart-card">            background: var(--gradient-secondary);
+
+                    <h3 class="chart-title"><i class="bi bi-star-fill"></i> Top 10 Atendentes</h3>            color: white;
+
+                    <p class="chart-subtitle">Mais leads atendidos</p>        }
+
+                    <div class="chart-container">        .gradient-bg-2 p,
+
+                        <canvas id="chartAtendentes"></canvas>        .gradient-bg-2 i {
+
+                    </div>            color: white !important;
+
+                </div>        }
+
+            </div>        
+
+        </div>        .gradient-bg-3 { 
+
+            background: var(--gradient-accent);
+
+        <div class="row">            color: white;
+
+            <div class="col-lg-8 mb-4">        }
+
+                <div class="chart-card">        .gradient-bg-3 p,
+
+                    <h3 class="chart-title"><i class="bi bi-bar-chart-line-fill"></i> Taxa de Conversão</h3>        .gradient-bg-3 i {
+
+                    <p class="chart-subtitle">Percentual por etapa</p>            color: white !important;
+
+                    <div class="chart-container">        }
+
+                        <canvas id="chartConversao"></canvas>        
+
+                    </div>        .gradient-bg-4 { 
+
+                </div>            background: linear-gradient(135deg, var(--success) 0%, #38f9d7 100%);
+
+            </div>            color: white;
+
+            <div class="col-lg-4 mb-4">        }
+
+                <div class="chart-card chart-small">        .gradient-bg-4 p,
+
+                    <h3 class="chart-title"><i class="bi bi-calendar-week"></i> Leads por Dia</h3>        .gradient-bg-4 i {
+
+                    <p class="chart-subtitle">Padrão semanal</p>            color: white !important;
+
+                    <div class="chart-container">        }
+
+                        <canvas id="chartDiaSemana"></canvas>        
+
+                    </div>        .gradient-bg-5 { 
+
+                </div>            background: linear-gradient(135deg, #fa709a 0%, var(--warning) 100%);
+
+            </div>            color: white;
+
+        </div>        }
+
+        .gradient-bg-5 p,
+
+        <div class="row">        .gradient-bg-5 i {
+
+            <div class="col-12 mb-4">            color: white !important;
+
+                <div class="chart-card">        }
+
+                    <h3 class="chart-title"><i class="bi bi-clock-fill"></i> Tempo Médio por Etapa</h3>        
+
+                    <p class="chart-subtitle">Duração em dias</p>        .gradient-bg-6 { 
+
+                    <div class="chart-container">            background: linear-gradient(135deg, #30cfd0 0%, var(--secondary) 100%);
+
+                        <canvas id="chartTempo"></canvas>            color: white;
+
+                    </div>        }
+
+                </div>        .gradient-bg-6 p,
+
+            </div>        .gradient-bg-6 i {
+
+        </div>            color: white !important;
+
+    </div>        }
+
+        
+
+    <script>        /* ==================== ANIMAÇÕES EXTRAS ==================== */
+
+        // Tema        @keyframes slideInLeft {
+
+        const themeToggle = document.getElementById('themeToggle');            from {
+
+        const themeIcon = document.getElementById('themeIcon');                opacity: 0;
+
+        const themeText = document.getElementById('themeText');                transform: translateX(-50px);
+
+                    }
+
+        themeToggle.addEventListener('click', () => {            to {
+
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';                opacity: 1;
+
+            const newTheme = current === 'dark' ? 'light' : 'dark';                transform: translateX(0);
+
+            document.documentElement.setAttribute('data-theme', newTheme);            }
+
+            themeIcon.className = newTheme === 'dark' ? 'bi bi-moon-fill' : 'bi bi-sun-fill';        }
+
+            themeText.textContent = newTheme === 'dark' ? 'Modo Escuro' : 'Modo Claro';        
+
+        });        @keyframes slideInRight {
+
+                    from {
+
+        // Configuração Chart.js                opacity: 0;
+
+        Chart.defaults.font.family = "'Poppins', sans-serif";                transform: translateX(50px);
+
+        Chart.defaults.font.size = 13;            }
+
+                    to {
+
+        const colors = {                opacity: 1;
+
+            primary: ['#FF6B35', '#6A5ACD', '#4A90E2', '#2ECC71', '#1ABC9C', '#E67E22', '#95A5A6', '#34495E'],                transform: translateX(0);
+
+            success: '#2ECC71',            }
+
+            warning: '#F39C12',        }
+
+            danger: '#E74C3C',        
+
+            info: '#3498DB',        .row .col-md-4:nth-child(1) .kpi-card {
+
+        };            animation: slideInLeft 0.6s ease-out;
+
+                }
+
+        // Gráfico 1: Leads por Mês        
+
+        const ctx1 = document.getElementById('chartLeadsPorMes').getContext('2d');        .row .col-md-4:nth-child(2) .kpi-card {
+
+        const gradient1 = ctx1.createLinearGradient(0, 0, 0, 400);            animation: fadeInUp 0.6s ease-out 0.1s backwards;
+
+        gradient1.addColorStop(0, 'rgba(255, 107, 53, 0.6)');        }
+
+        gradient1.addColorStop(1, 'rgba(255, 107, 53, 0.0)');        
+
+                .row .col-md-4:nth-child(3) .kpi-card {
+
+        new Chart(ctx1, {            animation: slideInRight 0.6s ease-out 0.2s backwards;
+
+            type: 'line',        }
+
+            data: {        
+
+                labels: {{ labels_meses|safe }},        /* ==================== SCROLLBAR CUSTOMIZADA ==================== */
+
+                datasets: [{        ::-webkit-scrollbar {
+
+                    label: 'Leads Captados',            width: 12px;
+
+                    data: {{ leads_por_mes|safe }},        }
+
+                    borderColor: '#FF6B35',        
+
+                    backgroundColor: gradient1,        ::-webkit-scrollbar-track {
+
+                    borderWidth: 3,            background: var(--dark-bg);
+
+                    fill: true,        }
+
+                    tension: 0.4,        
+
+                    pointRadius: 5,        ::-webkit-scrollbar-thumb {
+
+                    pointHoverRadius: 8,            background: var(--gradient-orange-purple);
+
+                }]            border-radius: 10px;
+
+            },        }
+
+            options: {        
+
+                responsive: true,        ::-webkit-scrollbar-thumb:hover {
+
+                maintainAspectRatio: false,            background: var(--gradient-blue-purple);
+
+                plugins: { legend: { display: false } },        }
+
+                scales: {        
+
+                    y: { beginAtZero: true },        /* ==================== BADGES E TAGS ==================== */
+
+                    x: {}        .chart-badge {
+
+                }            position: absolute;
+
+            }            top: 1rem;
+
+        });            right: 1rem;
+
+                    background: var(--gradient-orange-purple);
+
+        // Gráfico 2: Status            color: white;
+
+        new Chart(document.getElementById('chartStatus'), {            padding: 0.3rem 0.8rem;
+
+            type: 'pie',            border-radius: 20px;
+
+            data: {            font-size: 0.75rem;
+
+                labels: {{ status_labels|safe }},            font-weight: 600;
+
+                datasets: [{            text-transform: uppercase;
+
+                    data: {{ status_values|safe }},            letter-spacing: 0.5px;
+
+                    backgroundColor: colors.primary,            box-shadow: 0 4px 10px rgba(255, 107, 53, 0.3);
+
+                }]        }
+
+            },        
+
+            options: {        /* ==================== RESPONSIVE MELHORADO ==================== */
+
+                responsive: true,        @media (max-width: 768px) {
+
+                maintainAspectRatio: false,            .dashboard-container {
+
+                plugins: {                padding: 1.5rem;
+
+                    legend: { position: 'bottom', labels: { padding: 10, font: { size: 11 } } }                margin: 1rem;
+
+                }                border-radius: 20px;
+
+            }            }
+
+        });            
+
+                    .page-header h1 {
+
+        // Gráfico 3: Origem                font-size: 2.5rem;
+
+        new Chart(document.getElementById('chartOrigem'), {            }
+
+            type: 'doughnut',            
+
+            data: {            .kpi-card h2 {
+
+                labels: {{ origem_labels|safe }},                font-size: 2.5rem;
+
+                datasets: [{            }
+
+                    data: {{ origem_values|safe }},            
+
+                    backgroundColor: colors.primary,            .chart-title {
+
+                }]                font-size: 1.2rem;
+
+            },            }
+
+            options: {            
+
+                responsive: true,            .chart-container {
+
+                maintainAspectRatio: false,                height: 300px;
+
+                cutout: '60%',            }
+
+                plugins: {            
+
+                    legend: { position: 'bottom', labels: { padding: 10, font: { size: 11 } } }            .theme-toggle {
+
+                }                top: 10px;
+
+            }                right: 10px;
+
+        });                padding: 8px 12px;
+
+                    }
+
+        // Gráfico 4: Captadores            
+
+        const ctx4 = document.getElementById('chartCaptadores').getContext('2d');            .theme-toggle .toggle-text {
+
+        const gradient4 = ctx4.createLinearGradient(0, 0, 400, 0);                display: none;
+
+        gradient4.addColorStop(0, 'rgba(255, 107, 53, 0.8)');            }
+
+        gradient4.addColorStop(1, 'rgba(106, 90, 205, 0.8)');        }
+
+            </style>
+
+        new Chart(ctx4, {</head>
+
+            type: 'bar', </body>
+
+            data: {</html>
+
+                labels: {{ captadores_labels|safe }},        <i class="bi bi-moon-fill" id="themeIcon"></i>
+
+                datasets: [{        <span class="toggle-text" id="themeText">Modo Escuro</span>
+
+                    label: 'Leads',    </div>
+
+                    data: {{ captadores_values|safe }},
+
+                    backgroundColor: gradient4,    <div class="dashboard-container">
+
+                    borderRadius: 8,        
+
+                }]        <!-- Cabeçalho -->
+
+            },        <div class="page-header">
+
+            options: {            <h1>
+
+                indexAxis: 'y',                <i class="bi bi-graph-up-arrow"></i> Dashboard de Métricas
+
+                responsive: true,            </h1>
+
+                maintainAspectRatio: false,            <p class="text-muted">Análise visual completa de todas as métricas do sistema</p>
+
+                plugins: { legend: { display: false } },            <a href="/relatorios/painel_relatorios/" class="btn btn-back mt-3">
+
+                scales: { x: { beginAtZero: true } }                <i class="bi bi-arrow-left"></i> Voltar aos Relatórios
+
+            }            </a>
+
+        });        </div>
+
+        
+
+        // Gráfico 5: Atendentes        <!-- KPIs Principais -->
+
+        const ctx5 = document.getElementById('chartAtendentes').getContext('2d');        <div class="row mb-4">
+
+        const gradient5 = ctx5.createLinearGradient(0, 0, 400, 0);            <div class="col-md-4">
+
+        gradient5.addColorStop(0, 'rgba(46, 204, 113, 0.8)');                <div class="kpi-card gradient-bg-1">
+
+        gradient5.addColorStop(1, 'rgba(52, 152, 219, 0.8)');                    <i class="bi bi-people-fill"></i>
+
+                            <h2>1,247</h2>
+
+        new Chart(ctx5, {                    <p>Total de Leads</p>
+
+            type: 'bar',                </div>
+
+            data: {            </div>
+
+                labels: {{ atendentes_labels|safe }},            <div class="col-md-4">
+
+                datasets: [{                <div class="kpi-card gradient-bg-2">
+
+                    label: 'Leads',                    <i class="bi bi-check-circle-fill"></i>
+
+                    data: {{ atendentes_values|safe }},                    <h2>342</h2>
+
+                    backgroundColor: gradient5,                    <p>Vendas Fechadas</p>
+
+                    borderRadius: 8,                </div>
+
+                }]            </div>
+
+            },            <div class="col-md-4">
+
+            options: {                <div class="kpi-card gradient-bg-3">
+
+                indexAxis: 'y',                    <i class="bi bi-percent"></i>
+
+                responsive: true,                    <h2>27.4%</h2>
+
+                maintainAspectRatio: false,                    <p>Taxa de Conversão</p>
+
+                plugins: { legend: { display: false } },                </div>
+
+                scales: { x: { beginAtZero: true } }            </div>
+
+            }        </div>
+
+        });
+
+                <div class="row mb-4">
+
+        // Gráfico 6: Funil            <div class="col-md-4">
+
+        new Chart(document.getElementById('chartFunil'), {                <div class="kpi-card gradient-bg-4">
+
+            type: 'bar',                    <i class="bi bi-currency-dollar"></i>
+
+            data: {                    <h2>R$ 124,560</h2>
+
+                labels: {{ funil_labels|safe }},                    <p>Receita Total</p>
+
+                datasets: [{                </div>
+
+                    data: {{ funil_values|safe }},            </div>
+
+                    backgroundColor: colors.primary,            <div class="col-md-4">
+
+                    borderRadius: 6,                <div class="kpi-card gradient-bg-5">
+
+                }]                    <i class="bi bi-cart-check-fill"></i>
+
+            },                    <h2>R$ 364</h2>
+
+            options: {                    <p>Ticket Médio</p>
+
+                responsive: true,                </div>
+
+                maintainAspectRatio: false,            </div>
+
+                plugins: { legend: { display: false } },            <div class="col-md-4">
+
+                scales: { y: { beginAtZero: true } }                <div class="kpi-card gradient-bg-6">
+
+            }                    <i class="bi bi-calendar-check"></i>
+
+        });                    <h2>187</h2>
+
+                            <p>Leads Este Mês</p>
+
+        // Gráfico 7: PIX                </div>
+
+        new Chart(document.getElementById('chartPix'), {            </div>
+
+            type: 'pie',        </div>
+
+            data: {
+
+                labels: {{ pix_labels|safe }},        <!-- Linha 1: Gráficos de Linha e Funil -->
+
+                datasets: [{        <div class="row">
+
+                    data: {{ pix_values|safe }},            <div class="col-lg-8">
+
+                    backgroundColor: [colors.success, colors.warning, colors.danger],                <div class="chart-card">
+
+                }]                    <h3 class="chart-title">
+
+            },                        <i class="bi bi-graph-up"></i> Evolução de Leads nos Últimos 12 Meses
+
+            options: {                    </h3>
+
+                responsive: true,                    <p class="chart-subtitle">Acompanhe o crescimento mensal de captação</p>
+
+                maintainAspectRatio: false,                    <div class="chart-container">
+
+                plugins: {                        <canvas id="chartLeadsPorMes"></canvas>
+
+                    legend: { position: 'bottom', labels: { padding: 10, font: { size: 11 } } }                    </div>
+
+                }                </div>
+
+            }            </div>
+
+        });            <div class="col-lg-4">
+
+                        <div class="chart-card">
+
+        // Gráfico 8: Receita                    <h3 class="chart-title">
+
+        const ctx8 = document.getElementById('chartReceita').getContext('2d');                        <i class="bi bi-funnel"></i> Funil de Conversão
+
+        const gradient8 = ctx8.createLinearGradient(0, 0, 0, 400);                    </h3>
+
+        gradient8.addColorStop(0, 'rgba(46, 204, 113, 0.8)');                    <p class="chart-subtitle">Da captação até a venda</p>
+
+        gradient8.addColorStop(1, 'rgba(46, 204, 113, 0.2)');                    <div class="chart-container">
+
+                                <canvas id="chartFunil"></canvas>
+
+        new Chart(ctx8, {                    </div>
+
+            type: 'bar',                </div>
+
+            data: {            </div>
+
+                labels: {{ labels_meses|safe }},        </div>
+
+                datasets: [{
+
+                    label: 'Receita (R$)',        <!-- Linha 2: Status e Origem -->
+
+                    data: {{ receita_por_mes|safe }},        <div class="row">
+
+                    backgroundColor: gradient8,            <div class="col-lg-4">
+
+                    borderRadius: 6,                <div class="chart-card chart-small">
+
+                }]                    <h3 class="chart-title">
+
+            },                        <i class="bi bi-pie-chart"></i> Leads por Status
+
+            options: {                    </h3>
+
+                responsive: true,                    <p class="chart-subtitle">Distribuição por status</p>
+
+                maintainAspectRatio: false,                    <div class="chart-container">
+
+                plugins: { legend: { display: false } },                        <canvas id="chartStatus"></canvas>
+
+                scales: {                    </div>
+
+                    y: {                </div>
+
+                        beginAtZero: true,            </div>
+
+                        ticks: {            <div class="col-lg-4">
+
+                            callback: function(value) {                <div class="chart-card chart-small">
+
+                                return 'R$ ' + value.toLocaleString('pt-BR');                    <h3 class="chart-title">
+
+                            }                        <i class="bi bi-diagram-3"></i> Leads por Origem
+
+                        }                    </h3>
+
+                    }                    <p class="chart-subtitle">Top 10 fontes de captação</p>
+
+                }                    <div class="chart-container">
+
+            }                        <canvas id="chartOrigem"></canvas>
+
+        });                    </div>
+
+                        </div>
+
+        // Gráfico 9: Parcelas            </div>
+
+        new Chart(document.getElementById('chartParcelas'), {            <div class="col-lg-4">
+
+            type: 'doughnut',                <div class="chart-card chart-small">
+
+            data: {                    <h3 class="chart-title">
+
+                labels: {{ parcelas_labels|safe }},                        <i class="bi bi-qr-code"></i> Status PIX Levantamento
+
+                datasets: [{                    </h3>
+
+                    data: {{ parcelas_values|safe }},                    <p class="chart-subtitle">Situação dos pagamentos PIX</p>
+
+                    backgroundColor: [colors.success, colors.warning, colors.danger, colors.info],                    <div class="chart-container">
+
+                }]                        <canvas id="chartPix"></canvas>
+
+            },                    </div>
+
+            options: {                </div>
+
+                responsive: true,            </div>
+
+                maintainAspectRatio: false,        </div>
+
+                cutout: '60%',
+
+                plugins: {        <!-- Linha 3: Receita e Parcelas -->
+
+                    legend: { position: 'bottom', labels: { padding: 10, font: { size: 11 } } }        <div class="row">
+
+                }            <div class="col-lg-8">
+
+            }                <div class="chart-card">
+
+        });                    <h3 class="chart-title">
+
+                                <i class="bi bi-cash-stack"></i> Receita Mensal (Últimos 12 Meses)
+
+        // Gráfico 10: Conversão                    </h3>
+
+        new Chart(document.getElementById('chartConversao'), {                    <p class="chart-subtitle">Evolução de faturamento</p>
+
+            type: 'bar',                    <div class="chart-container">
+
+            data: {                        <canvas id="chartReceita"></canvas>
+
+                labels: {{ conversao_labels|safe }},                    </div>
+
+                datasets: [                </div>
+
+                    {            </div>
+
+                        type: 'line',            <div class="col-lg-4">
+
+                        label: 'Taxa (%)',                <div class="chart-card">
+
+                        data: {{ conversao_taxa|safe }},                    <h3 class="chart-title">
+
+                        borderColor: colors.danger,                        <i class="bi bi-credit-card"></i> Parcelas por Status
+
+                        borderWidth: 3,                    </h3>
+
+                        fill: false,                    <p class="chart-subtitle">Situação das cobranças</p>
+
+                        yAxisID: 'y1',                    <div class="chart-container">
+
+                    },                        <canvas id="chartParcelas"></canvas>
+
+                    {                    </div>
+
+                        label: 'Quantidade',                </div>
+
+                        data: {{ conversao_counts|safe }},            </div>
+
+                        backgroundColor: colors.info,        </div>
+
+                        borderRadius: 6,
+
+                    }        <!-- Linha 4: Top Performers -->
+
+                ]        <div class="row">
+
+            },            <div class="col-lg-6">
+
+            options: {                <div class="chart-card">
+
+                responsive: true,                    <h3 class="chart-title">
+
+                maintainAspectRatio: false,                        <i class="bi bi-trophy"></i> Top 10 Captadores
+
+                scales: {                    </h3>
+
+                    y: { beginAtZero: true, position: 'left' },                    <p class="chart-subtitle">Maiores geradores de leads</p>
+
+                    y1: { beginAtZero: true, max: 100, position: 'right', grid: { drawOnChartArea: false } }                    <div class="chart-container">
+
+                }                        <canvas id="chartCaptadores"></canvas>
+
+            }                    </div>
+
+        });                </div>
+
+                    </div>
+
+        // Gráfico 11: Dia da Semana            <div class="col-lg-6">
+
+        new Chart(document.getElementById('chartDiaSemana'), {                <div class="chart-card">
+
+            type: 'radar',                    <h3 class="chart-title">
+
+            data: {                        <i class="bi bi-star"></i> Top 10 Atendentes
+
+                labels: {{ dias_semana|safe }},                    </h3>
+
+                datasets: [{                    <p class="chart-subtitle">Maiores atendedores</p>
+
+                    label: 'Leads',                    <div class="chart-container">
+
+                    data: {{ leads_por_dia|safe }},                        <canvas id="chartAtendentes"></canvas>
+
+                    backgroundColor: 'rgba(255, 107, 53, 0.2)',                    </div>
+
+                    borderColor: '#FF6B35',                </div>
+
+                    borderWidth: 2,            </div>
+
+                }]        </div>
+
+            },
+
+            options: {        <!-- Linha 5: Conversão e Padrões -->
+
+                responsive: true,        <div class="row">
+
+                maintainAspectRatio: false,            <div class="col-lg-8">
+
+                plugins: { legend: { display: false } }                <div class="chart-card">
+
+            }                    <h3 class="chart-title">
+
+        });                        <i class="bi bi-arrow-down-up"></i> Taxa de Conversão por Etapa
+
+                            </h3>
+
+        // Gráfico 12: Tempo                    <p class="chart-subtitle">Percentual de aproveitamento entre etapas</p>
+
+        new Chart(document.getElementById('chartTempo'), {                    <div class="chart-container">
+
+            type: 'bar',                        <canvas id="chartConversao"></canvas>
+
+            data: {                    </div>
+
+                labels: {{ tempo_labels|safe }},                </div>
+
+                datasets: [{            </div>
+
+                    label: 'Dias',            <div class="col-lg-4">
+
+                    data: {{ tempo_values|safe }},                <div class="chart-card">
+
+                    backgroundColor: colors.primary,                    <h3 class="chart-title">
+
+                    borderRadius: 6,                        <i class="bi bi-calendar-week"></i> Leads por Dia da Semana
+
+                }]                    </h3>
+
+            },                    <p class="chart-subtitle">Padrão semanal de captação</p>
+
+            options: {                    <div class="chart-container">
+
+                responsive: true,                        <canvas id="chartDiaSemana"></canvas>
+
+                maintainAspectRatio: false,                    </div>
+
+                plugins: { legend: { display: false } },                </div>
+
+                scales: {            </div>
+
+                    y: {        </div>
+
+                        beginAtZero: true,
+
+                        ticks: {        <!-- Linha 6: Tempo Médio -->
+
+                            callback: function(value) {        <div class="row">
+
+                                return value + ' dias';            <div class="col-12">
+
+                            }                <div class="chart-card">
+
+                        }                    <h3 class="chart-title">
+
+                    }                        <i class="bi bi-clock-history"></i> Tempo Médio Entre Etapas (Dias)
+
+                }                    </h3>
+
+            }                    <p class="chart-subtitle">Velocidade do processo comercial</p>
+
+        });                    <div class="chart-container">
+
+    </script>                        <canvas id="chartTempo"></canvas>
+
+</body>                    </div>
+
+</html>                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ==================== TOGGLE DE TEMA ====================
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const themeText = document.getElementById('themeText');
+        const htmlElement = document.documentElement;
+        
+        // Verificar preferência salva ou padrão do sistema
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        htmlElement.setAttribute('data-theme', savedTheme);
+        updateThemeToggle(savedTheme);
+        
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = htmlElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            htmlElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeToggle(newTheme);
+            updateChartsForTheme(newTheme);
+        });
+        
+        function updateThemeToggle(theme) {
+            if (theme === 'dark') {
+                themeIcon.className = 'bi bi-moon-fill';
+                themeText.textContent = 'Modo Escuro';
+            } else {
+                themeIcon.className = 'bi bi-sun-fill';
+                themeText.textContent = 'Modo Claro';
+            }
+        }
+        
+        // ==================== CONFIGURAÇÃO GLOBAL CHART.JS ====================
+        Chart.defaults.font.family = "'Poppins', 'Inter', 'Segoe UI', Arial, sans-serif";
+        Chart.defaults.font.size = 14;
+        Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary');
+        Chart.defaults.responsive = true;
+        Chart.defaults.maintainAspectRatio = false;
+        
+        // ==================== PALETA DE CORES ====================
+        const colors = {
+            primary: [
+                '#FF6B35', '#6A5ACD', '#4A90E2', '#2ECC71', 
+                '#F39C12', '#E74C3C', '#3498DB', '#9B59B6', 
+                '#1ABC9C', '#E67E22', '#95A5A6', '#34495E'
+            ],
+            primarySingle: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
+            secondary: getComputedStyle(document.documentElement).getPropertyValue('--secondary').trim(),
+            accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
+            success: getComputedStyle(document.documentElement).getPropertyValue('--success').trim(),
+            warning: getComputedStyle(document.documentElement).getPropertyValue('--warning').trim(),
+            danger: getComputedStyle(document.documentElement).getPropertyValue('--danger').trim(),
+            info: getComputedStyle(document.documentElement).getPropertyValue('--info').trim(),
+            gradient1: '#FF6B35',
+            gradient2: '#6A5ACD',
+        };
+        
+        // ==================== CONFIGURAÇÃO DE TOOLTIPS ====================
+        const tooltipConfig = {
+            backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--dark-card').trim(),
+            titleColor: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim(),
+            bodyColor: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim(),
+            padding: 16,
+            titleFont: { size: 15, weight: 'bold', family: 'Poppins' },
+            bodyFont: { size: 14, family: 'Poppins' },
+            borderColor: colors.primarySingle,
+            borderWidth: 2,
+            cornerRadius: 12,
+            displayColors: true,
+            boxPadding: 6,
+        };
+        
+        // ==================== ANIMAÇÃO ====================
+        const animationConfig = {
+            duration: 1500,
+            easing: 'easeInOutQuart',
+        };
+        
+        // ========== GRÁFICO 1: Leads por Mês (Linha) ==========
+        function createLeadsChart() {
+            const ctx1 = document.getElementById('chartLeadsPorMes').getContext('2d');
+            const gradient1 = ctx1.createLinearGradient(0, 0, 0, 400);
+            gradient1.addColorStop(0, 'rgba(255, 107, 53, 0.6)');
+            gradient1.addColorStop(0.5, 'rgba(255, 107, 53, 0.3)');
+            gradient1.addColorStop(1, 'rgba(255, 107, 53, 0.0)');
+            
+            // Dados de exemplo (substitua pelos dados reais do Django)
+            const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            const leadsData = [85, 92, 78, 105, 120, 135, 150, 142, 160, 175, 190, 210];
+            
+            return new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: meses,
+                    datasets: [{
+                        label: 'Leads Captados',
+                        data: leadsData,
+                        borderColor: colors.primarySingle,
+                        backgroundColor: gradient1,
+                        borderWidth: 4,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 6,
+                        pointHoverRadius: 10,
+                        pointBackgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--dark-card'),
+                        pointBorderColor: colors.primarySingle,
+                        pointBorderWidth: 3,
+                        pointHoverBackgroundColor: colors.primarySingle,
+                        pointHoverBorderColor: getComputedStyle(document.documentElement).getPropertyValue('--dark-card'),
+                        pointHoverBorderWidth: 3,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: animationConfig,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: tooltipConfig,
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            grid: { 
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--dark-border'),
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                padding: 10,
+                                font: { size: 13, weight: '600' }
+                            }
+                        },
+                        x: { 
+                            grid: { 
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--dark-border'),
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                padding: 10,
+                                font: { size: 13, weight: '600' }
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    },
+                }
+            });
+        }
+        
+        // Inicializar gráficos
+        let charts = [];
+        charts.push(createLeadsChart());
+        
+        // ========== GRÁFICO 2: Status (Pizza) ==========
+        charts.push(new Chart(document.getElementById('chartStatus'), {
+            type: 'pie',
+            data: {
+                labels: ["CONTATADO", "QUALIFICADO", "NOVO", "LEVANTAMENTO_PENDENTE", "LEVANTAMENTO_PAGO", "EM_COMPLIANCE"],
+                datasets: [{
+                    data: [32, 8, 6, 4, 4, 2],
+                    backgroundColor: colors.primary,
+                    borderWidth: 4,
+                    borderColor: '#fff',
+                    hoverBorderWidth: 6,
+                    hoverOffset: 15,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    ...animationConfig,
+                    animateRotate: true,
+                    animateScale: true,
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            font: { size: 12, weight: '600', family: 'Poppins' },
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                        }
+                    },
+                    tooltip: {
+                        ...tooltipConfig,
+                        callbacks: {
+                            label: function(context) {
+                                let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                let percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return ' ' + context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        }));
+
+        // ========== GRÁFICO 3: Origem (Doughnut) ==========
+        charts.push(new Chart(document.getElementById('chartOrigem'), {
+            type: 'doughnut',
+            data: {
+                labels: ["Origem 5", "Origem 3", "Origem 2", "Origem 4", "Origem 6", "Origem 1"],
+                datasets: [{
+                    data: [22, 12, 10, 8, 3, 1],
+                    backgroundColor: colors.primary,
+                    borderWidth: 4,
+                    borderColor: '#fff',
+                    hoverBorderWidth: 6,
+                    hoverOffset: 15,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                animation: {
+                    ...animationConfig,
+                    animateRotate: true,
+                    animateScale: true,
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 18,
+                            font: { size: 11, weight: '600', family: 'Poppins' },
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                        }
+                    },
+                    tooltip: tooltipConfig,
+                }
+            }
+        }));
+
+        // ========== GRÁFICO 4: Top Captadores (Barra Horizontal) ==========
+        const ctx4 = document.getElementById('chartCaptadores').getContext('2d');
+        const gradient4 = ctx4.createLinearGradient(0, 0, 400, 0);
+        gradient4.addColorStop(0, 'rgba(255, 107, 53, 0.8)');
+        gradient4.addColorStop(1, 'rgba(106, 90, 205, 0.8)');
+
+        charts.push(new Chart(ctx4, {
+            type: 'bar',
+            data: {
+                labels: ["Sem captador", "Atendente Teste"],
+                datasets: [{
+                    label: 'Leads Captados',
+                    data: [45, 11],
+                    backgroundColor: gradient4,
+                    borderRadius: 10,
+                    borderSkipped: false,
+                    barThickness: 25,
+                    hoverBackgroundColor: colors.gradient2,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: animationConfig,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: tooltipConfig,
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--dark-border'),
+                            drawBorder: false,
+                        },
+                        ticks: {
+                            font: { size: 13, weight: '600' }
+                        }
+                    },
+                    y: {
+                        grid: { display: false, drawBorder: false },
+                        ticks: {
+                            font: { size: 12, weight: '600' }
+                        }
+                    }
+                }
+            }
+        }));
+
+        // ========== GRÁFICO 5: Top Atendentes (Barra Horizontal) ==========
+        const ctx5 = document.getElementById('chartAtendentes').getContext('2d');
+        const gradient5 = ctx5.createLinearGradient(0, 0, 400, 0);
+        gradient5.addColorStop(0, 'rgba(46, 204, 113, 0.8)');
+        gradient5.addColorStop(1, 'rgba(52, 152, 219, 0.8)');
+
+        charts.push(new Chart(ctx5, {
+            type: 'bar',
+            data: {
+                labels: ["Atendente Teste", "Sem atendente"],
+                datasets: [{
+                    label: 'Leads Atendidos',
+                    data: [11, 7],
+                    backgroundColor: gradient5,
+                    borderRadius: 10,
+                    borderSkipped: false,
+                    barThickness: 25,
+                    hoverBackgroundColor: colors.success,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: animationConfig,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: tooltipConfig,
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--dark-border'),
+                            drawBorder: false,
+                        },
+                        ticks: {
+                            font: { size: 13, weight: '600' }
+                        }
+                    },
+                    y: {
+                        grid: { display: false, drawBorder: false },
+                        ticks: {
+                            font: { size: 12, weight: '600' }
+                        }
+                    }
+                }
+            }
+        }));
+
+        // ========== GRÁFICO 6: Funil (Barra Vertical) ==========
+        charts.push(new Chart(document.getElementById('chartFunil'), {
+            type: 'bar',
+            data: {
+                labels: ["Leads Totais", "Fez Levantamento", "PIX Pago", "Pré-Vendas", "Vendas Fechadas"],
+                datasets: [{
+                    label: 'Quantidade',
+                    data: [56, 14, 4, 10, 10],
+                    backgroundColor: [
+                        colors.primary[0],
+                        colors.primary[2],
+                        colors.primary[4],
+                        colors.primary[5],
+                        colors.primary[3]
+                    ],
+                    borderRadius: 8,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        }));
+
+        // ========== GRÁFICO 7: PIX Status (Pizza) ==========
+        charts.push(new Chart(document.getElementById('chartPix'), {
+            type: 'pie',
+            data: {
+                labels: ["Pago", "Pendente"],
+                datasets: [{
+                    data: [15, 5],
+                    backgroundColor: [colors.success, colors.warning],
+                    borderWidth: 2,
+                    borderColor: '#fff',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { padding: 15, font: { size: 11 } } },
+                }
+            }
+        }));
+
+        // ========== GRÁFICO 8: Receita (Barra) ==========
+        const ctx8 = document.getElementById('chartReceita').getContext('2d');
+        const gradient8 = ctx8.createLinearGradient(0, 0, 0, 400);
+        gradient8.addColorStop(0, 'rgba(46, 204, 113, 0.8)');
+        gradient8.addColorStop(1, 'rgba(26, 188, 156, 0.4)');
+
+        charts.push(new Chart(ctx8, {
+            type: 'bar',
+            data: {
+                labels: ["dez/24", "jan/25", "fev/25", "mar/25", "abr/25", "mai/25", "jun/25", "jul/25", "ago/25", "ago/25", "set/25", "out/25"],
+                datasets: [{
+                    label: 'Receita (R$)',
+                    data: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 690.8],
+                    backgroundColor: gradient8,
+                    borderRadius: 8,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'R$ ' + context.parsed.y.toFixed(2).replace('.', ',');
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value.toFixed(0);
+                            }
+                        }
+                    }
+                }
+            }
+        }));
+
+        // ========== GRÁFICO 9: Parcelas (Doughnut) ==========
+        charts.push(new Chart(document.getElementById('chartParcelas'), {
+            type: 'doughnut',
+            data: {
+                labels: ["Aberta", "Vencida", "Paga"],
+                datasets: [{
+                    data: [54, 1, 1],
+                    backgroundColor: [colors.info, colors.warning, colors.success],
+                    borderWidth: 2,
+                    borderColor: '#fff',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { padding: 12, font: { size: 11 } } },
+                }
+            }
+        }));
+
+        // ========== GRÁFICO 10: Conversão (Linha + Barra) ==========
+        charts.push(new Chart(document.getElementById('chartConversao'), {
+            type: 'bar',
+            data: {
+                labels: ["Lead", "Levantamento", "PIX Pago", "Pré-Venda", "Venda"],
+                datasets: [
+                    {
+                        type: 'line',
+                        label: 'Taxa de Conversão (%)',
+                        data: [100, 25.0, 28.57, 71.43, 100.0],
+                        borderColor: colors.danger,
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        yAxisID: 'y1',
+                    },
+                    {
+                        type: 'bar',
+                        label: 'Quantidade',
+                        data: [56, 14, 4, 10, 10],
+                        backgroundColor: colors.primarySingle,
+                        borderRadius: 8,
+                        yAxisID: 'y',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        type: 'linear',
+                        position: 'left',
+                        beginAtZero: true,
+                        title: { display: true, text: 'Quantidade' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        position: 'right',
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { drawOnChartArea: false },
+                        title: { display: true, text: 'Taxa (%)' }
+                    }
+                }
+            }
+        }));
+
+        // ========== GRÁFICO 11: Dia da Semana (Radar) ==========
+        charts.push(new Chart(document.getElementById('chartDiaSemana'), {
+            type: 'radar',
+            data: {
+                labels: ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"],
+                datasets: [{
+                    label: 'Leads',
+                    data: [6, 5, 3, 10, 7, 25, 0],
+                    backgroundColor: 'rgba(255, 107, 53, 0.2)',
+                    borderColor: colors.primarySingle,
+                    borderWidth: 2,
+                    pointBackgroundColor: colors.primarySingle,
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: colors.primarySingle,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 5 }
+                    }
+                }
+            }
+        }));
+
+        // ========== GRÁFICO 12: Tempo Médio (Barra) ==========
+        charts.push(new Chart(document.getElementById('chartTempo'), {
+            type: 'bar',
+            data: {
+                labels: ["Lead → Levantamento", "Levantamento → PIX", "PIX → Pré-Venda", "Pré-Venda → Venda"],
+                datasets: [{
+                    label: 'Dias',
+                    data: [2.5, 1.2, 3.8, 5.5],
+                    backgroundColor: [
+                        colors.primary[0],
+                        colors.primary[2],
+                        colors.primary[4],
+                        colors.primary[6]
+                    ],
+                    borderRadius: 8,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y + ' dias';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Dias' }
+                    }
+                }
+            }
+        }));
+        
+        // Função para atualizar gráficos quando o tema mudar
+        function updateChartsForTheme(theme) {
+            // Destruir gráficos existentes
+            charts.forEach(chart => chart.destroy());
+            charts = [];
+            
+            // Recriar gráficos com novo tema
+            setTimeout(() => {
+                charts.push(createLeadsChart());
+                // Adicione aqui a criação dos outros gráficos
+            }, 300);
+        }
+    </script>
+</body>
+</html>
+gradient1.addColorStop(0, 'rgba(102, 126, 234, 0.6)');
+gradient1.addColorStop(0.5, 'rgba(102, 126, 234, 0.3)');
+gradient1.addColorStop(1, 'rgba(102, 126, 234, 0.0)');
+
+new Chart(ctx1, {
+  type: 'line',
+  data: {
+    labels: {{ labels_meses|safe }},
+    datasets: [{
+      label: 'Leads Captados',
+      data: {{ leads_por_mes|safe }},
+      borderColor: colors.gradient1,
+      backgroundColor: gradient1,
+      borderWidth: 4,
+      fill: true,
+      tension: 0.4,
+      pointRadius: 6,
+      pointHoverRadius: 10,
+      pointBackgroundColor: '#fff',
+      pointBorderColor: colors.gradient1,
+      pointBorderWidth: 3,
+      pointHoverBackgroundColor: colors.gradient1,
+      pointHoverBorderColor: '#fff',
+      pointHoverBorderWidth: 3,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: animationConfig,
+    plugins: {
+      legend: { display: false },
+      tooltip: tooltipConfig,
+    },
+    scales: {
+      y: { 
+        beginAtZero: true,
+        grid: { 
+          color: 'rgba(0,0,0,0.03)',
+          drawBorder: false,
+        },
+        ticks: {
+          padding: 10,
+          font: { size: 13, weight: '600' }
+        }
+      },
+      x: { 
+        grid: { 
+          display: false,
+          drawBorder: false,
+        },
+        ticks: {
+          padding: 10,
+          font: { size: 13, weight: '600' }
+        }
+      }
+    },
+    interaction: {
+      intersect: false,
+      mode: 'index',
+    },
+  }
+});
+
+// ========== GRÁFICO 2: Status (Pizza) ==========
+new Chart(document.getElementById('chartStatus'), {
+  type: 'pie',
+  data: {
+    labels: {{ status_labels|safe }},
+    datasets: [{
+      data: {{ status_values|safe }},
+      backgroundColor: colors.primary,
+      borderWidth: 4,
+      borderColor: '#fff',
+      hoverBorderWidth: 6,
+      hoverOffset: 15,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: {
+      ...animationConfig,
+      animateRotate: true,
+      animateScale: true,
+    },
+    plugins: {
+      legend: { 
+        position: 'bottom', 
+        labels: { 
+          padding: 20,
+          font: { size: 12, weight: '600', family: 'Poppins' },
+          usePointStyle: true,
+          pointStyle: 'circle',
+        } 
+      },
+      tooltip: {
+        ...tooltipConfig,
+        callbacks: {
+          label: function(context) {
+            let total = context.dataset.data.reduce((a, b) => a + b, 0);
+            let percentage = ((context.parsed / total) * 100).toFixed(1);
+            return ' ' + context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+          }
+        }
+      }
+    }
+  }
+});
+
+// ========== GRÁFICO 3: Origem (Doughnut) ==========
+new Chart(document.getElementById('chartOrigem'), {
+  type: 'doughnut',
+  data: {
+    labels: {{ origem_labels|safe }},
+    datasets: [{
+      data: {{ origem_values|safe }},
+      backgroundColor: colors.primary,
+      borderWidth: 4,
+      borderColor: '#fff',
+      hoverBorderWidth: 6,
+      hoverOffset: 15,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '65%',
+    animation: {
+      ...animationConfig,
+      animateRotate: true,
+      animateScale: true,
+    },
+    plugins: {
+      legend: { 
+        position: 'bottom', 
+        labels: { 
+          padding: 18,
+          font: { size: 11, weight: '600', family: 'Poppins' },
+          usePointStyle: true,
+          pointStyle: 'circle',
+        } 
+      },
+      tooltip: tooltipConfig,
+    }
+  }
+});
+
+// ========== GRÁFICO 4: Top Captadores (Barra Horizontal) ==========
+const ctx4 = document.getElementById('chartCaptadores').getContext('2d');
+const gradient4 = ctx4.createLinearGradient(0, 0, 400, 0);
+gradient4.addColorStop(0, 'rgba(102, 126, 234, 0.8)');
+gradient4.addColorStop(1, 'rgba(118, 75, 162, 0.8)');
+
+new Chart(ctx4, {
+  type: 'bar',
+  data: {
+    labels: {{ captadores_labels|safe }},
+    datasets: [{
+      label: 'Leads Captados',
+      data: {{ captadores_values|safe }},
+      backgroundColor: gradient4,
+      borderRadius: 10,
+      borderSkipped: false,
+      barThickness: 25,
+      hoverBackgroundColor: colors.gradient2,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: animationConfig,
+    plugins: {
+      legend: { display: false },
+      tooltip: tooltipConfig,
+    },
+    scales: {
+      x: { 
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0,0,0,0.03)',
+          drawBorder: false,
+        },
+        ticks: {
+          font: { size: 13, weight: '600' }
+        }
+      },
+      y: {
+        grid: { display: false, drawBorder: false },
+        ticks: {
+          font: { size: 12, weight: '600' }
+        }
+      }
+    }
+  }
+});
+
+// ========== GRÁFICO 5: Top Atendentes (Barra Horizontal) ==========
+const ctx5 = document.getElementById('chartAtendentes').getContext('2d');
+const gradient5 = ctx5.createLinearGradient(0, 0, 400, 0);
+gradient5.addColorStop(0, 'rgba(67, 233, 123, 0.8)');
+gradient5.addColorStop(1, 'rgba(56, 249, 215, 0.8)');
+
+new Chart(ctx5, {
+  type: 'bar',
+  data: {
+    labels: {{ atendentes_labels|safe }},
+    datasets: [{
+      label: 'Leads Atendidos',
+      data: {{ atendentes_values|safe }},
+      backgroundColor: gradient5,
+      borderRadius: 10,
+      borderSkipped: false,
+      barThickness: 25,
+      hoverBackgroundColor: colors.success,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: animationConfig,
+    plugins: {
+      legend: { display: false },
+      tooltip: tooltipConfig,
+    },
+    scales: {
+      x: { 
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0,0,0,0.03)',
+          drawBorder: false,
+        },
+        ticks: {
+          font: { size: 13, weight: '600' }
+        }
+      },
+      y: {
+        grid: { display: false, drawBorder: false },
+        ticks: {
+          font: { size: 12, weight: '600' }
+        }
+      }
+    }
+  }
+});
+
+// ========== GRÁFICO 6: Funil (Barra Vertical) ==========
+new Chart(document.getElementById('chartFunil'), {
+  type: 'bar',
+  data: {
+    labels: {{ funil_labels|safe }},
+    datasets: [{
+      label: 'Quantidade',
+      data: {{ funil_values|safe }},
+      backgroundColor: [
+        colors.gradient1,
+        colors.info,
+        colors.warning,
+        '#f093fb',
+        colors.success
+      ],
+      borderRadius: 8,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+    },
+    scales: {
+      y: { beginAtZero: true }
+    }
+  }
+});
+
+// ========== GRÁFICO 7: PIX Status (Pizza) ==========
+new Chart(document.getElementById('chartPix'), {
+  type: 'pie',
+  data: {
+    labels: {{ pix_labels|safe }},
+    datasets: [{
+      data: {{ pix_values|safe }},
+      backgroundColor: [colors.success, colors.warning, colors.danger],
+      borderWidth: 2,
+      borderColor: '#fff',
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { padding: 15, font: { size: 11 } } },
+    }
+  }
+});
+
+// ========== GRÁFICO 8: Receita (Barra) ==========
+const ctx8 = document.getElementById('chartReceita').getContext('2d');
+const gradient8 = ctx8.createLinearGradient(0, 0, 0, 400);
+gradient8.addColorStop(0, 'rgba(67, 233, 123, 0.8)');
+gradient8.addColorStop(1, 'rgba(56, 249, 215, 0.4)');
+
+new Chart(ctx8, {
+  type: 'bar',
+  data: {
+    labels: {{ labels_meses|safe }},
+    datasets: [{
+      label: 'Receita (R$)',
+      data: {{ receita_por_mes|safe }},
+      backgroundColor: gradient8,
+      borderRadius: 8,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return 'R$ ' + context.parsed.y.toFixed(2).replace('.', ',');
+          }
+        }
+      }
+    },
+    scales: {
+      y: { 
+        beginAtZero: true,
+        ticks: {
+          callback: function(value) {
+            return 'R$ ' + value.toFixed(0);
+          }
+        }
+      }
+    }
+  }
+});
+
+// ========== GRÁFICO 9: Parcelas (Doughnut) ==========
+new Chart(document.getElementById('chartParcelas'), {
+  type: 'doughnut',
+  data: {
+    labels: {{ parcelas_labels|safe }},
+    datasets: [{
+      data: {{ parcelas_values|safe }},
+      backgroundColor: [colors.success, colors.warning, colors.danger, colors.info],
+      borderWidth: 2,
+      borderColor: '#fff',
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { padding: 12, font: { size: 11 } } },
+    }
+  }
+});
+
+// ========== GRÁFICO 10: Conversão (Linha + Barra) ==========
+new Chart(document.getElementById('chartConversao'), {
+  type: 'bar',
+  data: {
+    labels: {{ conversao_labels|safe }},
+    datasets: [
+      {
+        type: 'line',
+        label: 'Taxa de Conversão (%)',
+        data: {{ conversao_taxa|safe }},
+        borderColor: colors.danger,
+        backgroundColor: 'rgba(245, 87, 108, 0.1)',
+        borderWidth: 3,
+        tension: 0.4,
+        yAxisID: 'y1',
+      },
+      {
+        type: 'bar',
+        label: 'Quantidade',
+        data: {{ conversao_counts|safe }},
+        backgroundColor: colors.gradient1,
+        borderRadius: 8,
+        yAxisID: 'y',
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: { 
+        type: 'linear',
+        position: 'left',
+        beginAtZero: true,
+        title: { display: true, text: 'Quantidade' }
+      },
+      y1: {
+        type: 'linear',
+        position: 'right',
+        beginAtZero: true,
+        max: 100,
+        grid: { drawOnChartArea: false },
+        title: { display: true, text: 'Taxa (%)' }
+      }
+    }
+  }
+});
+
+// ========== GRÁFICO 11: Dia da Semana (Radar) ==========
+new Chart(document.getElementById('chartDiaSemana'), {
+  type: 'radar',
+  data: {
+    labels: {{ dias_semana|safe }},
+    datasets: [{
+      label: 'Leads',
+      data: {{ leads_por_dia|safe }},
+      backgroundColor: 'rgba(102, 126, 234, 0.2)',
+      borderColor: colors.gradient1,
+      borderWidth: 2,
+      pointBackgroundColor: colors.gradient1,
+      pointBorderColor: '#fff',
+      pointHoverBackgroundColor: '#fff',
+      pointHoverBorderColor: colors.gradient1,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+    },
+    scales: {
+      r: {
+        beginAtZero: true,
+        ticks: { stepSize: 5 }
+      }
+    }
+  }
+});
+
+// ========== GRÁFICO 12: Tempo Médio (Barra) ==========
+new Chart(document.getElementById('chartTempo'), {
+  type: 'bar',
+  data: {
+    labels: {{ tempo_labels|safe }},
+    datasets: [{
+      label: 'Dias',
+      data: {{ tempo_values|safe }},
+      backgroundColor: [
+        colors.primary[0],
+        colors.primary[2],
+        colors.primary[4],
+        colors.primary[6]
+      ],
+      borderRadius: 8,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return context.parsed.y + ' dias';
+          }
+        }
+      }
+    },
+    scales: {
+      y: { 
+        beginAtZero: true,
+        title: { display: true, text: 'Dias' }
+      }
+    }
+  }
+});
+</script>

@@ -513,6 +513,86 @@ def painel_central(request):
 
 
 @login_required
+def grafico_evolucao_leads(request):
+    """
+    Página dedicada ao gráfico de evolução de leads nos últimos 12 meses.
+    """
+    # Período: últimos 12 meses
+    hoje = timezone.now()
+    data_inicio = hoje - timedelta(days=365)
+    
+    # ========== GRÁFICO: LEADS POR MÊS (Linha) ==========
+    leads_por_mes = []
+    labels_meses = []
+    
+    for i in range(11, -1, -1):
+        mes_data = hoje - timedelta(days=30*i)
+        inicio_mes = mes_data.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if mes_data.month == 12:
+            fim_mes = inicio_mes.replace(year=inicio_mes.year + 1, month=1)
+        else:
+            fim_mes = inicio_mes.replace(month=inicio_mes.month + 1)
+        
+        count = Lead.objects.filter(
+            data_cadastro__gte=inicio_mes,
+            data_cadastro__lt=fim_mes
+        ).count()
+        
+        leads_por_mes.append(count)
+        labels_meses.append(inicio_mes.strftime('%b/%y'))
+    
+    # ========== CÁLCULOS DE RECEITA ==========
+    receita_total = 0
+    for i in range(11, -1, -1):
+        mes_data = hoje - timedelta(days=30*i)
+        inicio_mes = mes_data.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if mes_data.month == 12:
+            fim_mes = inicio_mes.replace(year=inicio_mes.year + 1, month=1)
+        else:
+            fim_mes = inicio_mes.replace(month=inicio_mes.month + 1)
+        
+        receita = Parcela.objects.filter(
+            status='paga',
+            data_pagamento__gte=inicio_mes.date(),
+            data_pagamento__lt=fim_mes.date()
+        ).aggregate(total=Sum('valor'))['total'] or 0
+        
+        receita_total += float(receita)
+    
+    # ========== KPIs ==========
+    total_leads = Lead.objects.count()
+    vendas_fechadas = Venda.objects.count()
+    taxa_conversao = round((vendas_fechadas / total_leads * 100) if total_leads > 0 else 0, 2)
+    ticket_medio = round(receita_total / vendas_fechadas if vendas_fechadas > 0 else 0, 2)
+    leads_mes_atual = leads_por_mes[-1] if leads_por_mes else 0
+    
+    # Crescimento percentual (comparar último mês com penúltimo)
+    if len(leads_por_mes) >= 2 and leads_por_mes[-2] > 0:
+        crescimento = ((leads_por_mes[-1] - leads_por_mes[-2]) / leads_por_mes[-2]) * 100
+        crescimento_percentual = round(crescimento, 1)
+    else:
+        crescimento_percentual = 0
+    
+    kpis = {
+        'total_leads': total_leads,
+        'total_vendas': vendas_fechadas,
+        'taxa_conversao_geral': taxa_conversao,
+        'receita_total': receita_total,
+        'ticket_medio': ticket_medio,
+        'leads_mes_atual': leads_mes_atual,
+        'crescimento_percentual': crescimento_percentual,
+    }
+    
+    context = {
+        'leads_por_mes': json.dumps(leads_por_mes),
+        'labels_meses': json.dumps(labels_meses),
+        'kpis': kpis,
+    }
+    
+    return render(request, 'relatorios/grafico_evolucao_leads.html', context)
+
+
+@login_required
 def dashboard_kpis_comercial2(request):
     """
     Dashboard com KPIs e métricas do Comercial 2
