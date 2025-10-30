@@ -54,8 +54,9 @@ class AsaasWebhookHandler:
         """Processa pagamento confirmado"""
         payment_id = payment.get('id')
         value = payment.get('value')
+        external_reference = payment.get('externalReference', '')
         
-        # Atualizar status do PIX Levantamento
+        # 1. Processar PIX Levantamento
         from financeiro.models import PixLevantamento
         try:
             pix_levantamento = PixLevantamento.objects.get(asaas_payment_id=payment_id)
@@ -74,12 +75,38 @@ class AsaasWebhookHandler:
                 acao='pagamento_confirmado'
             )
         except PixLevantamento.DoesNotExist:
-            LogService.registrar(
-                nivel='WARNING',
-                mensagem=f"PIX Levantamento não encontrado para payment_id: {payment_id}",
-                modulo='financeiro',
-                acao='pagamento_confirmado_sem_registro'
-            )
+            pass
+        
+        # 2. Processar Multa de Distrato
+        if external_reference.startswith('DISTRATO-'):
+            try:
+                distrato_id = int(external_reference.replace('DISTRATO-', ''))
+                from juridico.models import Distrato
+                
+                distrato = Distrato.objects.get(id=distrato_id, boleto_multa_codigo=payment_id)
+                distrato.data_pagamento_multa = timezone.now().date()
+                distrato.status = 'MULTA_PAGA'
+                distrato.save()
+                
+                distrato.adicionar_historico(
+                    'pagamento_multa',
+                    None,
+                    f'Multa paga via ASAAS - Valor: R$ {value} - Payment ID: {payment_id}'
+                )
+                
+                LogService.registrar(
+                    nivel='INFO',
+                    mensagem=f"Multa de distrato paga: Distrato {distrato.numero_distrato} - R$ {value}",
+                    modulo='juridico',
+                    acao='multa_distrato_paga'
+                )
+            except (Distrato.DoesNotExist, ValueError) as e:
+                LogService.registrar(
+                    nivel='WARNING',
+                    mensagem=f"Distrato não encontrado para external_reference: {external_reference} - Erro: {str(e)}",
+                    modulo='juridico',
+                    acao='pagamento_multa_sem_registro'
+                )
         
         return True
     
@@ -87,8 +114,9 @@ class AsaasWebhookHandler:
     def _processar_pagamento_vencido(payment):
         """Processa pagamento vencido"""
         payment_id = payment.get('id')
+        external_reference = payment.get('externalReference', '')
         
-        # Atualizar status do PIX Levantamento para vencido
+        # 1. Processar PIX Levantamento vencido
         from financeiro.models import PixLevantamento
         try:
             pix_levantamento = PixLevantamento.objects.get(asaas_payment_id=payment_id)
@@ -107,12 +135,40 @@ class AsaasWebhookHandler:
                 acao='pagamento_vencido'
             )
         except PixLevantamento.DoesNotExist:
-            LogService.registrar(
-                nivel='WARNING',
-                mensagem=f"PIX Levantamento não encontrado para payment_id vencido: {payment_id}",
-                modulo='financeiro',
-                acao='pagamento_vencido_sem_registro'
-            )
+            pass
+        
+        # 2. Processar Multa de Distrato Vencida
+        if external_reference.startswith('DISTRATO-'):
+            try:
+                distrato_id = int(external_reference.replace('DISTRATO-', ''))
+                from juridico.models import Distrato
+                
+                distrato = Distrato.objects.get(id=distrato_id, boleto_multa_codigo=payment_id)
+                
+                # Só atualiza se ainda não foi pago
+                if not distrato.data_pagamento_multa:
+                    distrato.status = 'MULTA_VENCIDA'
+                    distrato.save()
+                    
+                    distrato.adicionar_historico(
+                        'vencimento_multa',
+                        None,
+                        f'Multa vencida - Boleto ASAAS vencido: {payment_id}'
+                    )
+                    
+                    LogService.registrar(
+                        nivel='WARNING',
+                        mensagem=f"Multa de distrato vencida: Distrato {distrato.numero_distrato} - Payment: {payment_id}",
+                        modulo='juridico',
+                        acao='multa_distrato_vencida'
+                    )
+            except (Distrato.DoesNotExist, ValueError) as e:
+                LogService.registrar(
+                    nivel='WARNING',
+                    mensagem=f"Distrato não encontrado para vencimento - external_reference: {external_reference}",
+                    modulo='juridico',
+                    acao='vencimento_multa_sem_registro'
+                )
         
         return True
     

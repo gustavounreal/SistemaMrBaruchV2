@@ -1,0 +1,204 @@
+{% extends 'core/doc_base.html' %}
+
+{% block doc_content %}
+
+<h2 id="visao-geral">Visão Geral</h2>
+<p>
+  O módulo <strong>Jurídico</strong> do Sistema Mr. Baruch gerencia todo o ciclo de <strong>distratos</strong> (quebra de contrato) e processos jurídicos, desde a solicitação até a conclusão do processo, com automações, histórico detalhado e integração com financeiro.
+</p>
+
+<h2 id="etapas-fluxo">Etapas do Fluxo de Distrato Jurídico</h2>
+
+<h3>1. Identificação de Inadimplência</h3>
+<ul>
+  <li><strong>Onde:</strong> Financeiro &rarr; Parcelas</li>
+  <li><strong>Como:</strong> Parcelas vencidas exibem botão <span class="badge bg-warning">Solicitar Distrato</span></li>
+  <li><strong>Ação:</strong> Atendente solicita distrato para venda inadimplente</li>
+  <li><strong>Resultado:</strong> Distrato criado, status <span class="badge bg-primary">SOLICITADO</span>, número único gerado</li>
+</ul>
+
+<h3>2. Tentativa de Acordo</h3>
+<ul>
+  <li><strong>Onde:</strong> Jurídico &rarr; Painel de Distratos</li>
+  <li><strong>Como:</strong> Equipe de retenção tenta negociar acordo com cliente</li>
+  <li><strong>Ação:</strong> Registrar resultado (aceito ou recusado)</li>
+  <li><strong>Resultado:</strong> 
+    <ul>
+      <li><span class="badge bg-success">ACORDO ACEITO</span>: Fim do fluxo</li>
+      <li><span class="badge bg-danger">ACORDO RECUSADO</span>: Prossegue para multa</li>
+    </ul>
+  </li>
+</ul>
+
+<h3>3. Geração de Multa</h3>
+<ul>
+  <li><strong>Onde:</strong> Jurídico &rarr; Painel de Distratos</li>
+  <li><strong>Como:</strong> Sistema calcula automaticamente 25% do valor total da venda</li>
+  <li><strong>Ação:</strong> Gestor define data de vencimento e confirma geração</li>
+  <li><strong>Resultado:</strong> 
+    <ul>
+      <li>Status <span class="badge bg-warning">MULTA_GERADA</span></li>
+      <li>Usuario define a data de vencimento</li>
+      <li>Boleto criado automaticamente no ASAAS</li>
+      <li>Cliente recebe link do boleto e linha digitável</li>
+      <li>Valor mínimo garantido: R$ 5,00 (exigência ASAAS)</li>
+    </ul>
+  </li>
+  <li><strong>Integração ASAAS:</strong> Boleto bancário gerado automaticamente com vencimento configurável</li>
+</ul>
+
+<h3>4. Monitoramento de Vencimento</h3>
+<ul>
+  <li><strong>Onde:</strong> Automático via Webhook ASAAS &rarr; Multas Vencidas</li>
+  <li><strong>Como:</strong> 
+    <ul>
+      <li>Webhook ASAAS notifica quando boleto vence (evento: PAYMENT_OVERDUE)</li>
+      <li>Sistema atualiza status automaticamente para <span class="badge bg-dark">MULTA_VENCIDA</span></li>
+      <li>Distrato aparece na tela "Multas Vencidas" com dias de atraso</li>
+    </ul>
+  </li>
+  <li><strong>Resultado:</strong> Botão "Enviar ao Jurídico" habilitado para iniciar processo judicial</li>
+</ul>
+
+<h3>5. Envio para Jurídico</h3>
+<ul>
+  <li><strong>Onde:</strong> Painel de Distratos ou Multas Vencidas</li>
+  <li><strong>Como:</strong> Usuário envia distrato para processo judicial</li>
+  <li><strong>Resultado:</strong> Status <span class="badge bg-success">ENVIADO_JURIDICO</span>, processo criado automaticamente</li>
+</ul>
+
+<h3>6. Painel de Processos Jurídicos</h3>
+<ul>
+  <li><strong>Onde:</strong> Jurídico &rarr; Processos Jurídicos</li>
+  <li><strong>Como:</strong> Cards de estatísticas, filtros, tabela detalhada</li>
+  <li><strong>Resultado:</strong> Acompanhamento completo dos processos</li>
+</ul>
+
+<h3>7. Detalhes do Processo</h3>
+<ul>
+  <li><strong>Onde:</strong> Jurídico &rarr; Detalhes do Processo</li>
+  <li><strong>Como:</strong> Timeline visual, informações do distrato, cliente e venda</li>
+  <li><strong>Resultado:</strong> Histórico completo e ações disponíveis</li>
+</ul>
+
+<h3>8. Marcação de Assinatura</h3>
+<ul>
+  <li><strong>Onde:</strong> Painel ou Detalhes do Processo</li>
+  <li><strong>Como:</strong> Advogado marca quando cliente assina documento</li>
+  <li><strong>Resultado:</strong> Status <span class="badge bg-success">ASSINADO</span>, timeline atualizada</li>
+</ul>
+
+<h3>9. Conclusão do Processo</h3>
+<ul>
+  <li><strong>Onde:</strong> Automático ou botão "Concluir Processo"</li>
+  <li><strong>Como:</strong> Multa paga ou ação manual</li>
+  <li><strong>Resultado:</strong> Status <span class="badge" style="background:#8b5cf6;color:#fff;">CONCLUIDO</span>, processo arquivado</li>
+</ul>
+
+<h2 id="resumo-fluxo">Resumo Visual do Fluxo</h2>
+<pre><code>
+1. PARCELA VENCIDA (Financeiro)
+   ↓
+2. SOLICITAR DISTRATO
+   ↓
+3. TENTATIVA DE ACORDO
+   ↓
+4. GERAR MULTA
+   ↓
+5. MONITORAMENTO AUTOMÁTICO
+   ↓
+6. MULTAS VENCIDAS
+   ↓
+7. ENVIAR AO JURÍDICO
+   ↓
+8. PAINEL DE PROCESSOS
+   ↓
+9. DETALHES DO PROCESSO
+   ↓
+10. MARCAR ASSINADO
+   ↓
+11. CONCLUIR PROCESSO
+</code></pre>
+
+<h2 id="estrutura-dados">Estrutura de Dados</h2>
+<ul>
+  <li><strong>Distrato:</strong> Relaciona venda, status, histórico, multa, processo</li>
+  <li><strong>ProcessoJuridico:</strong> Relaciona distrato, status, assinatura, datas</li>
+  <li><strong>Campos ASAAS no Distrato:</strong>
+    <ul>
+      <li><code>boleto_multa_codigo</code>: ID da cobrança no ASAAS</li>
+      <li><code>boleto_multa_url</code>: URL para visualizar/baixar o boleto</li>
+      <li><code>boleto_multa_linha_digitavel</code>: Linha digitável do boleto</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="integracao-asaas">Integração ASAAS</h2>
+
+<h3>Geração Automática de Boleto</h3>
+<div class="doc-card">
+  <p><strong>Quando:</strong> Ao gerar multa de distrato</p>
+  <p><strong>Cálculo:</strong> 25% do valor total da venda (mínimo R$ 5,00)</p>
+  <p><strong>Tipo:</strong> Boleto bancário</p>
+  <p><strong>Vencimento:</strong> Configurável pelo gestor</p>
+  <p><strong>Referência:</strong> <code>DISTRATO-{id}</code></p>
+</div>
+
+<h3>Webhooks Processados</h3>
+<table class="table">
+  <thead>
+    <tr><th>Evento ASAAS</th><th>Ação do Sistema</th><th>Status Resultante</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>PAYMENT_RECEIVED</code></td>
+      <td>Marca multa como paga, registra data pagamento</td>
+      <td><span class="badge bg-success">MULTA_PAGA</span></td>
+    </tr>
+    <tr>
+      <td><code>PAYMENT_OVERDUE</code></td>
+      <td>Marca multa como vencida, adiciona ao painel "Multas Vencidas"</td>
+      <td><span class="badge bg-dark">MULTA_VENCIDA</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Validação do Fluxo</h3>
+<div class="doc-alert doc-alert-success">
+  <strong>Fluxo Validado:</strong>
+  <ol class="mb-0">
+    <li>Multa gerada → Boleto criado no ASAAS automaticamente</li>
+    <li>Cliente paga boleto → Webhook <code>PAYMENT_RECEIVED</code> atualiza status para MULTA_PAGA</li>
+    <li>Boleto vence sem pagamento → Webhook <code>PAYMENT_OVERDUE</code> atualiza para MULTA_VENCIDA</li>
+    <li>Multas vencidas aparecem no painel com dias de atraso</li>
+    <li>Botão "Enviar ao Jurídico" disponível para processos judiciais</li>
+  </ol>
+</div>
+
+<h2 id="interface">Interface do Usuário</h2>
+<ul>
+  <li><strong>Sidebar:</strong> Financeiro &rarr; Gestão &rarr; Parcelas (Solicitar Distrato)</li>
+  <li><strong>Sidebar:</strong> Jurídico &rarr; Painel de Distratos, Multas Vencidas, Processos Jurídicos</li>
+  <li><strong>Telas:</strong> Cards de estatísticas, tabelas, timeline visual, filtros avançados</li>
+</ul>
+
+<h2 id="urls">URLs Relacionadas</h2>
+<table class="table">
+  <thead>
+    <tr><th>URL</th><th>Nome</th><th>Descrição</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>/juridico/distrato/painel/</code></td><td>Painel de Distratos</td><td>Gestão de distratos</td></tr>
+    <tr><td><code>/juridico/distrato/multas-vencidas/</code></td><td>Multas Vencidas</td><td>Monitoramento de multas</td></tr>
+    <tr><td><code>/juridico/processos/</code></td><td>Painel de Processos</td><td>Gestão de processos jurídicos</td></tr>
+  </tbody>
+</table>
+
+<h2 id="suporte">Suporte</h2>
+<div class="doc-card">
+  <p class="mb-2"><strong>Desenvolvido por:</strong> GitHub Copilot + Equipe Mr. Baruch</p>
+  <p class="mb-2"><strong>Data:</strong> 29 de Outubro de 2025</p>
+  <p class="mb-0"><strong>Status:</strong> <span class="doc-badge doc-badge-success">PRONTO PARA PRODUÇÃO</span></p>
+</div>
+
+{% endblock %}

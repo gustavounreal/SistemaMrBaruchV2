@@ -180,7 +180,9 @@ class Distrato(models.Model):
     valor_multa = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     data_vencimento_multa = models.DateField(null=True, blank=True)
     data_pagamento_multa = models.DateField(null=True, blank=True)
-    boleto_multa_codigo = models.CharField(max_length=100, blank=True)
+    boleto_multa_codigo = models.CharField(max_length=100, blank=True, verbose_name='ID Boleto ASAAS')
+    boleto_multa_url = models.URLField(blank=True, verbose_name='URL Boleto ASAAS')
+    boleto_multa_linha_digitavel = models.CharField(max_length=200, blank=True, verbose_name='Linha Digitável')
     
     # Arquivos
     arquivo_distrato = models.FileField(upload_to='distratos/', null=True, blank=True)

@@ -1,1122 +1,366 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Documentação - Jornada Lead - Sistema Mr. Baruch</title>
-  
-  <!-- Bootstrap 5 -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-  
-  <!-- Mermaid.js -->
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
-  
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      background: linear-gradient(120deg, #eef2ff 0%, #f7fafc 100%);
-      color: #2d3748;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      line-height: 1.6;
-    }
-    
-    .container-fluid {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 2rem 1rem;
-    }
-    
-    .doc-header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 3rem 2rem;
-      border-radius: 15px;
-      margin-bottom: 2rem;
-      box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
-    }
-    
-    .doc-header h1 {
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-    }
-    
-    .doc-header p {
-      font-size: 1.1rem;
-      opacity: 0.95;
-    }
-    
-    .doc-card, .card {
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 24px rgba(102, 126, 234, 0.08);
-      border-left: 6px solid #667eea;
-      padding: 2rem 1.5rem;
-      margin-bottom: 2rem;
-      transition: box-shadow 0.2s;
-    }
-    
-    .doc-card:hover, .card:hover {
-      box-shadow: 0 8px 32px rgba(102, 126, 234, 0.16);
-      border-left-color: #5a67d8;
-    }
-    
-    .doc-card h2, .doc-card h3 {
-      color: #667eea;
-      font-weight: 700;
-      margin-bottom: 1rem;
-    }
-    
-    .doc-card h2 {
-      font-size: 1.8rem;
-    }
-    
-    .doc-card h3 {
-      font-size: 1.4rem;
-    }
-    
-    .doc-alert {
-      border-radius: 10px;
-      padding: 1.2rem 2rem;
-      margin: 2rem 0;
-      font-size: 1.08rem;
-      background: #ebf8ff;
-      border-left: 6px solid #3182ce;
-      color: #2b6cb0;
-    }
-    
-    .doc-alert-info {
-      background: #ebf8ff;
-      border-left-color: #3182ce;
-      color: #2b6cb0;
-    }
-    
-    .doc-alert-warning {
-      background: #fffbea;
-      border-left-color: #ecc94b;
-      color: #b7791f;
-    }
-    
-    .doc-alert-success {
-      background: #f0fff4;
-      border-left-color: #38a169;
-      color: #276749;
-    }
-    
-    .doc-badge, .badge {
-      display: inline-block;
-      border-radius: 14px;
-      padding: 0.25em 0.9em;
-      font-size: 1em;
-      font-weight: 600;
-      margin-right: 0.4em;
-      background: #edf2f7;
-      color: #4a5568;
-    }
-    
-    .doc-badge-info, .badge-primary {
-      background: #ebf8ff;
-      color: #2b6cb0;
-    }
-    
-    .doc-badge-warning, .badge-warning {
-      background: #fffbea;
-      color: #b7791f;
-    }
-    
-    .doc-badge-success, .badge-success {
-      background: #f0fff4;
-      color: #276749;
-    }
-    
-    .doc-badge-secondary, .badge-secondary {
-      background: #e2e8f0;
-      color: #4a5568;
-    }
-    
-    .table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 2rem;
-      background: #fff;
-      border-radius: 12px;
-      overflow: hidden;
-    }
-    
-    .table th, .table td {
-      border: 1px solid #e2e8f0;
-      padding: 1em 1.2em;
-      text-align: left;
-      font-size: 1.05em;
-    }
-    
-    .table th {
-      background: #f7fafc;
-      font-weight: 700;
-      color: #4a5568;
-    }
-    
-    .table tbody tr:nth-child(even) {
-      background: #f7fafc;
-    }
-    
-    .table tbody tr:hover {
-      background: #edf2f7;
-    }
-    
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      margin-right: -15px;
-      margin-left: -15px;
-    }
-    
-    .col-md-3, .col-md-6, .col-md-9 {
-      position: relative;
-      width: 100%;
-      padding-right: 15px;
-      padding-left: 15px;
-    }
-    
-    @media (min-width: 768px) {
-      .col-md-3 {
-        flex: 0 0 25%;
-        max-width: 25%;
-      }
-      .col-md-6 {
-        flex: 0 0 50%;
-        max-width: 50%;
-      }
-      .col-md-9 {
-        flex: 0 0 75%;
-        max-width: 75%;
-      }
-    }
-    
-    .flow-diagram {
-      overflow-x: auto;
-      padding: 2.5rem 0;
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 24px rgba(102, 126, 234, 0.08);
-      margin-bottom: 2.5rem;
-    }
-    
-    .mermaid {
-      text-align: center;
-      min-height: 320px;
-    }
-    
-    .sumario-link {
-      color: #4a5568;
-      text-decoration: none;
-      display: block;
-      padding: 0.5rem 0.75rem;
-      border-radius: 6px;
-      transition: all 0.2s;
-      font-size: 0.95rem;
-    }
-    
-    .sumario-link:hover {
-      background: #f7fafc;
-      color: #667eea;
-      transform: translateX(5px);
-    }
-    
-    .sumario-link.active {
-      background: #667eea;
-      color: white;
-      font-weight: 600;
-    }
-    
-    .btn-dashboard {
-      display: inline-block;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 600;
-      transition: all 0.2s;
-      border: none;
-      cursor: pointer;
-    }
-    
-    .btn-dashboard:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-      color: white;
-    }
-    
-    .btn-voltar {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: white;
-      color: #667eea;
-      padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 600;
-      transition: all 0.2s;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-bottom: 1rem;
-    }
-    
-    .btn-voltar:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
-      color: #5a67d8;
-    }
-    
-    .footer-inner {
-      background: #f7fafc;
-      padding: 2rem;
-      text-align: center;
-      color: #4a5568;
-      font-size: 1.08em;
-      border-top: 1px solid #e2e8f0;
-      border-radius: 16px;
-      margin-top: 3rem;
-    }
-    
-    .code {
-      background: #edf2f7;
-      padding: 0.2em 0.5em;
-      border-radius: 4px;
-      font-family: 'Courier New', monospace;
-      font-size: 0.95em;
-      color: #e53e3e;
-    }
-    
-    ul {
-      padding-left: 1.5rem;
-    }
-    
-    ul li {
-      margin-bottom: 0.5rem;
-    }
-    
-    .mb-2 { margin-bottom: 0.5rem; }
-    .mb-3 { margin-bottom: 1rem; }
-    .mb-4 { margin-bottom: 1.5rem; }
-    .mt-4 { margin-top: 1.5rem; }
-    .mb-0 { margin-bottom: 0; }
-    
-    @media print {
-      body {
-        background: white;
-      }
-      .doc-card, .card {
-        box-shadow: none;
-        border: 1px solid #e2e8f0;
-      }
-      .btn-voltar, .btn-dashboard {
-        display: none;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="container-fluid">
-    <a href="{% url 'core:central_documentacao' %}" class="btn-voltar">
-      <i class="bi bi-arrow-left"></i> Voltar à Central
-    </a>
-    
-    <div class="doc-header">
-      <h1><i class="bi bi-book"></i> Documentação - Jornada Lead</h1>
-      <p>Documentação técnica completa do fluxo de captação, qualificação e comissionamento de leads</p>
-    </div>
+{% extends 'core/doc_base.html' %}
 
 
-    <div class="row">
-      <div class="col-md-3">
-        <div class="doc-card" style="min-height:100%;">
-          <h3>Navegação</h3>
-          <ul style="padding-left:1rem; list-style:none;">
-            <li><a href="#visao-geral" class="sumario-link">Visão Geral da Jornada Lead</a></li>
-            <li><a href="#caracteristicas" class="sumario-link">Principais Características</a></li>
-            <li><a href="#tecnologias" class="sumario-link">Tecnologias Utilizadas</a></li>
-            <li><a href="#jornada" class="sumario-link">Jornada do Usuário - Fluxo Completo</a></li>
-            <li><a href="#etapas-fluxo" class="sumario-link">Etapas do Fluxo</a></li>
-            <li><a href="#painel-configuracoes" class="sumario-link">Painel de Configurações</a></li>
-            <li><a href="#etapas-detalhadas" class="sumario-link">Etapas Detalhadas</a></li>
-            <li><a href="#dados" class="sumario-link">Estrutura de Dados</a></li>
-            <li><a href="#validacoes" class="sumario-link">Validações e Regras</a></li>
-            <li><a href="#tecnico" class="sumario-link">Considerações Técnicas</a></li>
-          </ul>
-        </div>
-      </div>
-      
-      <div class="col-md-9">
-        <div class="doc-card mb-4" id="visao-geral">
-          <h2>Visão Geral da Jornada Lead</h2>
-          <p>
-            O sistema Lead gerencia todo o ciclo de vida do potencial cliente, desde o contato inicial até o acompanhamento comercial, 
-            com integração completa de pagamentos PIX via ASAAS e comissionamento automático.
-          </p>
-          <div class="doc-alert doc-alert-info">
-            <strong>Objetivo:</strong> Automatizar todo o processo de captação, qualificação, pagamento e comissionamento, 
-            garantindo rastreabilidade e eficiência operacional.
-          </div>
-        </div>
+{% block doc_content %}
 
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <div class="doc-card" id="caracteristicas" style="height: 100%;">
-              <h3>Principais Características</h3>
-              <ul>
-                <li>Captura de leads com validação em tempo real</li>
-                <li>Integração com ASAAS para pagamentos PIX</li>
-                <li>Comissionamento automático</li>
-                <li>Auditoria completa de todas as ações</li>
-                <li>Acompanhamento comercial integrado</li>
-              </ul>
-            </div>
-          </div>
-          <div class="col-md-6 mb-3">
-            <div class="doc-card" id="tecnologias" style="height: 100%;">
-              <h3>Tecnologias Utilizadas</h3>
-              <ul>
-                <li>Backend: Django/Python</li>
-                <li>Frontend: HTML, CSS, JavaScript</li>
-                <li>Banco de Dados: PostgreSQL</li>
-                <li>Pagamentos: API ASAAS</li>
-                <li>Diagramas: Mermaid.js</li>
-              </ul>
-            </div>
-          </div>
-        </div>
 
-        <div class="doc-card mb-4" id="jornada">
-          <h2>Jornada do Usuário - Fluxo Completo</h2>
-          <div class="flow-diagram">
-            <div class="mermaid">
-              graph TD
-                A["Contato Inicial<br/>Formulário de Atendimento"] --> B["Cadastro do Lead<br/>Persistência dos dados"]
-                B --> C{"Fez Levantamento?"}
-                C -->|Não| H["Acompanhamento Comercial"]
-                C -->|Sim| D["Geração do PIX<br/>Integração com ASAAS"]
-                D --> E["Webhook ASAAS<br/>Confirmação de Pagamento"]
-                E --> F["Comissionamento Automático<br/>Registro para atendente"]
-                F --> H
-                E --> G["Atualização Status<br/>Lead para Pago"]
-                G --> H
-            </div>
-          </div>
-        </div>
 
-        <div class="doc-card mb-4" id="etapas-fluxo">
-          <h3>Etapas do Fluxo</h3>
-          <p class="mb-2"><strong>1. Captação Inicial</strong></p>
-          <ul class="mb-3">
-            <li>Lead chega ao sistema via formulário web, ligação ou indicação</li>
-            <li>Dados básicos são coletados (nome, telefone, e-mail opcional)</li>
-            <li>Sistema atribui automaticamente um atendente</li>
-            <li>Status inicial: <span class="doc-badge doc-badge-info">NOVO</span></li>
-          </ul>
-          
-          <p class="mb-2"><strong>2. Qualificação e Levantamento</strong></p>
-          <ul class="mb-3">
-            <li>Atendente entra em contato com o lead</li>
-            <li>Identifica necessidade de levantamento de informações</li>
-            <li>Sistema gera cobrança PIX via integração Asaas</li>
-            <li>Valor configurável: <span class="doc-badge doc-badge-warning">R$ 0,50</span> (padrão)</li>
-            <li>Status: <span class="doc-badge doc-badge-warning">AGUARDANDO_PAGAMENTO</span></li>
-          </ul>
-          
-          <p class="mb-2"><strong>3. Confirmação de Pagamento</strong></p>
-          <ul class="mb-3">
-            <li>Cliente realiza pagamento via PIX</li>
-            <li>Webhook Asaas notifica o sistema automaticamente</li>
-            <li>Sistema atualiza status do lead</li>
-            <li>Status: <span class="doc-badge doc-badge-success">LEVANTAMENTO_PAGO</span></li>
-          </ul>
-          
-          <p class="mb-2"><strong>4. Comissionamento Automático</strong></p>
-          <ul class="mb-0">
-            <li>Sistema cria registro de comissão para o atendente</li>
-            <li>Valor fixo: <span class="doc-badge doc-badge-success">R$ 0,50</span> (padrão)</li>
-            <li>Vinculado ao lead e ao usuário responsável</li>
-            <li>Rastreável via painel de comissões</li>
-          </ul>
 
-        </div>
+<style>
+  .doc-content-lead * {
+    font-size: 0.97rem !important;
+  }
+  .doc-content-lead h2 {
+    font-size: 1.4rem !important;
+  }
+  .doc-content-lead h3 {
+    font-size: 1.13rem !important;
+  }
+  .doc-content-lead table th, .doc-content-lead table td {
+    font-size: 0.95rem !important;
+  }
+  .doc-banner-lead {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    height: 160px;
+    background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 24px;
+    margin-bottom: 2.5rem;
+    padding: 2.5rem 2.5rem 2.5rem 3.5rem;
+    color: #fff;
+    position: relative;
+  }
+  .doc-banner-lead h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    color: #fff;
+  }
+  .doc-banner-lead p {
+    font-size: 1.08rem;
+    font-weight: 400;
+    margin-bottom: 0;
+    color: #e0e7ff;
+  }
+</style>
 
-        <section id="painel-configuracoes" class="doc-card mb-4">
-          <h2><i class="bi bi-gear-wide-connected"></i> Painel de Configurações (Lead)</h2>
-          <p>O comportamento do fluxo de Lead é governado pelo Painel de Configurações. Abaixo, as chaves relevantes, seus tipos, valores padrão, impacto no sistema, status e o valor atual configurado.</p>
-          <div style="margin: .5rem 0 1rem;">
-            <a href="{% url 'core:painel_configuracoes' %}" class="btn-dashboard" style="padding:.5rem 1rem;">
-              <i class="bi bi-sliders"></i> Abrir Painel de Configurações
-            </a>
-          </div>
-          
-          <div class="doc-card">
-            <h3>Captura e Cadastro</h3>
-            <table class="table">
-              <thead>
-                <tr><th>Chave</th><th>Tipo</th><th>Padrão</th><th>Valor atual</th><th>Impacto</th><th>Status</th></tr>
-              </thead>
-              <tbody>
-                <tr><td><span class="code">LEAD_OBRIGAR_EMAIL</span></td><td><span class="badge badge-primary">Booleano</span></td><td>false</td><td><code>{{ config_values_by_category.lead_captura.0.valor_atual }}</code></td><td>Exige e-mail no cadastro do Lead.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-                <tr><td><span class="code">LEAD_OBRIGAR_CPF_PARA_LEVANTAMENTO</span></td><td><span class="badge badge-primary">Booleano</span></td><td>true</td><td><code>{{ config_values_by_category.lead_captura.1.valor_atual }}</code></td><td>Exige CPF/CNPJ para gerar o PIX do levantamento.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-                <tr><td><span class="code">LEAD_STATUS_INICIAL</span></td><td><span class="badge badge-primary">Texto</span></td><td>NOVO</td><td><code>{{ config_values_by_category.lead_captura.2.valor_atual }}</code></td><td>Define o status inicial do Lead ao salvar.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-              </tbody>
-            </table>
-          </div>
-          
-          <div class="doc-card">
-            <h3>PIX e Integração ASAAS</h3>
-            <table class="table">
-              <thead>
-                <tr><th>Chave</th><th>Tipo</th><th>Padrão</th><th>Valor atual</th><th>Impacto</th><th>Status</th></tr>
-              </thead>
-              <tbody>
-                <tr><td><span class="code">PIX_VALOR_LEVANTAMENTO</span></td><td><span class="badge badge-primary">Número</span></td><td>0.50</td><td><code>{{ config_values_by_category.lead_pix.0.valor_atual }}</code></td><td>Valor da cobrança PIX de levantamento.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-                <tr><td><span class="code">PIX_DESCRICAO</span></td><td><span class="badge badge-primary">Texto</span></td><td>Levantamento de informações (PIX)</td><td><code>{{ config_values_by_category.lead_pix.1.valor_atual }}</code></td><td>Descrição da cobrança PIX.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-                <tr><td><span class="code">PIX_EXPIRA_MINUTOS</span></td><td><span class="badge badge-primary">Número</span></td><td>60</td><td><code>{{ config_values_by_category.lead_pix.2.valor_atual }}</code></td><td>Tempo para expiração do PIX (a ser aplicado conforme suporte ASAAS).</td><td><span class="badge badge-warning">Em breve</span></td></tr>
-                <tr><td><span class="code">ASAAS_MAX_RETRIES</span></td><td><span class="badge badge-primary">Número</span></td><td>3</td><td><code>{{ config_values_by_category.lead_pix.3.valor_atual }}</code></td><td>Número máximo de tentativas na API ASAAS.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-                <tr><td><span class="code">ASAAS_TIMEOUT</span></td><td><span class="badge badge-primary">Número</span></td><td>30</td><td><code>{{ config_values_by_category.lead_pix.4.valor_atual }}</code></td><td>Timeout (segundos) para chamadas ASAAS.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-              </tbody>
-            </table>
-          </div>
-          
-          <div class="doc-card">
-            <h3>Pagamento, Comissão e Acompanhamento</h3>
-            <table class="table">
-              <thead>
-                <tr><th>Chave</th><th>Tipo</th><th>Padrão</th><th>Valor atual</th><th>Impacto</th><th>Status</th></tr>
-              </thead>
-              <tbody>
-                <tr><td><span class="code">LEAD_STATUS_APOS_PAGAMENTO</span></td><td><span class="badge badge-primary">Texto</span></td><td>LEVANTAMENTO_PAGO</td><td><code>{{ config_values_by_category.lead_pagamento.0.valor_atual }}</code></td><td>Status do Lead após pagamento confirmado (Webhook).</td><td><span class="badge badge-success">Ativo</span></td></tr>
-                <tr><td><span class="code">COMISSAO_ATIVA</span></td><td><span class="badge badge-primary">Booleano</span></td><td>true</td><td><code>{{ config_values_by_category.lead_comissao.0.valor_atual }}</code></td><td>Cria registro em Comissão do Lead para o atendente.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-                <tr><td><span class="code">COMISSAO_ATENDENTE_VALOR_FIXO</span></td><td><span class="badge badge-primary">Número</span></td><td>0.50</td><td><code>{{ config_values_by_category.lead_comissao.1.valor_atual }}</code></td><td>Valor fixo da comissão por Lead pago.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-                <tr><td><span class="code">FOLLOWUP_INTERVALO_PADRAO_DIAS</span></td><td><span class="badge badge-primary">Número</span></td><td>2</td><td><code>{{ config_values_by_category.lead_acompanhamento.0.valor_atual }}</code></td><td>Cria notificação para realizar follow-up em N dias.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-                <tr><td><span class="code">LEAD_STATUS_CONTATO</span></td><td><span class="badge badge-primary">Texto</span></td><td>CONTATADO</td><td><code>{{ config_values_by_category.lead_acompanhamento.1.valor_atual }}</code></td><td>Status setado após agendar follow-up.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-              </tbody>
-            </table>
-          </div>
-          
-          <div class="doc-card">
-            <h3>Auditoria & Logs</h3>
-            <table class="table">
-              <thead>
-                <tr><th>Chave</th><th>Tipo</th><th>Padrão</th><th>Valor atual</th><th>Impacto</th><th>Status</th></tr>
-              </thead>
-              <tbody>
-                <tr><td><span class="code">LOG_ATIVO</span></td><td><span class="badge badge-primary">Booleano</span></td><td>true</td><td><code>{{ config_values_by_category.auditoria_logs.0.valor_atual }}</code></td><td>Ativa/Desativa persistência de logs no banco.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-                <tr><td><span class="code">LOG_NIVEL_MINIMO</span></td><td><span class="badge badge-primary">Texto</span></td><td>INFO</td><td><code>{{ config_values_by_category.auditoria_logs.1.valor_atual }}</code></td><td>Ignora logs abaixo do nível mínimo.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-              </tbody>
-            </table>
-          </div>
-          <p class="small" style="margin-top:.5rem; color:#556;">Notas: 1) "Em breve" indica chaves já presentes no painel mas ainda não aplicadas na integração ASAAS; 2) todos os valores podem ser ajustados em tempo real no painel, com auditoria.</p>
-        </section>
 
-        <section id="etapas-detalhadas" class="doc-card mb-4">
-          <h2>Etapas Detalhadas da Jornada</h2>
-          
-          <div class="doc-card">
-            <h3>Contato Inicial</h3>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Campo</th><th>Tipo</th><th>Obrigatoriedade</th><th>Descrição</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td><span class="code">nome_completo</span></td><td><span class="badge badge-primary">String</span></td><td><span class="badge badge-success">Obrigatório</span></td><td>Nome completo do lead</td></tr>
-                <tr><td><span class="code">telefone</span></td><td><span class="badge badge-primary">String</span></td><td><span class="badge badge-success">Obrigatório</span></td><td>Telefone/WhatsApp</td></tr>
-                <tr><td><span class="code">cpf_cnpj</span></td><td><span class="badge badge-primary">String</span></td><td><span class="badge badge-warning">Condicional</span></td><td>CPF ou CNPJ</td></tr>
-                <tr><td><span class="code">email</span></td><td><span class="badge badge-primary">String</span></td><td><span class="badge badge-secondary">Opcional</span></td><td>E-mail do lead</td></tr>
-                <tr><td><span class="code">origem</span></td><td><span class="badge badge-primary">ForeignKey</span></td><td><span class="badge badge-success">Obrigatório</span></td><td>Origem do lead</td></tr>
-                <tr><td><span class="code">fez_levantamento</span></td><td><span class="badge badge-primary">Boolean</span></td><td><span class="badge badge-success">Obrigatório</span></td><td>Indica se optou por levantamento</td></tr>
-              </tbody>
-            </table>
-          </div>
-          
-          <div class="doc-card">
-            <h3>Cadastro do Lead</h3>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Campo</th><th>Tipo</th><th>Descrição</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td><span class="code">nome_completo</span></td><td><span class="badge badge-primary">CharField</span></td><td>Nome completo do lead</td></tr>
-                <tr><td><span class="code">telefone</span></td><td><span class="badge badge-primary">CharField</span></td><td>Telefone/WhatsApp</td></tr>
-                <tr><td><span class="code">cpf_cnpj</span></td><td><span class="badge badge-primary">CharField</span></td><td>CPF ou CNPJ</td></tr>
-                <tr><td><span class="code">email</span></td><td><span class="badge badge-primary">EmailField</span></td><td>E-mail do lead</td></tr>
-                <tr><td><span class="code">origem</span></td><td><span class="badge badge-primary">ForeignKey</span></td><td>Origem do lead (OrigemLead)</td></tr>
-                <tr><td><span class="code">fez_levantamento</span></td><td><span class="badge badge-primary">BooleanField</span></td><td>Indica se fez levantamento</td></tr>
-                <tr><td><span class="code">status</span></td><td><span class="badge badge-primary">CharField</span></td><td>Status do lead</td></tr>
-                <tr><td><span class="code">captador</span></td><td><span class="badge badge-primary">ForeignKey</span></td><td>Usuário que indicou</td></tr>
-                <tr><td><span class="code">atendente</span></td><td><span class="badge badge-primary">ForeignKey</span></td><td>Usuário que cadastrou</td></tr>
-                <tr><td><span class="code">cliente_asaas</span></td><td><span class="badge badge-primary">ForeignKey</span></td><td>Referência ao cliente na ASAAS</td></tr>
-                <tr><td><span class="code">data_cadastro</span></td><td><span class="badge badge-primary">DateTimeField</span></td><td>Data/hora do cadastro</td></tr>
-                <tr><td><span class="code">data_atualizacao</span></td><td><span class="badge badge-primary">DateTimeField</span></td><td>Data/hora da última atualização</td></tr>
-              </tbody>
-            </table>
-          </div>
-          
-          <div class="doc-card">
-            <h3>Decisão de Levantamento</h3>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Opção</th><th>Próxima Ação</th><th>Status do Lead</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td><span class="badge badge-secondary">Não fez levantamento</span></td><td>Lead segue para acompanhamento comercial</td><td><span class="badge badge-primary">NOVO</span></td></tr>
-                <tr><td><span class="badge badge-success">Fez levantamento</span></td><td>Inicia processo de cobrança PIX</td><td><span class="badge badge-warning">LEVANTAMENTO_PENDENTE</span></td></tr>
-              </tbody>
-            </table>
-          </div>
-          
-          <div class="doc-card">
-            <h3>Geração do PIX</h3>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Campo</th><th>Origem</th><th>Descrição</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td><span class="code">asaas_id</span></td><td>ASAAS</td><td>Identificador do cliente na ASAAS</td></tr>
-                <tr><td><span class="code">valor</span></td><td>Sistema</td><td>Valor fixo da cobrança</td></tr>
-                <tr><td><span class="code">pix_copia_cola</span></td><td>ASAAS</td><td>Código PIX para pagamento</td></tr>
-                <tr><td><span class="code">status_pix</span></td><td>ASAAS</td><td>Status da cobrança</td></tr>
-                <tr><td><span class="code">payload_pix</span></td><td>ASAAS</td><td>Dados completos da cobrança</td></tr>
-                <tr><td><span class="code">data_criacao_pix</span></td><td>Sistema</td><td>Data/hora da geração</td></tr>
-              </tbody>
-            </table>
-          </div>
-          
-          <div class="doc-card">
-            <h3>Confirmação de Pagamento</h3>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Campo</th><th>Valor</th><th>Descrição</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td><span class="code">status_pagamento</span></td><td><span class="badge badge-success">confirmado</span></td><td>Status do pagamento</td></tr>
-                <tr><td><span class="code">data_pagamento</span></td><td>Data/hora atual</td><td>Data da confirmação</td></tr>
-                <tr><td><span class="code">id_transacao</span></td><td>ASAAS</td><td>Identificador da transação</td></tr>
-                <tr><td><span class="code">status</span></td><td><span class="badge badge-success">LEVANTAMENTO_PAGO</span></td><td>Status atualizado do lead</td></tr>
-              </tbody>
-            </table>
-          </div>
-          
-          <div class="doc-card">
-            <h3>Comissionamento Automático</h3>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Campo</th><th>Tipo</th><th>Descrição</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td><span class="code">lead</span></td><td><span class="badge badge-primary">ForeignKey</span></td><td>Referência ao lead</td></tr>
-                <tr><td><span class="code">atendente</span></td><td><span class="badge badge-primary">ForeignKey</span></td><td>Usuário que recebe a comissão</td></tr>
-                <tr><td><span class="code">valor</span></td><td><span class="badge badge-primary">DecimalField</span></td><td>Valor fixo por lead (R$ 0,50)</td></tr>
-                <tr><td><span class="code">data_criacao</span></td><td><span class="badge badge-primary">DateTimeField</span></td><td>Data/hora do registro</td></tr>
-              </tbody>
-            </table>
-          </div>
-          
-          <div class="doc-card">
-            <h3>Acompanhamento Comercial</h3>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Status</th><th>Descrição</th><th>Condição</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td><span class="badge badge-primary">NOVO</span></td><td>Lead cadastrado sem levantamento</td><td>fez_levantamento = False</td></tr>
-                <tr><td><span class="badge badge-warning">LEVANTAMENTO_PENDENTE</span></td><td>Lead com PIX gerado</td><td>PIX gerado, não pago</td></tr>
-                <tr><td><span class="badge badge-success">LEVANTAMENTO_PAGO</span></td><td>Lead com pagamento confirmado</td><td>Webhook confirmado</td></tr>
-                <tr><td><span class="badge badge-secondary">CONTATADO</span></td><td>Lead em contato comercial</td><td>Início do acompanhamento</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
+<div class="doc-banner-lead">
+  <h1>Documentação Técnica - Jornada Lead</h1>
+  <p>Documentação completa do fluxo de captação, qualificação e comissionamento de leads</p>
+</div>
 
-        <section id="dados" class="doc-card mb-4">
-          <h2>Estrutura de Dados e Relacionamentos</h2>
-          
-          <div class="doc-card">
-            <h3>Dados de Auditoria</h3>
-            <table class="table">
-              <thead>
-                <tr><th>Campo</th><th>Tipo</th><th>Descrição</th></tr>
-              </thead>
-              <tbody>
-                <tr><td><span class="code">usuario</span></td><td><span class="badge badge-primary">ForeignKey</span></td><td>Usuário que realizou a ação</td></tr>
-                <tr><td><span class="code">ip</span></td><td><span class="badge badge-primary">GenericIPAddressField</span></td><td>IP do usuário</td></tr>
-                <tr><td><span class="code">modulo</span></td><td><span class="badge badge-primary">CharField</span></td><td>Módulo do sistema</td></tr>
-                <tr><td><span class="code">acao</span></td><td><span class="badge badge-primary">CharField</span></td><td>Tipo de ação</td></tr>
-                <tr><td><span class="code">mensagem</span></td><td><span class="badge badge-primary">TextField</span></td><td>Descrição do evento</td></tr>
-                <tr><td><span class="code">data_evento</span></td><td><span class="badge badge-primary">DateTimeField</span></td><td>Data/hora do evento</td></tr>
-              </tbody>
-            </table>
-          </div>
-          
-          <div class="doc-card">
-            <h3>Dados Relacionais Dinâmicos</h3>
-            <table class="table">
-              <thead>
-                <tr><th>Modelo</th><th>Propósito</th><th>Relacionamento</th></tr>
-              </thead>
-              <tbody>
-                <tr><td><span class="code">OrigemLead</span></td><td>Lista de origens</td><td><span class="badge badge-primary">ForeignKey</span> em Lead</td></tr>
-                <tr><td><span class="code">MotivoContato</span></td><td>Motivos/perfis emocionais</td><td><span class="badge badge-primary">ForeignKey</span> em Lead (opcional)</td></tr>
-                <tr><td><span class="code">ClienteAsaas</span></td><td>Dados do cliente na ASAAS</td><td><span class="badge badge-primary">ForeignKey</span> em Lead</td></tr>
-                <tr><td><span class="code">PixLevantamento</span></td><td>Dados da cobrança PIX associada</td><td><span class="badge badge-primary">OneToOne</span> com Lead</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
+<div class="doc-content-lead">
 
-        <section id="validacoes" class="doc-card mb-4">
-          <h2>Validações e Regras de Negócio</h2>
-          <div class="row">
-            <div class="col-md-6">
-              <div class="doc-card" style="height: 100%;">
-                <h3>Validações no Front-end</h3>
-                <ul>
-                  <li>Formatação automática de telefone</li>
-                  <li>Validação de campos obrigatórios</li>
-                  <li>Seleção dinâmica de origens</li>
-                  <li>Máscara para CPF/CNPJ</li>
-                  <li>Validação de e-mail</li>
-                </ul>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="doc-card" style="height: 100%;">
-                <h3>Regras de Negócio no Backend</h3>
-                <ul>
-                  <li>CPF/CNPJ obrigatório apenas para levantamento</li>
-                  <li>Comissionamento automático após confirmação de pagamento</li>
-                  <li>Status atualizado via webhook em tempo real</li>
-                  <li>Log completo de todas as ações do sistema</li>
-                  <li>Campo <span class="code">atendente</span> para rastreio e comissionamento</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
+<h2 id="visao-geral">Visão Geral da Jornada Lead</h2>
+<p>
+  O sistema <strong>Lead</strong> gerencia todo o ciclo de vida do potencial cliente, desde o contato inicial até o acompanhamento comercial, com integração completa de pagamentos PIX via ASAAS e comissionamento automático.
+</p>
+<p><strong>Objetivo:</strong> Automatizar todo o processo de captação, qualificação, pagamento e comissionamento, garantindo rastreabilidade e eficiência operacional.</p>
 
-        <section id="tecnico" class="doc-card mb-4">
-          <h2>Considerações Técnicas e Atualizações</h2>
-          <table class="table">
-            <thead>
-              <tr><th>Componente</th><th>Alteração</th><th>Impacto</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Modelo Lead</td><td>Campo consultor → atendente</td><td>Ajuste em todo o sistema</td></tr>
-              <tr><td>Comissionamento</td><td>Usa atendente do Lead</td><td>Comissionamento correto</td></tr>
-              <tr><td>Backend</td><td>Views e models atualizados</td><td>Funcionamento correto</td></tr>
-              <tr><td>Frontend</td><td>Navegação por âncoras</td><td>Menu lateral funcional</td></tr>
-            </tbody>
-          </table>
-          <ul>
-            <li><strong>ASAAS:</strong> Webhooks para atualização em tempo real</li>
-            <li><strong>Comissionamento:</strong> Processo automático e auditável</li>
-            <li><strong>Auditoria:</strong> Rastreabilidade completa de todas as ações</li>
-            <li><strong>Flexibilidade:</strong> Dados dinâmicos configuráveis via admin</li>
-            <li><strong>Segurança:</strong> Validações em múltiplas camadas</li>
-          </ul>
-        </section>
-      </div>
-    </div>
+<h2 id="caracteristicas">Principais Características</h2>
+<ul>
+  <li>Captura de leads com validação em tempo real</li>
+  <li>Integração com ASAAS para pagamentos PIX</li>
+  <li>Comissionamento automático</li>
+  <li>Auditoria completa de todas as ações</li>
+  <li>Acompanhamento comercial integrado</li>
+</ul>
 
-    <footer>
-      <div class="footer-inner">
-        <p><strong>Documentação do Sistema Lead</strong> | Versão 2.0 | Última atualização: <span id="current-date"></span></p>
-        <p>Documento elaborado para: Equipe de Desenvolvimento e Gestão Comercial</p>
-      </div>
-    </footer>
-  </div>
+<h2 id="tecnologias">Tecnologias Utilizadas</h2>
+<ul>
+  <li><strong>Backend:</strong> Django/Python</li>
+  <li><strong>Frontend:</strong> HTML, CSS, JavaScript</li>
+  <li><strong>Banco de Dados:</strong> PostgreSQL</li>
+  <li><strong>Pagamentos:</strong> API ASAAS</li>
+  <li><strong>Diagramas:</strong> Mermaid.js</li>
+</ul>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  
-  <script>
-    // Inicializa Mermaid
-    mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+<h2 id="fluxo">Jornada do Usuário - Fluxo Completo</h2>
+<pre><code>
+1. Contato Inicial
+   ↓
+2. Formulário de Atendimento → Cadastro do Lead
+   ↓
+3. Persistência dos dados → Fez Levantamento?
+   ↓
+   Não → Acompanhamento Comercial
+   Sim → Geração do PIX
+   ↓
+4. Integração com ASAAS → Webhook ASAAS
+   ↓
+5. Confirmação de Pagamento → Comissionamento Automático
+   ↓
+6. Registro para atendente → Acompanhamento Comercial
+   ↓
+7. Atualização Status
+   Lead para Pago → Acompanhamento Comercial
+</code></pre>
 
-    // Atualiza data
-    document.getElementById('current-date').textContent = new Date().toLocaleDateString('pt-BR');
+<h2 id="etapas">Etapas do Fluxo</h2>
+<h3>1. Captação Inicial</h3>
+<ul>
+  <li>Lead chega ao sistema via formulário web, ligação ou indicação</li>
+  <li>Dados básicos são coletados (nome, telefone, e-mail opcional)</li>
+  <li>Sistema atribui automaticamente um atendente</li>
+  <li>Status inicial: <span class="badge bg-primary">NOVO</span></li>
+</ul>
+<h3>2. Qualificação e Levantamento</h3>
+<ul>
+  <li>Atendente entra em contato com o lead</li>
+  <li>Identifica necessidade de levantamento de informações</li>
+  <li>Sistema gera cobrança PIX via integração ASAAS</li>
+  <li>Valor configurável: <strong>R$ 0,50</strong> (padrão)</li>
+  <li>Status: <span class="badge bg-warning">AGUARDANDO_PAGAMENTO</span></li>
+</ul>
+<h3>3. Confirmação de Pagamento</h3>
+<ul>
+  <li>Cliente realiza pagamento via PIX</li>
+  <li>Webhook ASAAS notifica o sistema automaticamente</li>
+  <li>Sistema atualiza status do lead</li>
+  <li>Status: <span class="badge bg-success">LEVANTAMENTO_PAGO</span></li>
+</ul>
+<h3>4. Comissionamento Automático</h3>
+<ul>
+  <li>Sistema cria registro de comissão para o atendente</li>
+  <li>Valor fixo: <strong>R$ 0,50</strong> (padrão)</li>
+  <li>Vinculado ao lead e ao usuário responsável</li>
+  <li>Rastreável via painel de comissões</li>
+</ul>
 
-    // Navegação do sumário (scroll suave + realce)
-    (function(){
-      const links = Array.from(document.querySelectorAll('.sumario-link'));
-      const sections = document.querySelectorAll('[id]');
+<h2 id="painel-configuracoes">Painel de Configurações (Lead)</h2>
+<p>O comportamento do fluxo de Lead é governado pelo Painel de Configurações. Abaixo, as chaves relevantes, seus tipos, valores padrão, impacto no sistema, status e o valor atual configurado.</p>
+<div class="doc-card">
+  <a href="#" class="btn btn-primary">Abrir Painel de Configurações</a>
+</div>
 
-      function setActive(id){ 
-        links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id)); 
-      }
+<h3>Captura e Cadastro</h3>
+<table class="table">
+  <thead>
+    <tr><th>Chave</th><th>Tipo</th><th>Padrão</th><th>Valor atual</th><th>Impacto</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>LEAD_OBRIGAR_EMAIL</td><td>Booleano</td><td>false</td><td>Ativo</td><td>Exige e-mail no cadastro do Lead.</td><td>Ativo</td></tr>
+    <tr><td>LEAD_OBRIGAR_CPF_PARA_LEVANTAMENTO</td><td>Booleano</td><td>true</td><td>Ativo</td><td>Exige CPF/CNPJ para gerar o PIX do levantamento.</td><td>Ativo</td></tr>
+    <tr><td>LEAD_STATUS_INICIAL</td><td>Texto</td><td>NOVO</td><td>Ativo</td><td>Define o status inicial do Lead ao salvar.</td><td>Ativo</td></tr>
+  </tbody>
+</table>
 
-      links.forEach(a => a.addEventListener('click', (e)=>{
-        e.preventDefault();
-        const id = a.getAttribute('href').substring(1);
-        const target = document.getElementById(id);
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          setActive(id);
-        }
-        if (id === 'jornada') mermaid.init();
-      }));
+<h3>PIX e Integração ASAAS</h3>
+<table class="table">
+  <thead>
+    <tr><th>Chave</th><th>Tipo</th><th>Padrão</th><th>Valor atual</th><th>Impacto</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>PIX_VALOR_LEVANTAMENTO</td><td>Número</td><td>0.50</td><td>Ativo</td><td>Valor da cobrança PIX de levantamento.</td><td>Ativo</td></tr>
+    <tr><td>PIX_DESCRICAO</td><td>Texto</td><td>Levantamento de informações (PIX)</td><td>Ativo</td><td>Descrição da cobrança PIX.</td><td>Ativo</td></tr>
+    <tr><td>PIX_EXPIRA_MINUTOS</td><td>Número</td><td>60</td><td>Em breve</td><td>Tempo para expiração do PIX (a ser aplicado conforme suporte ASAAS).</td><td>Em breve</td></tr>
+    <tr><td>ASAAS_MAX_RETRIES</td><td>Número</td><td>3</td><td>Ativo</td><td>Número máximo de tentativas na API ASAAS.</td><td>Ativo</td></tr>
+    <tr><td>ASAAS_TIMEOUT</td><td>Número</td><td>30</td><td>Ativo</td><td>Timeout (segundos) para chamadas ASAAS.</td><td>Ativo</td></tr>
+  </tbody>
+</table>
 
-      window.addEventListener('scroll', () => {
-        let current = '';
-        sections.forEach(section => {
-          const sectionTop = section.offsetTop;
-          if (pageYOffset >= sectionTop - 60) {
-            current = section.getAttribute('id');
-          }
-        });
-        if (current) setActive(current);
-      });
-    })();
+<h3>Pagamento, Comissão e Acompanhamento</h3>
+<table class="table">
+  <thead>
+    <tr><th>Chave</th><th>Tipo</th><th>Padrão</th><th>Valor atual</th><th>Impacto</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>LEAD_STATUS_APOS_PAGAMENTO</td><td>Texto</td><td>LEVANTAMENTO_PAGO</td><td>Ativo</td><td>Status do Lead após pagamento confirmado (Webhook).</td><td>Ativo</td></tr>
+    <tr><td>COMISSAO_ATIVA</td><td>Booleano</td><td>true</td><td>Ativo</td><td>Cria registro em Comissão do Lead para o atendente.</td><td>Ativo</td></tr>
+    <tr><td>COMISSAO_ATENDENTE_VALOR_FIXO</td><td>Número</td><td>0.50</td><td>Ativo</td><td>Valor fixo da comissão por Lead pago.</td><td>Ativo</td></tr>
+    <tr><td>FOLLOWUP_INTERVALO_PADRAO_DIAS</td><td>Número</td><td>2</td><td>Ativo</td><td>Cria notificação para realizar follow-up em N dias.</td><td>Ativo</td></tr>
+    <tr><td>LEAD_STATUS_CONTATO</td><td>Texto</td><td>CONTATADO</td><td>Ativo</td><td>Status setado após agendar follow-up.</td><td>Ativo</td></tr>
+  </tbody>
+</table>
 
-    // Ctrl+P imprime
-    document.addEventListener('keydown', function(e){ 
-      if (e.ctrlKey && e.key === 'p'){ 
-        e.preventDefault(); 
-        window.print(); 
-      }
-    });
-  </script>
-</body>
-</html>
-        <h2><i class="bi bi-gear-wide-connected"></i> Painel de Configurações (Lead)</h2>
-        <p>O comportamento do fluxo de Lead é governado pelo Painel de Configurações. Abaixo, as chaves relevantes, seus tipos, valores padrão, impacto no sistema, status e o valor atual configurado.</p>
-        <div style="margin: .5rem 0 1rem;">
-          <a href="{% url 'core:painel_configuracoes' %}" class="btn btn-dashboard" style="padding:.5rem 1rem;">
-            <i class="bi bi-sliders"></i> Abrir Painel de Configurações
-          </a>
-        </div>
-        <div class="card">
-          <h3>Captura e Cadastro</h3>
-          <table>
-            <thead>
-              <tr><th>Chave</th><th>Tipo</th><th>Padrão</th><th>Valor atual</th><th>Impacto</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>LEAD_OBRIGAR_EMAIL</td><td><span class="badge badge-primary">Booleano</span></td><td>false</td><td><code>{{ config_values_by_category.lead_captura.0.valor_atual }}</code></td><td>Exige e-mail no cadastro do Lead.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-              <tr><td>LEAD_OBRIGAR_CPF_PARA_LEVANTAMENTO</td><td><span class="badge badge-primary">Booleano</span></td><td>true</td><td><code>{{ config_values_by_category.lead_captura.1.valor_atual }}</code></td><td>Exige CPF/CNPJ para gerar o PIX do levantamento.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-              <tr><td>LEAD_STATUS_INICIAL</td><td><span class="badge badge-primary">Texto</span></td><td>NOVO</td><td><code>{{ config_values_by_category.lead_captura.2.valor_atual }}</code></td><td>Define o status inicial do Lead ao salvar.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card">
-          <h3>PIX e Integração ASAAS</h3>
-          <table>
-            <thead>
-              <tr><th>Chave</th><th>Tipo</th><th>Padrão</th><th>Valor atual</th><th>Impacto</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>PIX_VALOR_LEVANTAMENTO</td><td><span class="badge badge-primary">Número</span></td><td>0.50</td><td><code>{{ config_values_by_category.lead_pix.0.valor_atual }}</code></td><td>Valor da cobrança PIX de levantamento.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-              <tr><td>PIX_DESCRICAO</td><td><span class="badge badge-primary">Texto</span></td><td>Levantamento de informações (PIX)</td><td><code>{{ config_values_by_category.lead_pix.1.valor_atual }}</code></td><td>Descrição da cobrança PIX.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-              <tr><td>PIX_EXPIRA_MINUTOS</td><td><span class="badge badge-primary">Número</span></td><td>60</td><td><code>{{ config_values_by_category.lead_pix.2.valor_atual }}</code></td><td>Tempo para expiração do PIX (a ser aplicado conforme suporte ASAAS).</td><td><span class="badge badge-warning">Em breve</span></td></tr>
-              <tr><td>ASAAS_MAX_RETRIES</td><td><span class="badge badge-primary">Número</span></td><td>3</td><td><code>{{ config_values_by_category.lead_pix.3.valor_atual }}</code></td><td>Número máximo de tentativas na API ASAAS.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-              <tr><td>ASAAS_TIMEOUT</td><td><span class="badge badge-primary">Número</span></td><td>30</td><td><code>{{ config_values_by_category.lead_pix.4.valor_atual }}</code></td><td>Timeout (segundos) para chamadas ASAAS.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card">
-          <h3>Pagamento, Comissão e Acompanhamento</h3>
-          <table>
-            <thead>
-              <tr><th>Chave</th><th>Tipo</th><th>Padrão</th><th>Valor atual</th><th>Impacto</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>LEAD_STATUS_APOS_PAGAMENTO</td><td><span class="badge badge-primary">Texto</span></td><td>LEVANTAMENTO_PAGO</td><td><code>{{ config_values_by_category.lead_pagamento.0.valor_atual }}</code></td><td>Status do Lead após pagamento confirmado (Webhook).</td><td><span class="badge badge-success">Ativo</span></td></tr>
-              <tr><td>COMISSAO_ATIVA</td><td><span class="badge badge-primary">Booleano</span></td><td>true</td><td><code>{{ config_values_by_category.lead_comissao.0.valor_atual }}</code></td><td>Cria registro em Comissão do Lead para o atendente.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-              <tr><td>COMISSAO_ATENDENTE_VALOR_FIXO</td><td><span class="badge badge-primary">Número</span></td><td>0.50</td><td><code>{{ config_values_by_category.lead_comissao.1.valor_atual }}</code></td><td>Valor fixo da comissão por Lead pago.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-              <tr><td>FOLLOWUP_INTERVALO_PADRAO_DIAS</td><td><span class="badge badge-primary">Número</span></td><td>2</td><td><code>{{ config_values_by_category.lead_acompanhamento.0.valor_atual }}</code></td><td>Cria notificação para realizar follow-up em N dias.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-              <tr><td>LEAD_STATUS_CONTATO</td><td><span class="badge badge-primary">Texto</span></td><td>CONTATADO</td><td><code>{{ config_values_by_category.lead_acompanhamento.1.valor_atual }}</code></td><td>Status setado após agendar follow-up.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card">
-          <h3>Auditoria & Logs</h3>
-          <table>
-            <thead>
-              <tr><th>Chave</th><th>Tipo</th><th>Padrão</th><th>Valor atual</th><th>Impacto</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>LOG_ATIVO</td><td><span class="badge badge-primary">Booleano</span></td><td>true</td><td><code>{{ config_values_by_category.auditoria_logs.0.valor_atual }}</code></td><td>Ativa/Desativa persistência de logs no banco.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-              <tr><td>LOG_NIVEL_MINIMO</td><td><span class="badge badge-primary">Texto</span></td><td>INFO</td><td><code>{{ config_values_by_category.auditoria_logs.1.valor_atual }}</code></td><td>Ignora logs abaixo do nível mínimo.</td><td><span class="badge badge-success">Ativo</span></td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="small" style="margin-top:.5rem; color:#556;">Notas: 1) “Em breve” indica chaves já presentes no painel mas ainda não aplicadas na integração ASAAS; 2) todos os valores podem ser ajustados em tempo real no painel, com auditoria.</p>
-      </section>
+<h3>Auditoria & Logs</h3>
+<table class="table">
+  <thead>
+    <tr><th>Chave</th><th>Tipo</th><th>Padrão</th><th>Valor atual</th><th>Impacto</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>LOG_ATIVO</td><td>Booleano</td><td>true</td><td>Ativo</td><td>Ativa/Desativa persistência de logs no banco.</td><td>Ativo</td></tr>
+    <tr><td>LOG_NIVEL_MINIMO</td><td>Texto</td><td>INFO</td><td>Ativo</td><td>Ignora logs abaixo do nível mínimo.</td><td>Ativo</td></tr>
+  </tbody>
+</table>
+<p class="small">Notas: 1) "Em breve" indica chaves já presentes no painel mas ainda não aplicadas na integração ASAAS; 2) todos os valores podem ser ajustados em tempo real no painel, com auditoria.</p>
 
-      <section id="etapas" class="card">
-        <h2>Etapas Detalhadas da Jornada</h2>
-        <div class="card">
-          <h3>Contato Inicial</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Campo</th><th>Tipo</th><th>Obrigatoriedade</th><th>Descrição</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td><span class="code">nome_completo</span></td><td><span class="badge badge-primary">String</span></td><td><span class="badge badge-success">Obrigatório</span></td><td>Nome completo do lead</td></tr>
-              <tr><td><span class="code">telefone</span></td><td><span class="badge badge-primary">String</span></td><td><span class="badge badge-success">Obrigatório</span></td><td>Telefone/WhatsApp</td></tr>
-              <tr><td><span class="code">cpf_cnpj</span></td><td><span class="badge badge-primary">String</span></td><td><span class="badge badge-warning">Condicional</span></td><td>CPF ou CNPJ</td></tr>
-              <tr><td><span class="code">email</span></td><td><span class="badge badge-primary">String</span></td><td><span class="badge badge-secondary">Opcional</span></td><td>E-mail do lead</td></tr>
-              <tr><td><span class="code">origem</span></td><td><span class="badge badge-primary">ForeignKey</span></td><td><span class="badge badge-success">Obrigatório</span></td><td>Origem do lead</td></tr>
-              <tr><td><span class="code">fez_levantamento</span></td><td><span class="badge badge-primary">Boolean</span></td><td><span class="badge badge-success">Obrigatório</span></td><td>Indica se optou por levantamento</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card">
-          <h3>Cadastro do Lead</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Campo</th><th>Tipo</th><th>Descrição</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td><span class="code">nome_completo</span></td><td><span class="badge badge-primary">CharField</span></td><td>Nome completo do lead</td></tr>
-              <tr><td><span class="code">telefone</span></td><td><span class="badge badge-primary">CharField</span></td><td>Telefone/WhatsApp</td></tr>
-              <tr><td><span class="code">cpf_cnpj</span></td><td><span class="badge badge-primary">CharField</span></td><td>CPF ou CNPJ</td></tr>
-              <tr><td><span class="code">email</span></td><td><span class="badge badge-primary">EmailField</span></td><td>E-mail do lead</td></tr>
-              <tr><td><span class="code">origem</span></td><td><span class="badge badge-primary">ForeignKey</span></td><td>Origem do lead (OrigemLead)</td></tr>
-              <tr><td><span class="code">fez_levantamento</span></td><td><span class="badge badge-primary">BooleanField</span></td><td>Indica se fez levantamento</td></tr>
-              <tr><td><span class="code">status</span></td><td><span class="badge badge-primary">CharField</span></td><td>Status do lead</td></tr>
-              <tr><td><span class="code">captador</span></td><td><span class="badge badge-primary">ForeignKey</span></td><td>Usuário que indicou</td></tr>
-              <tr><td><span class="code">atendente</span></td><td><span class="badge badge-primary">ForeignKey</span></td><td>Usuário que cadastrou</td></tr>
-              <tr><td><span class="code">cliente_asaas</span></td><td><span class="badge badge-primary">ForeignKey</span></td><td>Referência ao cliente na ASAAS</td></tr>
-              <tr><td><span class="code">data_cadastro</span></td><td><span class="badge badge-primary">DateTimeField</span></td><td>Data/hora do cadastro</td></tr>
-              <tr><td><span class="code">data_atualizacao</span></td><td><span class="badge badge-primary">DateTimeField</span></td><td>Data/hora da última atualização</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card">
-          <h3>Decisão de Levantamento</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Opção</th><th>Próxima Ação</th><th>Status do Lead</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td><span class="badge badge-secondary">Não fez levantamento</span></td><td>Lead segue para acompanhamento comercial</td><td><span class="badge badge-primary">NOVO</span></td></tr>
-              <tr><td><span class="badge badge-success">Fez levantamento</span></td><td>Inicia processo de cobrança PIX</td><td><span class="badge badge-warning">LEVANTAMENTO_PENDENTE</span></td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card">
-          <h3>Geração do PIX</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Campo</th><th>Origem</th><th>Descrição</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td><span class="code">asaas_id</span></td><td>ASAAS</td><td>Identificador do cliente na ASAAS</td></tr>
-              <tr><td><span class="code">valor</span></td><td>Sistema</td><td>Valor fixo da cobrança</td></tr>
-              <tr><td><span class="code">pix_copia_cola</span></td><td>ASAAS</td><td>Código PIX para pagamento</td></tr>
-              <tr><td><span class="code">status_pix</span></td><td>ASAAS</td><td>Status da cobrança</td></tr>
-              <tr><td><span class="code">payload_pix</span></td><td>ASAAS</td><td>Dados completos da cobrança</td></tr>
-              <tr><td><span class="code">data_criacao_pix</span></td><td>Sistema</td><td>Data/hora da geração</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card">
-          <h3>Confirmação de Pagamento</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Campo</th><th>Valor</th><th>Descrição</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td><span class="code">status_pagamento</span></td><td><span class="badge badge-success">confirmado</span></td><td>Status do pagamento</td></tr>
-              <tr><td><span class="code">data_pagamento</span></td><td>Data/hora atual</td><td>Data da confirmação</td></tr>
-              <tr><td><span class="code">id_transacao</span></td><td>ASAAS</td><td>Identificador da transação</td></tr>
-              <tr><td><span class="code">status</span></td><td><span class="badge badge-success">LEVANTAMENTO_PAGO</span></td><td>Status atualizado do lead</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card">
-          <h3>Comissionamento Automático</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Campo</th><th>Tipo</th><th>Descrição</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td><span class="code">lead</span></td><td><span class="badge badge-primary">ForeignKey</span></td><td>Referência ao lead</td></tr>
-              <tr><td><span class="code">atendente</span></td><td><span class="badge badge-primary">ForeignKey</span></td><td>Usuário que recebe a comissão</td></tr>
-              <tr><td><span class="code">valor</span></td><td><span class="badge badge-primary">DecimalField</span></td><td>Valor fixo por lead (R$ 0,50)</td></tr>
-              <tr><td><span class="code">data_criacao</span></td><td><span class="badge badge-primary">DateTimeField</span></td><td>Data/hora do registro</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card">
-          <h3>Acompanhamento Comercial</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Status</th><th>Descrição</th><th>Condição</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td><span class="badge badge-primary">NOVO</span></td><td>Lead cadastrado sem levantamento</td><td>fez_levantamento = False</td></tr>
-              <tr><td><span class="badge badge-warning">LEVANTAMENTO_PENDENTE</span></td><td>Lead com PIX gerado</td><td>PIX gerado, não pago</td></tr>
-              <tr><td><span class="badge badge-success">LEVANTAMENTO_PAGO</span></td><td>Lead com pagamento confirmado</td><td>Webhook confirmado</td></tr>
-              <tr><td><span class="badge badge-secondary">CONTATADO</span></td><td>Lead em contato comercial</td><td>Início do acompanhamento</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+<h2 id="etapas-detalhadas">Etapas Detalhadas da Jornada</h2>
+<h3>Contato Inicial</h3>
+<table class="table">
+  <thead>
+    <tr><th>Campo</th><th>Tipo</th><th>Obrigatoriedade</th><th>Descrição</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>nome_completo</td><td>String</td><td>Obrigatório</td><td>Nome completo do lead</td></tr>
+    <tr><td>telefone</td><td>String</td><td>Obrigatório</td><td>Telefone/WhatsApp</td></tr>
+    <tr><td>cpf_cnpj</td><td>String</td><td>Condicional</td><td>CPF ou CNPJ</td></tr>
+    <tr><td>email</td><td>String</td><td>Opcional</td><td>E-mail do lead</td></tr>
+    <tr><td>origem</td><td>ForeignKey</td><td>Obrigatório</td><td>Origem do lead</td></tr>
+    <tr><td>fez_levantamento</td><td>Boolean</td><td>Obrigatório</td><td>Indica se optou por levantamento</td></tr>
+  </tbody>
+</table>
 
-      <section id="dados" class="card">
-        <h2>Estrutura de Dados e Relacionamentos</h2>
-        <h3>Dados de Auditoria</h3>
-        <table>
-          <thead>
-            <tr><th>Campo</th><th>Tipo</th><th>Descrição</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><span class="code">usuario</span></td><td><span class="badge badge-primary">ForeignKey</span></td><td>Usuário que realizou a ação</td></tr>
-            <tr><td><span class="code">ip</span></td><td><span class="badge badge-primary">GenericIPAddressField</span></td><td>IP do usuário</td></tr>
-            <tr><td><span class="code">modulo</span></td><td><span class="badge badge-primary">CharField</span></td><td>Módulo do sistema</td></tr>
-            <tr><td><span class="code">acao</span></td><td><span class="badge badge-primary">CharField</span></td><td>Tipo de ação</td></tr>
-            <tr><td><span class="code">mensagem</span></td><td><span class="badge badge-primary">TextField</span></td><td>Descrição do evento</td></tr>
-            <tr><td><span class="code">data_evento</span></td><td><span class="badge badge-primary">DateTimeField</span></td><td>Data/hora do evento</td></tr>
-          </tbody>
-        </table>
-        <h3>Dados Relacionais Dinâmicos</h3>
-        <table>
-          <thead>
-            <tr><th>Modelo</th><th>Propósito</th><th>Relacionamento</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><span class="code">OrigemLead</span></td><td>Lista de origens</td><td><span class="badge badge-primary">ForeignKey</span> em Lead</td></tr>
-            <tr><td><span class="code">MotivoContato</span></td><td>Motivos/perfis emocionais</td><td><span class="badge badge-primary">ForeignKey</span> em Lead (opcional)</td></tr>
-            <tr><td><span class="code">ClienteAsaas</span></td><td>Dados do cliente na ASAAS</td><td><span class="badge badge-primary">ForeignKey</span> em Lead</td></tr>
-            <tr><td><span class="code">PixLevantamento</span></td><td>Dados da cobrança PIX associada</td><td><span class="badge badge-primary">OneToOne</span> com Lead</td></tr>
-          </tbody>
-        </table>
-      </section>
+<h3>Cadastro do Lead</h3>
+<table class="table">
+  <thead>
+    <tr><th>Campo</th><th>Tipo</th><th>Descrição</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>nome_completo</td><td>CharField</td><td>Nome completo do lead</td></tr>
+    <tr><td>telefone</td><td>CharField</td><td>Telefone/WhatsApp</td></tr>
+    <tr><td>cpf_cnpj</td><td>CharField</td><td>CPF ou CNPJ</td></tr>
+    <tr><td>email</td><td>EmailField</td><td>E-mail do lead</td></tr>
+    <tr><td>origem</td><td>ForeignKey</td><td>Origem do lead (OrigemLead)</td></tr>
+    <tr><td>fez_levantamento</td><td>BooleanField</td><td>Indica se fez levantamento</td></tr>
+    <tr><td>status</td><td>CharField</td><td>Status do lead</td></tr>
+    <tr><td>captador</td><td>ForeignKey</td><td>Usuário que indicou</td></tr>
+    <tr><td>atendente</td><td>ForeignKey</td><td>Usuário que cadastrou</td></tr>
+    <tr><td>cliente_asaas</td><td>ForeignKey</td><td>Referência ao cliente na ASAAS</td></tr>
+    <tr><td>data_cadastro</td><td>DateTimeField</td><td>Data/hora do cadastro</td></tr>
+    <tr><td>data_atualizacao</td><td>DateTimeField</td><td>Data/hora da última atualização</td></tr>
+  </tbody>
+</table>
 
-      <section id="validacoes" class="card">
-        <h2>Validações e Regras de Negócio</h2>
-        <div class="grid">
-          <div class="card">
-            <h3>Validações no Front-end</h3>
-            <ul>
-              <li>Formatação automática de telefone</li>
-              <li>Validação de campos obrigatórios</li>
-              <li>Seleção dinâmica de origens</li>
-              <li>Máscara para CPF/CNPJ</li>
-              <li>Validação de e-mail</li>
-            </ul>
-          </div>
-          <div class="card">
-            <h3>Regras de Negócio no Backend</h3>
-            <ul>
-              <li>CPF/CNPJ obrigatório apenas para levantamento</li>
-              <li>Comissionamento automático após confirmação de pagamento</li>
-              <li>Status atualizado via webhook em tempo real</li>
-              <li>Log completo de todas as ações do sistema</li>
-              <li>Campo <span class="code">atendente</span> para rastreio e comissionamento</li>
-            </ul>
-          </div>
-        </div>
-      </section>
+<h3>Decisão de Levantamento</h3>
+<table class="table">
+  <thead>
+    <tr><th>Opção</th><th>Próxima Ação</th><th>Status do Lead</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Não fez levantamento</td><td>Lead segue para acompanhamento comercial</td><td>NOVO</td></tr>
+    <tr><td>Fez levantamento</td><td>Inicia processo de cobrança PIX</td><td>LEVANTAMENTO_PENDENTE</td></tr>
+  </tbody>
+</table>
 
-      <section id="tecnico" class="card">
-        <h2>Considerações Técnicas e Atualizações</h2>
-        <table>
-          <thead>
-            <tr><th>Componente</th><th>Alteração</th><th>Impacto</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Modelo Lead</td><td>Campo consultor → atendente</td><td>Ajuste em todo o sistema</td></tr>
-            <tr><td>Comissionamento</td><td>Usa atendente do Lead</td><td>Comissionamento correto</td></tr>
-            <tr><td>Backend</td><td>Views e models atualizados</td><td>Funcionamento correto</td></tr>
-            <tr><td>Frontend</td><td>Navegação por âncoras</td><td>Menu lateral funcional</td></tr>
-          </tbody>
-        </table>
-        <ul>
-          <li><strong>ASAAS:</strong> Webhooks para atualização em tempo real</li>
-          <li><strong>Comissionamento:</strong> Processo automático e auditável</li>
-          <li><strong>Auditoria:</strong> Rastreabilidade completa de todas as ações</li>
-          <li><strong>Flexibilidade:</strong> Dados dinâmicos configuráveis via admin</li>
-          <li><strong>Segurança:</strong> Validações em múltiplas camadas</li>
-        </ul>
-      </section>
-    </main>
-  </div>
+<h3>Geração do PIX</h3>
+<table class="table">
+  <thead>
+    <tr><th>Campo</th><th>Origem</th><th>Descrição</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>asaas_id</td><td>ASAAS</td><td>Identificador do cliente na ASAAS</td></tr>
+    <tr><td>valor</td><td>Sistema</td><td>Valor fixo da cobrança</td></tr>
+    <tr><td>pix_copia_cola</td><td>ASAAS</td><td>Código PIX para pagamento</td></tr>
+    <tr><td>status_pix</td><td>ASAAS</td><td>Status da cobrança</td></tr>
+    <tr><td>payload_pix</td><td>ASAAS</td><td>Dados completos da cobrança</td></tr>
+    <tr><td>data_criacao_pix</td><td>Sistema</td><td>Data/hora da geração</td></tr>
+  </tbody>
+</table>
 
-  <footer>
-    <div class="footer-inner">
-      <p><strong>Documentação do Sistema Lead</strong> | Versão 2.0 | Última atualização: <span id="current-date"></span></p>
-      <p>Documento elaborado para: Equipe de Desenvolvimento e Gestão Comercial</p>
-    </div>
-  </footer>
+<h3>Confirmação de Pagamento</h3>
+<table class="table">
+  <thead>
+    <tr><th>Campo</th><th>Valor</th><th>Descrição</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>status_pagamento</td><td>confirmado</td><td>Status do pagamento</td></tr>
+    <tr><td>data_pagamento</td><td>Data/hora atual</td><td>Data da confirmação</td></tr>
+    <tr><td>id_transacao</td><td>ASAAS</td><td>Identificador da transação</td></tr>
+    <tr><td>status</td><td>LEVANTAMENTO_PAGO</td><td>Status atualizado do lead</td></tr>
+  </tbody>
+</table>
 
-  <script>
-    // Inicializa Mermaid
-    mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+<h3>Comissionamento Automático</h3>
+<table class="table">
+  <thead>
+    <tr><th>Campo</th><th>Tipo</th><th>Descrição</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>lead</td><td>ForeignKey</td><td>Referência ao lead</td></tr>
+    <tr><td>atendente</td><td>ForeignKey</td><td>Usuário que recebe a comissão</td></tr>
+    <tr><td>valor</td><td>DecimalField</td><td>Valor fixo por lead (R$ 0,50)</td></tr>
+    <tr><td>data_criacao</td><td>DateTimeField</td><td>Data/hora do registro</td></tr>
+  </tbody>
+</table>
 
-    // Atualiza data
-    document.getElementById('current-date').textContent = new Date().toLocaleDateString('pt-BR');
+<h3>Acompanhamento Comercial</h3>
+<table class="table">
+  <thead>
+    <tr><th>Status</th><th>Descrição</th><th>Condição</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>NOVO</td><td>Lead cadastrado sem levantamento</td><td>fez_levantamento = False</td></tr>
+    <tr><td>LEVANTAMENTO_PENDENTE</td><td>Lead com PIX gerado</td><td>PIX gerado, não pago</td></tr>
+    <tr><td>LEVANTAMENTO_PAGO</td><td>Lead com pagamento confirmado</td><td>Webhook confirmado</td></tr>
+    <tr><td>CONTATADO</td><td>Lead em contato comercial</td><td>Início do acompanhamento</td></tr>
+  </tbody>
+</table>
 
-    // Navegação do sumário (scroll suave + realce)
-    (function(){
-      const links = Array.from(document.querySelectorAll('.sumario-link'));
-      const sections = Array.from(document.querySelectorAll('section.card'));
+<h2 id="estrutura-dados">Estrutura de Dados e Relacionamentos</h2>
+<h3>Dados de Auditoria</h3>
+<table class="table">
+  <thead>
+    <tr><th>Campo</th><th>Tipo</th><th>Descrição</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>usuario</td><td>ForeignKey</td><td>Usuário que realizou a ação</td></tr>
+    <tr><td>ip</td><td>GenericIPAddressField</td><td>IP do usuário</td></tr>
+    <tr><td>modulo</td><td>CharField</td><td>Módulo do sistema</td></tr>
+    <tr><td>acao</td><td>CharField</td><td>Tipo de ação</td></tr>
+    <tr><td>mensagem</td><td>TextField</td><td>Descrição do evento</td></tr>
+    <tr><td>data_evento</td><td>DateTimeField</td><td>Data/hora do evento</td></tr>
+  </tbody>
+</table>
 
-      function setActive(id){ links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id)); }
+<h3>Dados Relacionais Dinâmicos</h3>
+<table class="table">
+  <thead>
+    <tr><th>Modelo</th><th>Propósito</th><th>Relacionamento</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>OrigemLead</td><td>Lista de origens</td><td>ForeignKey em Lead</td></tr>
+    <tr><td>MotivoContato</td><td>Motivos/perfis emocionais</td><td>ForeignKey em Lead (opcional)</td></tr>
+    <tr><td>ClienteAsaas</td><td>Dados do cliente na ASAAS</td><td>ForeignKey em Lead</td></tr>
+    <tr><td>PixLevantamento</td><td>Dados da cobrança PIX associada</td><td>OneToOne com Lead</td></tr>
+  </tbody>
+</table>
 
-      links.forEach(a => a.addEventListener('click', (e)=>{
-        e.preventDefault();
-        const id = a.getAttribute('href').slice(1);
-        const el = document.getElementById(id);
-        if(!el) return;
-        const y = el.getBoundingClientRect().top + window.scrollY - 16;
-        window.scrollTo({ top: y, behavior: 'smooth' });
-        setTimeout(()=> setActive(id), 250);
-        if (id === 'jornada') mermaid.init();
-      }));
+<h2 id="validacoes">Validações e Regras de Negócio</h2>
+<h3>Validações no Front-end</h3>
+<ul>
+  <li>Formatação automática de telefone</li>
+  <li>Validação de campos obrigatórios</li>
+  <li>Seleção dinâmica de origens</li>
+  <li>Máscara para CPF/CNPJ</li>
+  <li>Validação de e-mail</li>
+</ul>
+<h3>Regras de Negócio no Backend</h3>
+<ul>
+  <li>CPF/CNPJ obrigatório apenas para levantamento</li>
+  <li>Comissionamento automático após confirmação de pagamento</li>
+  <li>Status atualizado via webhook em tempo real</li>
+  <li>Log completo de todas as ações do sistema</li>
+  <li>Campo atendente para rastreio e comissionamento</li>
+</ul>
 
-      window.addEventListener('scroll', () => {
-        let current = sections[0]?.id;
-        for (const s of sections) {
-          const r = s.getBoundingClientRect();
-          if (r.top <= 120 && r.bottom >= 120) { current = s.id; break; }
-        }
-        if (current) setActive(current);
-      });
-    })();
+<h2 id="consideracoes">Considerações Técnicas e Atualizações</h2>
+<table class="table">
+  <thead>
+    <tr><th>Componente</th><th>Alteração</th><th>Impacto</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Modelo Lead</td><td>Campo consultor → atendente</td><td>Ajuste em todo o sistema</td></tr>
+    <tr><td>Comissionamento</td><td>Usa atendente do Lead</td><td>Comissionamento correto</td></tr>
+    <tr><td>Backend</td><td>Views e models atualizados</td><td>Funcionamento correto</td></tr>
+    <tr><td>Frontend</td><td>Navegação por âncoras</td><td>Menu lateral funcional</td></tr>
+  </tbody>
+</table>
+<ul>
+  <li><strong>ASAAS:</strong> Webhooks para atualização em tempo real</li>
+  <li><strong>Comissionamento:</strong> Processo automático e auditável</li>
+  <li><strong>Auditoria:</strong> Rastreabilidade completa de todas as ações</li>
+  <li><strong>Flexibilidade:</strong> Dados dinâmicos configuráveis via admin</li>
+  <li><strong>Segurança:</strong> Validações em múltiplas camadas</li>
+</ul>
 
-    // Ctrl+P imprime
-    document.addEventListener('keydown', function(e){ if (e.ctrlKey && e.key === 'p'){ e.preventDefault(); window.print(); }});
-  </script>
-</body>
-</html>
+<h2 id="footer">Documentação do Sistema Lead | Versão 2.0 | Última atualização: {{ "now"|date:"d/m/Y" }}</h2>
+<p class="small">Documento elaborado para: Equipe de Desenvolvimento e Gestão Comercial</p>
+
+
+</div>
+
+{% endblock %}

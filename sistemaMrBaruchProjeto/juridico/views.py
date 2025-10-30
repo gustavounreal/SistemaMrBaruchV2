@@ -1208,32 +1208,86 @@ def recusar_acordo(request, distrato_id):
 @login_required
 @user_passes_test(is_compliance_or_juridico)
 def gerar_multa(request, distrato_id):
-    """Gera multa de distrato"""
+    """Gera multa de distrato e boleto no ASAAS"""
     from .models import Distrato
+    from core.asaas_service import AsaasService
     
     distrato = get_object_or_404(Distrato, id=distrato_id)
     
     if request.method == 'POST':
-        valor_multa = Decimal(request.POST.get('valor_multa', '0'))
+        # Calcular 25% do valor total da venda
+        valor_total_venda = distrato.venda.valor_total
+        valor_multa = (valor_total_venda * Decimal('0.25')).quantize(Decimal('0.01'))
+        
+        # Garantir valor mínimo do ASAAS (R$ 5,00)
+        if valor_multa < Decimal('5.00'):
+            valor_multa = Decimal('5.00')
+        
         data_vencimento = request.POST.get('data_vencimento')
         
+        # Atualizar distrato
         distrato.valor_multa = valor_multa
         distrato.data_vencimento_multa = data_vencimento
         distrato.status = 'MULTA_GERADA'
         distrato.data_geracao_multa = timezone.now()
         distrato.save()
         
-        distrato.adicionar_historico(
-            'geracao_multa',
-            request.user,
-            f'Multa gerada: R$ {valor_multa} - Vencimento: {data_vencimento}'
-        )
+        # Criar boleto no ASAAS
+        try:
+            asaas = AsaasService()
+            
+            # Dados da cobrança
+            dados_cobranca = {
+                'customer_id': distrato.cliente.asaas_customer_id,
+                'billing_type': 'BOLETO',
+                'due_date': data_vencimento,
+                'value': float(valor_multa),
+                'description': f'Multa de Distrato {distrato.numero_distrato} - 25% do valor total',
+                'external_reference': f'DISTRATO-{distrato.id}',
+            }
+            
+            resposta = asaas.criar_cobranca(dados_cobranca)
+            
+            if resposta and resposta.get('id'):
+                # Salvar informações do boleto no distrato
+                distrato.boleto_multa_codigo = resposta.get('id')
+                distrato.boleto_multa_url = resposta.get('bankSlipUrl', '')
+                distrato.boleto_multa_linha_digitavel = resposta.get('identificationField', '')
+                distrato.save()
+                
+                distrato.adicionar_historico(
+                    'geracao_multa',
+                    request.user,
+                    f'Multa gerada: R$ {valor_multa} (25% de R$ {valor_total_venda}) - Vencimento: {data_vencimento} - Boleto ASAAS: {resposta.get("id")}'
+                )
+                
+                messages.success(request, f'Multa de R$ {valor_multa} gerada com sucesso! Boleto criado no ASAAS.')
+            else:
+                distrato.adicionar_historico(
+                    'geracao_multa',
+                    request.user,
+                    f'Multa gerada: R$ {valor_multa} - Vencimento: {data_vencimento} - ERRO ao criar boleto ASAAS'
+                )
+                messages.warning(request, f'Multa de R$ {valor_multa} gerada, mas houve erro ao criar boleto no ASAAS.')
         
-        messages.success(request, f'Multa de R$ {valor_multa} gerada com sucesso!')
+        except Exception as e:
+            distrato.adicionar_historico(
+                'geracao_multa',
+                request.user,
+                f'Multa gerada: R$ {valor_multa} - Vencimento: {data_vencimento} - EXCEÇÃO ao criar boleto: {str(e)}'
+            )
+            messages.warning(request, f'Multa de R$ {valor_multa} gerada, mas houve erro ao criar boleto no ASAAS: {str(e)}')
+        
         return redirect('juridico:detalhes_distrato', distrato_id=distrato.id)
+    
+    # Calcular valor sugerido (25% do total)
+    valor_sugerido = (distrato.venda.valor_total * Decimal('0.25')).quantize(Decimal('0.01'))
+    if valor_sugerido < Decimal('5.00'):
+        valor_sugerido = Decimal('5.00')
     
     context = {
         'distrato': distrato,
+        'valor_sugerido': valor_sugerido,
     }
     
     return render(request, 'juridico/distratos/gerar_multa.html', context)

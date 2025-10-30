@@ -24,6 +24,9 @@ urlpatterns = [
     
     # Webhook ASAAS (rota direta sem prefixo)
     path('webhook/asaas/', core_views.webhook_asaas, name='webhook_asaas'),
+    path('', include('distratos.urls')),
+    
+    path('', home_view, name='home'),
     
     path('', home_view, name='home'),
 ]
