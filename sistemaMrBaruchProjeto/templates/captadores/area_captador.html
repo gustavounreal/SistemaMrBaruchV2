@@ -552,15 +552,21 @@
             <div class="section">
                 <h3><i class="fas fa-share-alt"></i> Link de Indicação</h3>
                 <div class="referral-link">
-                    <h4>Seu Link Exclusivo do WhatsApp</h4>
+                    <h4>Seu Link Curto de Indicação</h4>
                     <p>Compartilhe este link para indicar clientes e receber {{ percentual_comissao }}% de comissão:</p>
                     <div class="link-container">
-                        <input type="text" class="link-input" id="whatsappLink" value="{{ whatsapp_link }}" readonly>
-                        <button class="copy-btn" onclick="copiarLink()"><i class="fas fa-copy"></i></button>
+                        <input type="text" class="link-input" id="linkCurto" value="{{ link_curto_url }}" readonly>
+                        <button class="copy-btn" onclick="copiarLinkCurto()"><i class="fas fa-copy"></i></button>
                     </div>
-                    <a href="{{ whatsapp_link }}" target="_blank" class="btn btn-copy">
-                        <i class="fab fa-whatsapp"></i> Abrir no WhatsApp
+                    <a href="{{ link_curto_url }}" target="_blank" class="btn btn-copy">
+                        <i class="fab fa-whatsapp"></i> Abrir Link Curto
                     </a>
+                    <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 0.85rem;">
+                        <p style="margin: 0; color: #666;">
+                            <i class="fas fa-chart-line"></i> 
+                            <strong>{{ link_curto.total_cliques }}</strong> cliques registrados neste link
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -651,15 +657,21 @@
             <div class="section">
                 <h3><i class="fas fa-share-alt"></i> Link de Indicação</h3>
                 <div class="referral-link">
-                    <h4>Seu Link Exclusivo do WhatsApp</h4>
+                    <h4>Seu Link Curto de Indicação</h4>
                     <p>Compartilhe este link junto com os materiais acima:</p>
                     <div class="link-container">
-                        <input type="text" class="link-input" id="whatsappLink2" value="{{ whatsapp_link }}" readonly>
-                        <button class="copy-btn" onclick="copiarLink2()"><i class="fas fa-copy"></i></button>
+                        <input type="text" class="link-input" id="linkCurto2" value="{{ link_curto_url }}" readonly>
+                        <button class="copy-btn" onclick="copiarLinkCurto2()"><i class="fas fa-copy"></i></button>
                     </div>
-                    <a href="{{ whatsapp_link }}" target="_blank" class="btn btn-copy">
-                        <i class="fab fa-whatsapp"></i> Abrir no WhatsApp
+                    <a href="{{ link_curto_url }}" target="_blank" class="btn btn-copy">
+                        <i class="fab fa-whatsapp"></i> Abrir Link Curto
                     </a>
+                    <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; font-size: 0.85rem;">
+                        <p style="margin: 0; color: #666;">
+                            <i class="fas fa-chart-line"></i> 
+                            <strong>{{ link_curto.total_cliques }}</strong> cliques registrados
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -692,9 +704,9 @@
             });
         });
         
-        // Copiar link
-        function copiarLink() {
-            const linkInput = document.getElementById('whatsappLink');
+        // Copiar link curto
+        function copiarLinkCurto() {
+            const linkInput = document.getElementById('linkCurto');
             linkInput.select();
             linkInput.setSelectionRange(0, 99999); // Mobile
             
@@ -708,8 +720,8 @@
             });
         }
         
-        function copiarLink2() {
-            const linkInput = document.getElementById('whatsappLink2');
+        function copiarLinkCurto2() {
+            const linkInput = document.getElementById('linkCurto2');
             linkInput.select();
             linkInput.setSelectionRange(0, 99999); // Mobile
             

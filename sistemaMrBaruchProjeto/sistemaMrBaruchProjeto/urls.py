@@ -4,6 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.http import HttpResponse
 from core import views as core_views
+from captadores import views as captadores_views
 
 def home_view(request):
     return HttpResponse('<h1>Sistema Mr. Baruch</h1><p><a href="/accounts/login/">Fazer Login</a></p>')
@@ -12,6 +13,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls', namespace='accounts')),
     path('atendimento/', include('atendimento.urls', namespace='atendimento')),
+    
+    # Link curto público (antes do include de captadores para não conflitar)
+    path('c/<str:codigo>', captadores_views.redirecionar_link_curto, name='link_curto'),
+    
     path('captadores/', include('captadores.urls', namespace='captadores')),
     path('clientes/', include('clientes.urls', namespace='clientes')),
     path('compliance/', include('compliance.urls', namespace='compliance')),

@@ -1,9 +1,11 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Q, Count
+from django.http import Http404
 from datetime import date
 from vendas.models import Venda
 from financeiro.models import Parcela
+from .models import LinkCurto, ClickLinkCurto
 
 
 @login_required
@@ -12,6 +14,15 @@ def area_captador(request):
     Área do captador - Dashboard com estatísticas, boletos e materiais
     """
     captador = request.user
+    
+    # Criar ou recuperar link curto do captador
+    link_curto, created = LinkCurto.objects.get_or_create(
+        captador=captador,
+        defaults={
+            'codigo': LinkCurto.gerar_codigo_unico(),
+            'url_completa': f"https://wa.me/5511978891213?text=Olá! Fui indicado pelo captador ID: {captador.id}"
+        }
+    )
     
     # Buscar todas as vendas onde o captador foi indicado
     vendas = Venda.objects.filter(captador=captador).select_related('cliente__lead', 'servico')
@@ -59,9 +70,9 @@ def area_captador(request):
     proxima_parcela = parcelas.filter(status='aberta').order_by('data_vencimento').first()
     proximo_recebimento = proxima_parcela.data_vencimento if proxima_parcela else None
     
-    # Link de indicação do WhatsApp
-    # Formato: 11978891213+{user_id}
-    whatsapp_link = f"https://wa.me/5511978891213?text=Olá! Fui indicado pelo captador ID: {captador.id}"
+    # Link de indicação do WhatsApp (agora usa o link curto)
+    link_curto_url = link_curto.get_url_curta(request)
+    whatsapp_link = link_curto.url_completa  # Link completo para caso precisem ver
     
     # Materiais de marketing do Google Drive
     media_files = [
@@ -110,9 +121,39 @@ def area_captador(request):
         'boletos_vencidos': boletos_vencidos,
         'boletos_a_vencer': boletos_a_vencer,
         'whatsapp_link': whatsapp_link,
+        'link_curto_url': link_curto_url,  # URL curta para compartilhar
+        'link_curto': link_curto,  # Objeto completo para analytics
         'media_files': media_files,
         'hoje': hoje,
     }
     
     return render(request, 'captadores/area_captador.html', context)
+
+
+def redirecionar_link_curto(request, codigo):
+    """
+    View pública que redireciona link curto para WhatsApp.
+    Registra analytics (cliques, IP, user agent, referer).
+    """
+    # Buscar link curto pelo código
+    link_curto = get_object_or_404(LinkCurto, codigo=codigo, ativo=True)
+    
+    # Registrar clique para analytics
+    ip_address = request.META.get('REMOTE_ADDR')
+    user_agent = request.META.get('HTTP_USER_AGENT', '')
+    referer = request.META.get('HTTP_REFERER', None)
+    
+    # Criar registro de clique
+    ClickLinkCurto.objects.create(
+        link_curto=link_curto,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        referer=referer
+    )
+    
+    # Incrementar contador
+    link_curto.incrementar_clique()
+    
+    # Redirecionar para o WhatsApp
+    return redirect(link_curto.url_completa)
 
