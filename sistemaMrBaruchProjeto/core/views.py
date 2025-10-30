@@ -1243,15 +1243,62 @@ def resend_pending_webhooks(request):
 @permission_required('core.change_configuracaosistema')
 def webhook_statistics(request):
     """
-    Retorna estatísticas dos webhooks em JSON
+    Retorna estatísticas dos webhooks recebidos e processados
     """
-    from .asaas_webhook_manager import AsaasWebhookManager
+    from .models import WebhookLog
+    from django.db.models import Count, Q, Sum
+    import datetime
     
     try:
-        webhook_manager = AsaasWebhookManager()
-        stats = webhook_manager.get_statistics()
+        # Últimas 24 horas
+        data_24h = timezone.now() - datetime.timedelta(hours=24)
+        # Últimos 7 dias
+        data_7d = timezone.now() - datetime.timedelta(days=7)
+        # Último mês
+        data_30d = timezone.now() - datetime.timedelta(days=30)
         
-        return JsonResponse(stats)
+        # Estatísticas gerais
+        stats_24h = WebhookLog.objects.filter(data_recebimento__gte=data_24h).aggregate(
+            total=Count('id'),
+            sucesso=Count('id', filter=Q(status_processamento='SUCCESS')),
+            erro=Count('id', filter=Q(status_processamento='ERROR')),
+            ignorado=Count('id', filter=Q(status_processamento='IGNORED'))
+        )
+        
+        stats_7d = WebhookLog.objects.filter(data_recebimento__gte=data_7d).aggregate(
+            total=Count('id'),
+            sucesso=Count('id', filter=Q(status_processamento='SUCCESS')),
+            erro=Count('id', filter=Q(status_processamento='ERROR'))
+        )
+        
+        stats_30d = WebhookLog.objects.filter(data_recebimento__gte=data_30d).aggregate(
+            total=Count('id'),
+            sucesso=Count('id', filter=Q(status_processamento='SUCCESS'))
+        )
+        
+        # Eventos mais comuns
+        eventos_comuns = list(WebhookLog.objects.filter(
+            data_recebimento__gte=data_7d
+        ).values('evento').annotate(
+            count=Count('id')
+        ).order_by('-count')[:5])
+        
+        # Últimos erros
+        ultimos_erros = WebhookLog.objects.filter(
+            status_processamento='ERROR',
+            data_recebimento__gte=data_7d
+        ).values('evento', 'mensagem_erro', 'data_recebimento')[:5]
+        
+        return JsonResponse({
+            'success': True,
+            'periodo_24h': stats_24h,
+            'periodo_7d': stats_7d,
+            'periodo_30d': stats_30d,
+            'eventos_comuns': eventos_comuns,
+            'ultimos_erros': list(ultimos_erros),
+            'total_historico': WebhookLog.objects.count(),
+            'nota': 'Estatísticas baseadas nos webhooks recebidos e processados pelo sistema'
+        })
     
     except Exception as e:
         return JsonResponse({
@@ -1264,23 +1311,50 @@ def webhook_statistics(request):
 @permission_required('core.change_configuracaosistema')
 def list_pending_webhooks(request):
     """
-    Lista webhooks pendentes em JSON
+    Lista webhooks recebidos e seu status de processamento
+    Nota: A API do Asaas não fornece lista de eventos pendentes no sandbox,
+    então mostramos os webhooks recebidos pelo sistema.
     """
-    from .asaas_webhook_manager import AsaasWebhookManager
+    from .models import WebhookLog
+    from django.db.models import Count, Q
+    import datetime
     
     try:
-        webhook_manager = AsaasWebhookManager()
+        # Últimas 24 horas
+        data_limite = timezone.now() - datetime.timedelta(hours=24)
         
-        limit = int(request.GET.get('limit', 50))
-        offset = int(request.GET.get('offset', 0))
-        
-        result = webhook_manager.list_webhooks(
-            status='PENDING',
-            limit=limit,
-            offset=offset
+        # Estatísticas dos webhooks recebidos
+        stats = WebhookLog.objects.filter(
+            data_recebimento__gte=data_limite
+        ).aggregate(
+            total=Count('id'),
+            sucesso=Count('id', filter=Q(status_processamento='SUCCESS')),
+            erro=Count('id', filter=Q(status_processamento='ERROR')),
+            ignorado=Count('id', filter=Q(status_processamento='IGNORED'))
         )
         
-        return JsonResponse(result)
+        # Últimos webhooks recebidos
+        limit = int(request.GET.get('limit', 20))
+        webhooks = WebhookLog.objects.all()[:limit]
+        
+        webhooks_data = [{
+            'id': w.id,
+            'evento': w.evento or 'Desconhecido',
+            'status': w.status_processamento,
+            'payment_id': w.payment_id,
+            'valor': float(w.valor) if w.valor else 0,
+            'data_recebimento': w.data_recebimento.strftime('%d/%m/%Y %H:%M:%S'),
+            'mensagem_erro': w.mensagem_erro if w.status_processamento == 'ERROR' else None
+        } for w in webhooks]
+        
+        return JsonResponse({
+            'success': True,
+            'stats': stats,
+            'data': webhooks_data,
+            'totalCount': WebhookLog.objects.count(),
+            'periodo': '24h',
+            'nota': 'Mostrando webhooks recebidos pelo sistema (últimas 24h)'
+        })
     
     except Exception as e:
         return JsonResponse({
