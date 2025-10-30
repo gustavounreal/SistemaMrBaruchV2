@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     # Apps do sistema
     'accounts',
     'atendimento',
+    'captadores',  # Novo módulo Captadores
     'clientes', 
     'comissoes',
     'compliance',  # Novo módulo Compliance

@@ -12,6 +12,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls', namespace='accounts')),
     path('atendimento/', include('atendimento.urls', namespace='atendimento')),
+    path('captadores/', include('captadores.urls', namespace='captadores')),
     path('clientes/', include('clientes.urls', namespace='clientes')),
     path('compliance/', include('compliance.urls', namespace='compliance')),
     path('core/', include('core.urls', namespace='core')),
