@@ -23,7 +23,7 @@ class AsaasWebhookManager:
         Args:
             api_token: Token de acesso da API Asaas (usa settings se não fornecido)
         """
-        self.api_token = api_token or getattr(settings, 'ASAAS_API_KEY', '')
+        self.api_token = api_token or getattr(settings, 'ASAAS_API_TOKEN', '')
         
         # Determinar ambiente (sandbox ou production)
         is_sandbox = getattr(settings, 'ASAAS_SANDBOX', True)
