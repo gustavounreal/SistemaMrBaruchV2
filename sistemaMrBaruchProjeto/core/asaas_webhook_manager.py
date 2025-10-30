@@ -240,7 +240,7 @@ class AsaasWebhookManager:
             webhook_id: ID do webhook
             
         Returns:
-            Dict com detalhes do webhook
+            Dict com detalhes do webhook e status
         """
         try:
             url = f"{self.base_url}/webhooks/{webhook_id}"
@@ -252,15 +252,21 @@ class AsaasWebhookManager:
             )
             
             response.raise_for_status()
+            webhook_data = response.json()
             
             return {
+                'status': 'success',
                 'success': True,
-                'data': response.json()
+                'data': webhook_data,
+                'webhook_url': webhook_data.get('url'),
+                'enabled': webhook_data.get('enabled'),
+                'interrupted': webhook_data.get('interrupted')
             }
             
         except requests.exceptions.RequestException as e:
             logger.error(f"Erro ao obter detalhes do webhook {webhook_id}: {str(e)}")
             return {
+                'status': 'error',
                 'success': False,
                 'error': str(e)
             }
