@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Área do Captador - {{ captador.get_full_name|default:captador.username }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .captador-container {
+            max-width: 100%;
+            margin: 0 auto;
+            background-color: #fff;
+            min-height: 100vh;
+        }
+        
+        .header-captador {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 25px 20px;
+            margin-bottom: 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header-captador::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,261.3C672,256,768,224,864,224C960,224,1056,256,1152,250.7C1248,245,1344,203,1392,181.3L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>');
+            background-size: cover;
+            background-position: bottom;
+            opacity: 0.1;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header-captador h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .header-captador p {
+            opacity: 0.9;
+            margin: 5px 0;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .header-captador i {
+            margin-right: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: white;
+            border-bottom: 2px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            text-align: center;
+            padding: 15px 10px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: white;
+        }
+        
+        .nav-tab:hover {
+            color: #3498db;
+            background: #f8f9fa;
+        }
+        
+        .nav-tab.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+            background: white;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 0 15px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eaeaea;
+        }
+        
+        .section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section h3 i {
+            margin-right: 10px;
+            color: #3498db;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .info-card {
+            background: #f8f9fa;
+            padding: 18px;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .info-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .info-card label {
+            font-weight: 600;
+            color: #666;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .info-card .value {
+            font-size: 1.5rem;
+            color: #333;
+            font-weight: 700;
+        }
+        
+        .info-card .value.highlight {
+            color: #27ae60;
+        }
+        
+        .info-card .value.warning {
+            color: #e74c3c;
+        }
+        
+        .billet-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .billet-card {
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s ease;
+        }
+        
+        .billet-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .billet-card.paid {
+            background: #e8f6ef;
+            border-left: 4px solid #27ae60;
+        }
+        
+        .billet-card.overdue {
+            background: #fdedec;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .billet-card.pending {
+            background: #fef9e7;
+            border-left: 4px solid #f39c12;
+        }
+        
+        .billet-info {
+            flex: 1;
+        }
+        
+        .billet-info h4 {
+            font-size: 1rem;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .billet-info p {
+            font-size: 0.85rem;
+            color: #666;
+            margin: 0;
+        }
+        
+        .billet-value {
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        
+        .billet-card.paid .billet-value {
+            color: #27ae60;
+        }
+        
+        .billet-card.overdue .billet-value {
+            color: #e74c3c;
+        }
+        
+        .billet-card.pending .billet-value {
+            color: #f39c12;
+        }
+        
+        .materials-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .material-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .material-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+        
+        .material-thumbnail {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            background: #f8f9fa;
+        }
+        
+        .material-info {
+            padding: 12px;
+        }
+        
+        .material-info h4 {
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn i {
+            margin-right: 6px;
+        }
+        
+        .btn-copy {
+            background: #2ecc71;
+        }
+        
+        .btn-copy:hover {
+            background: #27ae60;
+        }
+        
+        .referral-link {
+            background: linear-gradient(135deg, #e3f0ff 0%, #f8fafc 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 15px;
+            border: 2px dashed #3498db;
+        }
+        
+        .referral-link h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .referral-link p {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .link-container {
+            display: flex;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+        
+        .link-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: white;
+        }
+        
+        .copy-btn {
+            background: #2ecc71;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .copy-btn:hover {
+            background: #27ae60;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-size: 0.9rem;
+            border-top: 1px solid #eaeaea;
+            margin-top: 30px;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 30px;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: #bdc3c7;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .empty-state h3 {
+            color: #7f8c8d;
+            margin-bottom: 10px;
+            font-size: 1.3rem;
+            justify-content: center;
+        }
+        
+        .empty-state p {
+            color: #95a5a6;
+        }
+        
+        @media (min-width: 768px) {
+            .captador-container {
+                max-width: 900px;
+                margin: 20px auto;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+            }
+            
+            .header-captador {
+                padding: 30px;
+            }
+            
+            .header-captador h1 {
+                font-size: 2.2rem;
+            }
+            
+            .section {
+                padding: 25px;
+                margin: 0 20px 25px;
+            }
+            
+            .info-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .billet-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .materials-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (min-width: 992px) {
+            .captador-container {
+                max-width: 1100px;
+            }
+            
+            .info-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .materials-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="captador-container">
+        <!-- Cabeçalho -->
+        <div class="header-captador">
+            <div class="header-content">
+                <h1>Área do Captador</h1>
+                <p><i class="fas fa-user"></i> {{ captador.get_full_name|default:captador.username }}</p>
+                <p><i class="fas fa-envelope"></i> {{ captador.email }}</p>
+            </div>
+        </div>
+        
+        <!-- Menu de navegação -->
+        <div class="nav-tabs">
+            <div class="nav-tab active" data-tab="dashboard">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </div>
+            <div class="nav-tab" data-tab="boletos">
+                <i class="fas fa-file-invoice-dollar"></i> Boletos
+            </div>
+            <div class="nav-tab" data-tab="materiais">
+                <i class="fas fa-images"></i> Materiais
+            </div>
+        </div>
+        
+        <!-- Conteúdo - Dashboard -->
+        <div id="dashboard" class="tab-content active">
+            {% if total_vendas > 0 %}
+            <!-- Resumo Financeiro -->
+            <div class="section">
+                <h3><i class="fas fa-chart-line"></i> Resumo Financeiro</h3>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <label>Valor Total de Indicações</label>
+                        <div class="value highlight">R$ {{ valor_total_indicacoes|floatformat:2 }}</div>
+                    </div>
+                    <div class="info-card">
+                        <label>Comissão Total ({{ percentual_comissao }}%)</label>
+                        <div class="value highlight">R$ {{ comissao_total|floatformat:2 }}</div>
+                    </div>
+                    <div class="info-card">
+                        <label>Comissão Recebida</label>
+                        <div class="value highlight">R$ {{ comissao_recebida|floatformat:2 }}</div>
+                    </div>
+                    <div class="info-card">
+                        <label>Comissão à Receber</label>
+                        <div class="value">R$ {{ comissao_a_receber|floatformat:2 }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Informações do Captador -->
+            <div class="section">
+                <h3><i class="fas fa-user-tie"></i> Minhas Informações</h3>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <label>Total de Indicações</label>
+                        <div class="value">{{ total_vendas }}</div>
+                    </div>
+                    <div class="info-card">
+                        <label>Total de Parcelas</label>
+                        <div class="value">{{ total_parcelas }}</div>
+                    </div>
+                    <div class="info-card">
+                        <label>Boletos Pagos</label>
+                        <div class="value highlight">{{ parcelas_pagas }}</div>
+                    </div>
+                    <div class="info-card">
+                        <label>Próximo Recebimento</label>
+                        <div class="value">{{ proximo_recebimento|date:"d/m/Y"|default:"N/A" }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Status de Boletos -->
+            <div class="section">
+                <h3><i class="fas fa-file-invoice-dollar"></i> Status de Boletos</h3>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <label>Boletos Pagos</label>
+                        <div class="value highlight">{{ parcelas_pagas }}</div>
+                    </div>
+                    <div class="info-card">
+                        <label>Boletos Vencidos</label>
+                        <div class="value warning">{{ parcelas_vencidas }}</div>
+                    </div>
+                    <div class="info-card">
+                        <label>Boletos à Vencer</label>
+                        <div class="value">{{ parcelas_abertas }}</div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <!-- Estado vazio -->
+            <div class="section empty-state">
+                <i class="fas fa-users"></i>
+                <h3>Nenhuma Indicação Ainda</h3>
+                <p>Compartilhe seu link de indicação abaixo para começar a receber comissões!</p>
+            </div>
+            {% endif %}
+            
+            <!-- Link de Indicação -->
+            <div class="section">
+                <h3><i class="fas fa-share-alt"></i> Link de Indicação</h3>
+                <div class="referral-link">
+                    <h4>Seu Link Exclusivo do WhatsApp</h4>
+                    <p>Compartilhe este link para indicar clientes e receber {{ percentual_comissao }}% de comissão:</p>
+                    <div class="link-container">
+                        <input type="text" class="link-input" id="whatsappLink" value="{{ whatsapp_link }}" readonly>
+                        <button class="copy-btn" onclick="copiarLink()"><i class="fas fa-copy"></i></button>
+                    </div>
+                    <a href="{{ whatsapp_link }}" target="_blank" class="btn btn-copy">
+                        <i class="fab fa-whatsapp"></i> Abrir no WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Conteúdo - Boletos -->
+        <div id="boletos" class="tab-content">
+            {% if total_parcelas > 0 %}
+            {% if boletos_pagos %}
+            <div class="section">
+                <h3><i class="fas fa-check-circle"></i> Boletos Pagos ({{ boletos_pagos|length }})</h3>
+                <div class="billet-cards">
+                    {% for boleto in boletos_pagos %}
+                    <div class="billet-card paid">
+                        <div class="billet-info">
+                            <h4>{{ boleto.venda.cliente.lead.nome_completo }}</h4>
+                            <p>Pago em: {{ boleto.data_pagamento|date:"d/m/Y" }}</p>
+                        </div>
+                        <div class="billet-value">R$ {{ boleto.valor|floatformat:2 }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if boletos_vencidos %}
+            <div class="section">
+                <h3><i class="fas fa-exclamation-triangle"></i> Boletos Vencidos ({{ boletos_vencidos|length }})</h3>
+                <div class="billet-cards">
+                    {% for boleto in boletos_vencidos %}
+                    <div class="billet-card overdue">
+                        <div class="billet-info">
+                            <h4>{{ boleto.venda.cliente.lead.nome_completo }}</h4>
+                            <p>Vencido: {{ boleto.data_vencimento|date:"d/m/Y" }}</p>
+                        </div>
+                        <div class="billet-value">R$ {{ boleto.valor|floatformat:2 }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if boletos_a_vencer %}
+            <div class="section">
+                <h3><i class="fas fa-clock"></i> Boletos à Vencer ({{ boletos_a_vencer|length }})</h3>
+                <div class="billet-cards">
+                    {% for boleto in boletos_a_vencer %}
+                    <div class="billet-card pending">
+                        <div class="billet-info">
+                            <h4>{{ boleto.venda.cliente.lead.nome_completo }}</h4>
+                            <p>Vencimento: {{ boleto.data_vencimento|date:"d/m/Y" }}</p>
+                        </div>
+                        <div class="billet-value">R$ {{ boleto.valor|floatformat:2 }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="section empty-state">
+                <i class="fas fa-file-invoice"></i>
+                <h3>Nenhum Boleto Disponível</h3>
+                <p>Assim que suas indicações gerarem vendas, os boletos aparecerão aqui.</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Conteúdo - Materiais -->
+        <div id="materiais" class="tab-content">
+            <div class="section">
+                <h3><i class="fas fa-download"></i> Materiais de Divulgação</h3>
+                <p style="color: #666; margin-bottom: 20px;">Baixe imagens e vídeos para divulgar nossos serviços:</p>
+                <div class="materials-grid">
+                    {% for material in media_files %}
+                    <div class="material-card">
+                        <img src="{{ material.thumbnail_url }}" alt="{{ material.name }}" class="material-thumbnail" loading="lazy">
+                        <div class="material-info">
+                            <h4>{{ material.name }}</h4>
+                            <a href="{{ material.download_url }}" target="_blank" class="btn">
+                                <i class="fas fa-download"></i> Baixar
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Link de Indicação -->
+            <div class="section">
+                <h3><i class="fas fa-share-alt"></i> Link de Indicação</h3>
+                <div class="referral-link">
+                    <h4>Seu Link Exclusivo do WhatsApp</h4>
+                    <p>Compartilhe este link junto com os materiais acima:</p>
+                    <div class="link-container">
+                        <input type="text" class="link-input" id="whatsappLink2" value="{{ whatsapp_link }}" readonly>
+                        <button class="copy-btn" onclick="copiarLink2()"><i class="fas fa-copy"></i></button>
+                    </div>
+                    <a href="{{ whatsapp_link }}" target="_blank" class="btn btn-copy">
+                        <i class="fab fa-whatsapp"></i> Abrir no WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Rodapé -->
+        <div class="footer">
+            <p>© 2025 Mr. Baruch - Todos os direitos reservados</p>
+            <p>Suporte: (11) 97889-1213 | captadores@mrbaruch.com</p>
+        </div>
+    </div>
+
+    <script>
+        // Navegação por abas
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('.nav-tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab');
+                    
+                    // Remove classe active de todas as abas e conteúdos
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    // Adiciona classe active à aba e conteúdo selecionados
+                    this.classList.add('active');
+                    document.getElementById(targetTab).classList.add('active');
+                });
+            });
+        });
+        
+        // Copiar link
+        function copiarLink() {
+            const linkInput = document.getElementById('whatsappLink');
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999); // Mobile
+            
+            navigator.clipboard.writeText(linkInput.value).then(() => {
+                const btn = event.target.closest('button');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                }, 2000);
+            });
+        }
+        
+        function copiarLink2() {
+            const linkInput = document.getElementById('whatsappLink2');
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999); // Mobile
+            
+            navigator.clipboard.writeText(linkInput.value).then(() => {
+                const btn = event.target.closest('button');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

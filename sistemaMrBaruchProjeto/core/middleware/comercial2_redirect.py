@@ -23,7 +23,8 @@ class Comercial2RedirectMiddleware:
         '/core/',            # Permitir documentação e configurações
         '/compliance/',      # Permitir ver histórico quando lead volta
         '/vendas/comercial2', 
-        '/clientes/',        
+        '/clientes/',
+        '/captadores/',      # Permitir área do captador
     )
     
     # Apenas redirecionar nestes paths específicos (login/raiz)

@@ -22,6 +22,7 @@ class ConsultorRestrictionMiddleware(MiddlewareMixin):
             '/static/',
             '/media/',
             '/clientes/',  # Área do cliente sempre permitida
+            '/captadores/',  # Área do captador sempre permitida
         ]
 
             # URLs permitidas para usuários do grupo 'comercial1' (consultores)

@@ -36,6 +36,7 @@ class AtendenteRestrictionMiddleware(MiddlewareMixin):
             '/accounts/perfil-atendente/',
             '/accounts/logout-session/',
             '/clientes/',  # Permitir área do cliente
+            '/captadores/',  # Permitir área do captador
         ]
 
         # Permitir sempre paths públicos

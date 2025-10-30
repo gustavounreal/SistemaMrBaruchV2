@@ -36,6 +36,7 @@ class ComplianceRestrictionMiddleware(MiddlewareMixin):
             '/juridico/',  # Acesso completo ao módulo jurídico (integração)
             '/juridico/api/',
             '/clientes/',  # Permitir área do cliente
+            '/captadores/',  # Permitir área do captador
         ]
 
         # Permitir sempre paths públicos
