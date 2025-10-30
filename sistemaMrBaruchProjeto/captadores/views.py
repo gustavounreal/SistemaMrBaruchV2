@@ -45,8 +45,9 @@ def area_captador(request):
     valor_total_indicacoes = vendas.aggregate(total=Sum('valor_total'))['total'] or 0
     
     # Comissão (percentual configurável do valor total das vendas)
-    percentual_comissao = percentual_comissao_config / 100  # Converter de % para decimal
-    comissao_total = valor_total_indicacoes * percentual_comissao
+    from decimal import Decimal
+    percentual_comissao = Decimal(str(percentual_comissao_config)) / Decimal('100')  # Converter de % para decimal
+    comissao_total = Decimal(str(valor_total_indicacoes)) * percentual_comissao
     
     # Buscar todas as parcelas das vendas do captador
     parcelas = Parcela.objects.filter(venda__captador=captador).select_related('venda__cliente__lead')
