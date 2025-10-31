@@ -86,11 +86,48 @@
                 <!-- Etapa 1 -->
                 <div class="form-step active" id="step1Content">
                     <h5 class="text-primary text-center mb-4"><i class="bi bi-person-plus me-2"></i>Registro do Lead</h5>
-                    
+                     <!-- Links para consulta de CPF/CNPJ -->
+                        <div class="cpf-cnpj-links d-flex flex-row w-100" style="gap: 10px;">
+                            <a href="https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/consultapublica.asp" target="_blank" class="btn btn-outline-primary flex-fill text-nowrap">
+                                <i class="bi bi-person-vcard"></i> Consultar Situação do CPF na Receita Federal
+                            </a>
+                            <a href="https://servicos.receita.fazenda.gov.br/servicos/cnpjreva/cnpjreva_solicitacao.asp" target="_blank" class="btn btn-outline-secondary flex-fill text-nowrap">
+                                <i class="bi bi-building"></i> Consultar Situação do CNPJ na Receita Federal
+                            </a>
+                             <small class="form-text d-block mt-1">Use os links acima para validar a titularidade e situação do CPF ou CNPJ informado.</small>
+                        </div>
+                        <label class="form-label required" for="id_cpf_cnpj">CPF/CNPJ</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="id_cpf_cnpj" placeholder="Informe o CPF ou CNPJ">
+                            <button type="button" class="btn btn-outline-info" onclick="buscarLeadPorCpfCnpj()" title="Buscar lead existente">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                             <small class="form-text text-muted ms-1" style="display:block;">
+                            Obrigatório apenas para <b>Fazer Levantamento</b>. Para leads sem levantamento, pode deixar em branco.
+                        </small>
+                        </div>                       
                     <div class="mb-3">
                         <label class="form-label required" for="id_nome_completo">Nome Completo</label>
                         <input type="text" class="form-control" id="id_nome_completo" placeholder="Digite o nome completo" required>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label required" for="id_telefone">Telefone / WhatsApp</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="padding-right: 0.5rem; padding-left: 0.75rem;">+<input type="text" id="id_ddi" class="form-control border-0 p-0 m-0" style="width: 40px; min-width: 40px; max-width: 50px; display: inline-block; background: transparent;" value="55" maxlength="3" pattern="\\d*" title="DDI" required></span>
+                            <input type="text" class="form-control" id="id_telefone" placeholder="(00) 00000-0000" required>
+                        </div>
+                        <small class="form-text text-muted ms-1">DDI padrão Brasil: 55</small>
+                    </div>
+                     <div class="mb-3">
+                        <label class="form-label required" for="id_origem">Origem do Lead</label>
+                        <select class="form-select" id="id_origem" required>
+                            <option value="" selected disabled>Selecione a origem</option>
+                            {% for origem in origens %}
+                                <option value="{{ origem.id }}">{{ origem.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label required" for="id_captador">Captador (ID do usuário)</label>
                         <div class="input-group">
@@ -125,51 +162,20 @@
                 document.getElementById('captadorInfo').textContent = 'Erro ao buscar captador.';
             });
     }
-    // ...existing code...
+    
     </script>
-                    <div class="mb-3">
-                        <label class="form-label required" for="id_cpf_cnpj">CPF/CNPJ</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="id_cpf_cnpj" placeholder="Informe o CPF ou CNPJ">
-                            <button type="button" class="btn btn-outline-info" onclick="buscarLeadPorCpfCnpj()" title="Buscar lead existente">
-                                <i class="bi bi-search"></i> Buscar
-                            </button>
-                        </div>
-                        <small class="form-text text-muted ms-1" style="display:block;">
-                            Obrigatório apenas para <b>Fazer Levantamento</b>. Para leads sem levantamento, pode deixar em branco.
-                        </small>
+                    <div class="mb-3">                        
+                       
                         <div id="leadEncontradoInfo" style="display:none;" class="alert alert-info mt-2 p-2">
                             <small><i class="bi bi-info-circle"></i> <span id="leadInfoTexto"></span></small>
-                        </div>
-                        <!-- Links para consulta de CPF/CNPJ -->
-                        <div class="cpf-cnpj-links d-flex flex-row w-100" style="gap: 10px;">
-                            <a href="https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/consultapublica.asp" target="_blank" class="btn btn-outline-primary flex-fill text-nowrap">
-                                <i class="bi bi-person-vcard"></i> Consultar Situação do CPF na Receita Federal
-                            </a>
-                            <a href="https://servicos.receita.fazenda.gov.br/servicos/cnpjreva/cnpjreva_solicitacao.asp" target="_blank" class="btn btn-outline-secondary flex-fill text-nowrap">
-                                <i class="bi bi-building"></i> Consultar Situação do CNPJ na Receita Federal
-                            </a>
-                        </div>
-                        <small class="form-text d-block mt-1">Use os links acima para validar a titularidade e situação do CPF ou CNPJ informado.</small>
+                        </div>                       
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label required" for="id_telefone">Telefone / WhatsApp</label>
-                        <input type="text" class="form-control" id="id_telefone" placeholder="(00) 00000-0000" required>
-                    </div>
-                    <div class="mb-3">
+                    
+                    <!--<div class="mb-3">
                         <label class="form-label" for="id_email">E-mail</label>
                         <input type="email" class="form-control" id="id_email" placeholder="email@exemplo.com">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label required" for="id_origem">Origem do Lead</label>
-                        <select class="form-select" id="id_origem" required>
-                            <option value="" selected disabled>Selecione a origem</option>
-                            {% for origem in origens %}
-                                <option value="{{ origem.id }}">{{ origem.nome }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
+                    </div>-->
+                   
                     <div class="d-flex justify-content-between mt-4 btn-row-mobile" id="botoesAcao">
                         <button type="button" class="btn btn-warning btn-step" onclick="salvarLeadSemLevantamento()" id="btnSemLevantamento">
                             <i class="bi bi-exclamation-triangle me-2"></i>Não fez Levantamento
@@ -374,12 +380,13 @@ function reativarLead() {
 // Função para salvar lead sem levantamento
 function salvarLeadSemLevantamento() {
     const nome = document.getElementById('id_nome_completo').value.trim();
-    const tel = document.getElementById('id_telefone').value.trim();
+    const ddi = document.getElementById('id_ddi').value.trim();
+    const telefone = document.getElementById('id_telefone').value.trim();
     const email = document.getElementById('id_email').value.trim();
     const origem = document.getElementById('id_origem').value;
     const cpfCnpj = document.getElementById('id_cpf_cnpj').value.trim();
 
-    if (!nome || !tel) {
+    if (!nome || !telefone) {
         showAlert('Preencha nome e telefone corretamente.', 'danger');
         return;
     }
@@ -387,7 +394,6 @@ function salvarLeadSemLevantamento() {
         showAlert('Selecione a origem do lead.', 'danger');
         return;
     }
-    
     // Se lead já existe, apenas atualizar status
     if (leadEncontrado) {
         showAlert('Lead já existe no sistema. Redirecionando...', 'info');
@@ -395,6 +401,14 @@ function salvarLeadSemLevantamento() {
             window.location.href = '/atendimento/leads-pix/';
         }, 1500);
         return;
+    }
+
+    // Unifica DDI e telefone
+    let tel = '';
+    if (ddi) {
+        tel = `+${ddi}${telefone.replace(/\D/g, '')}`;
+    } else {
+        tel = telefone.replace(/\D/g, '');
     }
 
     const formData = new FormData();
@@ -426,13 +440,14 @@ function salvarLeadSemLevantamento() {
 // Etapa 1 → salva o lead e carrega etapa 2
 function salvarLead() {
     const nome = document.getElementById('id_nome_completo').value.trim();
-    const tel = document.getElementById('id_telefone').value.trim();
+    const ddi = document.getElementById('id_ddi').value.trim();
+    const telefone = document.getElementById('id_telefone').value.trim();
     const email = document.getElementById('id_email').value.trim();
     const origem = document.getElementById('id_origem').value;
     const cpfCnpj = document.getElementById('id_cpf_cnpj').value.trim();
 
     // CPF/CNPJ obrigatório apenas para "Fazer Levantamento"
-    if (!nome || !tel) {
+    if (!nome || !telefone) {
         showAlert('Preencha nome e telefone corretamente.', 'danger');
         return;
     }
@@ -449,6 +464,14 @@ function salvarLead() {
     if (!validarCpfCnpj(cpfCnpjLimpo)) {
         showAlert(tipoDoc + ' inválido.', 'danger');
         return;
+    }
+
+    // Unifica DDI e telefone
+    let tel = '';
+    if (ddi) {
+        tel = `+${ddi}${telefone.replace(/\D/g, '')}`;
+    } else {
+        tel = telefone.replace(/\D/g, '');
     }
 // Validação de CPF/CNPJ
 function validarCpfCnpj(valor) {
