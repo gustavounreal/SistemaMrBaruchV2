@@ -439,12 +439,13 @@ function salvarLeadSemLevantamento() {
 
 // Etapa 1 → salva o lead e carrega etapa 2
 function salvarLead() {
-    const nome = document.getElementById('id_nome_completo').value.trim();
-    const ddi = document.getElementById('id_ddi').value.trim();
-    const telefone = document.getElementById('id_telefone').value.trim();
-    const email = document.getElementById('id_email').value.trim();
-    const origem = document.getElementById('id_origem').value;
-    const cpfCnpj = document.getElementById('id_cpf_cnpj').value.trim();
+    const nome = document.getElementById('id_nome_completo') ? document.getElementById('id_nome_completo').value.trim() : '';
+    const ddiInput = document.getElementById('id_ddi');
+    const ddi = ddiInput ? ddiInput.value.trim() : '';
+    const telefone = document.getElementById('id_telefone') ? document.getElementById('id_telefone').value.trim() : '';
+    const email = document.getElementById('id_email') ? document.getElementById('id_email').value.trim() : '';
+    const origem = document.getElementById('id_origem') ? document.getElementById('id_origem').value : '';
+    const cpfCnpj = document.getElementById('id_cpf_cnpj') ? document.getElementById('id_cpf_cnpj').value.trim() : '';
 
     // CPF/CNPJ obrigatório apenas para "Fazer Levantamento"
     if (!nome || !telefone) {
