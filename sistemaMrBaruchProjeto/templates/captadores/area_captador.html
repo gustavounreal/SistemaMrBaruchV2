@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Área do Captador - {{ captador.get_full_name|default:captador.username }}</title>
+    <title>Área do Captador - {{ captador.get_full_name|default:captador.id }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -454,7 +454,7 @@
         <div class="header-captador">
             <div class="header-content">
                 <h1>Área do Captador</h1>
-                <p><i class="fas fa-user"></i> {{ captador.get_full_name|default:captador.username }}</p>
+                <p><i class="fas fa-user"></i> {{ captador.get_full_name|default:'ID: ' }}{{ captador.id }}</p>
                 <p><i class="fas fa-envelope"></i> {{ captador.email }}</p>
             </div>
         </div>
