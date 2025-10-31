@@ -417,10 +417,7 @@
             </h2>
             <p>Acompanhamento completo do fluxo pós-venda e conferência</p>
         </div>
-
-        <div class="content-container">
-<div class="container-fluid py-4">
-    <!-- Header -->
+ <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2><i class="fas fa-clipboard-check"></i> Gestão Pós-Venda</h2>
@@ -461,8 +458,34 @@
             </div>
         </div>
     </div>
+        <div class="content-container">
+        <!-- Filtros de Status (Botões) -->
+        <div class="mb-4">
+            <div class="d-flex flex-wrap gap-2 align-items-center justify-content-center">
+                <form method="get" action="" style="display:inline;">
+                    <input type="hidden" name="status" value="">
+                    <input type="hidden" name="pagamento" value="{{ filtro_pagamento }}">
+                    <input type="hidden" name="busca" value="{{ filtro_busca }}">
+                    <button type="submit" class="btn {% if not filtro_status %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-pill px-4">
+                        Todos
+                    </button>
+                </form>
+                {% for value, label in status_choices %}
+                    <form method="get" action="" style="display:inline;">
+                        <input type="hidden" name="status" value="{{ value }}">
+                        <input type="hidden" name="pagamento" value="{{ filtro_pagamento }}">
+                        <input type="hidden" name="busca" value="{{ filtro_busca }}">
+                        <button type="submit" class="btn {% if filtro_status == value %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-pill px-4">
+                            {{ label }}
+                        </button>
+                    </form>
+                {% endfor %}
+            </div>
+        </div>
+<div class="container-fluid py-4">
+   
 
-    <!-- Filtros -->
+    <!-- Filtros
     <div class="filter-section">
         <form method="GET" action="{% url 'compliance:painel_pos_venda' %}">
             <div class="row g-3">
@@ -500,7 +523,7 @@
                 </div>
             </div>
         </form>
-    </div>
+    </div> -->
 
     <!-- Tabela de Vendas -->
     <div class="card">

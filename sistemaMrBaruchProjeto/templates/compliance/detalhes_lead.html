@@ -6,6 +6,51 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<style>
+   /* === CPF/CNPJ Consulta Buttons === */
+        .cpf-cnpj-links {
+            display: flex !important;
+            gap: 10px !important;
+            margin-top: 4px !important;
+            flex-wrap: wrap !important;
+        }
+        .cpf-cnpj-links a {
+            font-size: 0.97rem !important;
+            font-weight: 600 !important;
+            border-radius: 8px !important;
+            padding: 8px 18px !important;
+            box-shadow: 0 2px 8px rgba(59,130,246,0.08) !important;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.2s !important;
+            border-width: 2px !important;
+            letter-spacing: 0.01em !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+        }
+        .cpf-cnpj-links a.btn-outline-primary {
+            background: linear-gradient(90deg, #e3f0ff 0%, #f8fafc 100%) !important;
+            color: #2563eb !important;
+            border-color: #2563eb !important;
+        }
+        .cpf-cnpj-links a.btn-outline-primary:hover {
+            background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%) !important;
+            color: #fff !important;
+            box-shadow: 0 4px 16px rgba(59,130,246,0.15) !important;
+            transform: translateY(-2px) !important;
+        }
+        .cpf-cnpj-links a.btn-outline-secondary {
+            background: linear-gradient(90deg, #f3f4f6 0%, #f8fafc 100%) !important;
+            color: #374151 !important;
+            border-color: #374151 !important;
+        }
+        .cpf-cnpj-links a.btn-outline-secondary:hover {
+            background: linear-gradient(90deg, #374151 0%, #6b7280 100%) !important;
+            color: #fff !important;
+            box-shadow: 0 4px 16px rgba(55,65,81,0.13) !important;
+            transform: translateY(-2px) !important;
+        }
+
+</style>
 {% endblock %}
 
 {% block content %}
@@ -52,10 +97,15 @@
                         <label class="form-label text-muted">Telefone</label>
                         <p class="mb-0"><strong>{{ lead.telefone }}</strong></p>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted">Email</label>
-                        <p class="mb-0">{{ lead.email|default:"-" }}</p>
+                     <div class="col-md-3 mb-3">
+                        <label class="form-label text-muted">Data de Nascimento</label>
+                        {% if lead.cliente and lead.cliente.data_nascimento %}
+                            <p class="mb-0"><strong>{{ lead.cliente.data_nascimento|date:"d/m/Y" }}</strong></p>
+                        {% else %}
+                            <p class="mb-0"><strong>-</strong></p>
+                        {% endif %}
                     </div>
+                    
                     <div class="col-md-6 mb-3">
                         <label class="form-label text-muted">Origem</label>
                         <p class="mb-0">{{ lead.origem|default:"-" }}</p>
@@ -65,6 +115,16 @@
                         <p class="mb-0">{{ lead.observacoes|default:"Nenhuma observação" }}</p>
                     </div>
                 </div>
+                <!-- Links para consulta de CPF/CNPJ -->
+                        <div class="cpf-cnpj-links d-flex flex-row w-100" style="gap: 10px;">
+                            <a href="https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/consultapublica.asp" target="_blank" class="btn btn-outline-primary flex-fill text-nowrap">
+                                <i class="bi bi-person-vcard"></i> Consultar Situação do CPF na Receita Federal
+                            </a>
+                            <a href="https://servicos.receita.fazenda.gov.br/servicos/cnpjreva/cnpjreva_solicitacao.asp" target="_blank" class="btn btn-outline-secondary flex-fill text-nowrap">
+                                <i class="bi bi-building"></i> Consultar Situação do CNPJ na Receita Federal
+                            </a>
+                             <small class="form-text d-block mt-1">Use os links acima para validar a titularidade e situação do CPF ou CNPJ informado.</small>
+                        </div>
             </div>
 
             <!-- Levantamentos -->
@@ -86,14 +146,36 @@
                             {% for lev in levantamentos %}
                             <tr>
                                 <td>#{{ lev.id }}</td>
-                                <td>R$ {{ lev.valor_levantamento|floatformat:2 }}</td>
+                                <td>R$ 
+                                    {% if lev.valor_levantamento is not None %}
+                                        {{ lev.valor_levantamento|floatformat:2 }}
+                                    {% elif lev.valor is not None %}
+                                        {{ lev.valor|floatformat:2 }}
+                                    {% else %}
+                                        0,00
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <span class="badge bg-{% if lev.status_pagamento == 'pago' %}success{% else %}warning{% endif %}">
                                         {{ lev.get_status_pagamento_display }}
                                     </span>
                                 </td>
                                 <td>{{ lev.data_criacao|date:"d/m/Y H:i" }}</td>
-                                <td>{{ lev.data_pagamento|date:"d/m/Y H:i"|default:"-" }}</td>
+                                <td>
+                                    {% if lev.status_pagamento == 'pago' %}
+                                        {% if lev.data_pagamento %}
+                                            {{ lev.data_pagamento|date:"d/m/Y H:i" }}
+                                        {% elif lev.data_pagamento_pix %}
+                                            {{ lev.data_pagamento_pix|date:"d/m/Y H:i" }}
+                                        {% elif lev.data_criacao %}
+                                            {{ lev.data_criacao|date:"d/m/Y" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orçamento #{{ venda.id }} - {{ venda.cliente.lead.nome_completo }}</title>
+    <title>Orçamento {% if venda %}#{{ venda.id }} - {{ venda.cliente.lead.nome_completo }}{% elif pre_venda %}Pré-venda - {{ pre_venda.lead.nome_completo }}{% endif %}</title>
     <style>
         @page {
             size: A4;
@@ -39,18 +39,24 @@
             .parcelas-table tbody tr:nth-child(even) {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
-                color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             
             /* Garantir que gradientes apareçam */
             .header {
                 background: #6f42c1 !important;
                 -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             
             .servico-box {
                 background: #667eea !important;
                 -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             
             /* Evitar quebra de página dentro de elementos */
@@ -347,7 +353,9 @@
         <!-- Header -->
         <div class="header">
             <h1>ORÇAMENTO</h1>
-            <p class="subtitle">Orçamento Nº {{ 4655|add:venda.id }} | Emitido em: {{ data_emissao|date:"d/m/Y" }}</p>
+            <p class="subtitle">
+                {% if venda %}Orçamento Nº {{ 4655|add:venda.id }}{% elif pre_venda %}Pré-venda{% endif %} | Emitido em: {{ data_emissao|date:"d/m/Y" }}
+            </p>
         </div>
         
         <div class="content">
@@ -387,47 +395,72 @@
                 
                 <div class="info-box">
                     <h3>CLIENTE</h3>
-                    <div class="info-row">
-                        <span class="info-label">Nome:</span>
-                        <span class="info-value">{{ venda.cliente.lead.nome_completo }}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">CPF/CNPJ:</span>
-                        <span class="info-value">{{ venda.cliente.lead.cpf_cnpj|default:"Não informado" }}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">E-mail:</span>
-                        <span class="info-value">{{ venda.cliente.lead.email|default:"Não informado" }}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Telefone:</span>
-                        <span class="info-value">{{ venda.cliente.lead.telefone }}</span>
-                    </div>
-                    {% if venda.cliente.lead.endereco %}
-                    <div class="info-row">
-                        <span class="info-label">Endereço:</span>
-                        <span class="info-value">{{ venda.cliente.lead.endereco }}</span>
-                    </div>
-                    {% endif %}
-                    {% if venda.cliente.rua %}
-                    <div class="info-row">
-                        <span class="info-label">Endereço:</span>
-                        <span class="info-value">{{ venda.cliente.rua }}, {{ venda.cliente.numero }}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Bairro:</span>
-                        <span class="info-value">{{ venda.cliente.bairro }}</span>
-                    </div>
-                    {% endif %}
-                    {% if venda.cliente.cidade and venda.cliente.estado %}
-                    <div class="info-row">
-                        <span class="info-label">Cidade/UF:</span>
-                        <span class="info-value">{{ venda.cliente.cidade }}/{{ venda.cliente.estado }}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">CEP:</span>
-                        <span class="info-value">{{ venda.cliente.cep }}</span>
-                    </div>
+                    {% if venda %}
+                        <div class="info-row">
+                            <span class="info-label">Nome:</span>
+                            <span class="info-value">{{ venda.cliente.lead.nome_completo }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">CPF/CNPJ:</span>
+                            <span class="info-value">{{ venda.cliente.lead.cpf_cnpj|default:"Não informado" }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">E-mail:</span>
+                            <span class="info-value">{{ venda.cliente.lead.email|default:"Não informado" }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Telefone:</span>
+                            <span class="info-value">{{ venda.cliente.lead.telefone }}</span>
+                        </div>
+                        {% if venda.cliente.lead.endereco %}
+                        <div class="info-row">
+                            <span class="info-label">Endereço:</span>
+                            <span class="info-value">{{ venda.cliente.lead.endereco }}</span>
+                        </div>
+                        {% endif %}
+                        {% if venda.cliente.rua %}
+                        <div class="info-row">
+                            <span class="info-label">Endereço:</span>
+                            <span class="info-value">{{ venda.cliente.rua }}, {{ venda.cliente.numero }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Bairro:</span>
+                            <span class="info-value">{{ venda.cliente.bairro }}</span>
+                        </div>
+                        {% endif %}
+                        {% if venda.cliente.cidade and venda.cliente.estado %}
+                        <div class="info-row">
+                            <span class="info-label">Cidade/UF:</span>
+                            <span class="info-value">{{ venda.cliente.cidade }}/{{ venda.cliente.estado }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">CEP:</span>
+                            <span class="info-value">{{ venda.cliente.cep }}</span>
+                        </div>
+                        {% endif %}
+                    {% elif pre_venda %}
+                        <div class="info-row">
+                            <span class="info-label">Nome:</span>
+                            <span class="info-value">{{ pre_venda.lead.nome_completo }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">CPF/CNPJ:</span>
+                            <span class="info-value">{{ pre_venda.lead.cpf_cnpj|default:"Não informado" }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">E-mail:</span>
+                            <span class="info-value">{{ pre_venda.lead.email|default:"Não informado" }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Telefone:</span>
+                            <span class="info-value">{{ pre_venda.lead.telefone }}</span>
+                        </div>
+                        {% if pre_venda.lead.endereco %}
+                        <div class="info-row">
+                            <span class="info-label">Endereço:</span>
+                            <span class="info-value">{{ pre_venda.lead.endereco }}</span>
+                        </div>
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>
@@ -435,42 +468,75 @@
             <!-- Serviço Contratado -->
             <div class="servico-box">
                 <h2>SERVIÇO CONTRATADO</h2>
-                <p><strong>{{ venda.servico.nome }}</strong></p>
-                {% if venda.servico.descricao %}
-                <p>{{ venda.servico.descricao }}</p>
+                {% if venda %}
+                    <p><strong>{{ venda.servico.nome }}</strong></p>
+                    {% if venda.servico.descricao %}
+                    <p>{{ venda.servico.descricao }}</p>
+                    {% endif %}
+                {% elif pre_venda %}
+                    <p><strong>{{ pre_venda.get_servico_interesse_display }}</strong></p>
                 {% endif %}
             </div>
             
             <!-- Valores Principais -->
             <div class="valores-box">
+                                
                 <h3>RESUMO FINANCEIRO</h3>
                 
-                {% if not venda.sem_entrada %}
-                <div class="valor-item">
-                    <span>Entrada ({{ venda.get_forma_entrada_display }}):</span>
-                    <span class="valor-moeda"><strong>{{ venda.valor_entrada }}</strong></span>
-                </div>
-                {% else %}
-                <div class="valor-item">
-                    <span>Entrada:</span>
-                    <span><strong>SEM ENTRADA</strong></span>
+                {% if venda %}
+                    {% if not venda.sem_entrada %}
+                    <div class="valor-item">
+                        <span>Entrada ({{ venda.get_forma_entrada_display }}):</span>
+                        <span class="valor-moeda"><strong>{{ venda.valor_entrada }}</strong></span>
+                    </div>
+                    {% else %}
+                    <div class="valor-item">
+                        <span>Entrada:</span>
+                        <span><strong>SEM ENTRADA</strong></span>
+                    </div>
+                    {% endif %}
+                    <div class="valor-item">
+                        <span>Parcelamento:</span>
+                        <span><strong>{{ venda.quantidade_parcelas }}x de <span class="valor-moeda">{{ venda.valor_parcela }}</span> ({{ venda.get_frequencia_pagamento_display }})</strong></span>
+                    </div>
+                    <div class="valor-item">
+                        <span>Forma de Pagamento:</span>
+                        <span><strong>{{ venda.get_forma_pagamento_display }}</strong></span>
+                    </div>
+                    <div class="valor-item total">
+                        <span>VALOR TOTAL:</span>
+                        <span class="valor-moeda">{{ venda.valor_total }}</span>
+                    </div>
+                {% elif pre_venda %}
+                    <div class="valor-item">
+                        <span>Entrada:</span>
+                        <span class="valor-moeda"><strong>{{ pre_venda.valor_entrada|default:'0,00' }}</strong></span>
+                    </div>
+                    <div class="valor-item">
+                        <span>Parcelamento:</span>
+                        <span><strong>{{ pre_venda.quantidade_parcelas|default:'1' }}x de <span class="valor-moeda">{{ pre_venda.valor_parcela|default:'0,00' }}</span> ({{ pre_venda.get_frequencia_pagamento_display|default:'Mensal' }})</strong></span>
+                    </div>
+                    <div class="valor-item">
+                        <span>Forma de Pagamento:</span>
+                        <span><strong>Boleto</strong></span>
+                    </div>
+                    <div class="valor-item total">
+                        <span>VALOR TOTAL:</span>
+                        <span class="valor-moeda">{{ pre_venda.valor_total|default:pre_venda.valor_proposto }}</span>
+                    </div>
+                {% endif %}
+                {% if parcelas %}
+                <div style="margin-top:10px;">
+                    <strong>Detalhamento das Parcelas:</strong>
+                    <ul style="margin: 6px 0 0 0; padding-left: 18px; font-size: 10pt;">
+                        {% for parcela in parcelas %}
+                        <li>
+                            Parcela {{ parcela.numero_parcela }}: R$ {{ parcela.valor|floatformat:2 }} - Vencimento: {{ parcela.data_vencimento|date:"d/m/Y" }}
+                        </li>
+                        {% endfor %}
+                    </ul>
                 </div>
                 {% endif %}
-                
-                <div class="valor-item">
-                    <span>Parcelamento:</span>
-                    <span><strong>{{ venda.quantidade_parcelas }}x de <span class="valor-moeda">{{ venda.valor_parcela }}</span> ({{ venda.get_frequencia_pagamento_display }})</strong></span>
-                </div>
-                
-                <div class="valor-item">
-                    <span>Forma de Pagamento:</span>
-                    <span><strong>{{ venda.get_forma_pagamento_display }}</strong></span>
-                </div>
-                
-                <div class="valor-item total">
-                    <span>VALOR TOTAL:</span>
-                    <span class="valor-moeda">{{ venda.valor_total }}</span>
-                </div>
             </div>
             
             <!-- Cronograma de Parcelas -->
@@ -482,24 +548,28 @@
                         <th>Parcela</th>
                         <th>Vencimento</th>
                         <th>Valor</th>
-                        <th>Status</th>
+                        {% if venda %}<th>Status</th>{% endif %}
                     </tr>
                 </thead>
                 <tbody>
                     {% for parcela in parcelas %}
                     <tr>
-                        <td>{{ parcela.numero_parcela }}/{{ venda.quantidade_parcelas }}</td>
+                        <td>{{ parcela.numero_parcela }}{% if venda %}/{{ venda.quantidade_parcelas }}{% elif pre_venda %}/{{ pre_venda.quantidade_parcelas }}{% endif %}</td>
                         <td>{{ parcela.data_vencimento|date:"d/m/Y" }}</td>
                         <td class="valor-moeda">{{ parcela.valor }}</td>
+                        {% if venda %}
                         <td>
                             {% if parcela.status == 'paga' %}
                                 Paga
                             {% elif parcela.status == 'vencida' %}
                                 Vencida
+                            {% elif parcela.status == 'cancelada' %}
+                                Cancelada
                             {% else %}
                                 Aberta
                             {% endif %}
                         </td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -509,19 +579,15 @@
             <!-- Informações Adicionais e Consultor lado a lado -->
             {% if pre_venda or venda.dias_para_conclusao %}
             <h3 class="section-title">INFORMAÇÕES COMPLEMENTARES</h3>
-            
             <div class="info-grid">
                 <!-- Coluna Esquerda: Informações Adicionais -->
                 <div>
-                    {% if pre_venda %}
-                    {% if pre_venda.observacoes_levantamento %}
+                    {% if pre_venda and pre_venda.observacoes_levantamento %}
                     <div class="observacoes">
                         <p><strong>Observações:</strong> {{ pre_venda.observacoes_levantamento }}</p>
                     </div>
                     {% endif %}
-                    {% endif %}
-                    
-                    {% if venda.dias_para_conclusao %}
+                    {% if venda and venda.dias_para_conclusao %}
                     <div class="observacoes">
                         <h4>Prazo de Execução</h4>
                         <p><strong>Prazo para conclusão:</strong> {{ venda.dias_para_conclusao }} dias corridos</p>
@@ -531,8 +597,8 @@
                     </div>
                     {% endif %}
                 </div>
-                
                 <!-- Coluna Direita: Consultor -->
+                {% if venda %}
                 <div class="info-box">
                     <h3>CONSULTOR RESPONSÁVEL</h3>
                     <div class="info-row">
@@ -540,9 +606,11 @@
                         <span class="info-value">{{ venda.consultor.get_full_name|default:venda.consultor.username }}</span>
                     </div>
                 </div>
+                {% endif %}
             </div>
             {% else %}
             <!-- Caso não tenha informações adicionais, mostrar apenas o consultor -->
+            {% if venda %}
             <h3 class="section-title">CONSULTOR RESPONSÁVEL</h3>
             <div class="info-box">
                 <h3>Responsável pela Venda</h3>
@@ -551,6 +619,7 @@
                     <span class="info-value">{{ venda.consultor.get_full_name|default:venda.consultor.username }}</span>
                 </div>
             </div>
+            {% endif %}
             {% endif %}
             
             <!-- Botões de Ação -->

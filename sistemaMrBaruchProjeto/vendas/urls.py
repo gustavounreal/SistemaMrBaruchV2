@@ -17,6 +17,9 @@ urlpatterns = [
     
     # Aceite do cliente (segunda etapa)
     path('pre-venda/<int:pre_venda_id>/aceite/', views.registrar_aceite, name='registrar_aceite'),
+
+    # Orçamento da pré-venda (PDF)
+    path('pre-venda/<int:pre_venda_id>/orcamento/', views.gerar_orcamento_pre_venda_pdf, name='orcamento_pre_venda_pdf'),
     
     # Cadastro completo da venda (terceira etapa)
     path('cadastro/<int:pre_venda_id>/', views.cadastro_venda, name='cadastro_venda'),

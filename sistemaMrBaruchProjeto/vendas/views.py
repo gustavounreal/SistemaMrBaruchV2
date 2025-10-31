@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.template.loader import render_to_string
 from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.db import transaction
@@ -11,6 +12,88 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from decimal import Decimal
 from .forms import UserForm, ConsultorForm
 from accounts.models import DadosUsuario
+from django.contrib.auth.decorators import login_required
+from datetime import timedelta
+from dateutil.relativedelta import relativedelta
+import json
+
+from .models import PreVenda, Venda, DocumentoVenda, Servico, Parcela, MotivoRecusa
+from django.http import HttpResponse
+from django.utils.encoding import smart_str
+import io
+from xhtml2pdf import pisa
+
+from datetime import date, timedelta
+
+
+# Função de permissão para Comercial 2
+def is_comercial2_or_admin(user):
+    """Verifica se usuário é do comercial2 ou admin"""
+    if user.is_superuser or user.is_staff:
+        return True
+    return user.groups.filter(name__in=['comercial2', 'Comercial2', 'admin', 'Admin']).exists()
+
+# Painel principal do Comercial 2 - Repescagem de Leads
+@login_required
+@user_passes_test(is_comercial2_or_admin)
+def painel_comercial2(request):
+    """
+    Painel principal do Comercial 2 - Repescagem de Leads
+    """
+    from .models import RepescagemLead, EstrategiaRepescagem
+    # Filtros
+    status_filter = request.GET.get('status', '')
+    motivo_filter = request.GET.get('motivo', '')
+    search = request.GET.get('search', '')
+
+    # Query base
+    repescagens = RepescagemLead.objects.select_related(
+        'lead', 'pre_venda', 'motivo_recusa', 
+        'consultor_original', 'consultor_repescagem'
+    ).all()
+
+    # Aplicar filtros
+    if status_filter:
+        repescagens = repescagens.filter(status=status_filter)
+    if motivo_filter:
+        repescagens = repescagens.filter(motivo_recusa_id=motivo_filter)
+    if search:
+        repescagens = repescagens.filter(lead__nome_completo__icontains=search)
+
+    # Paginação
+    paginator = Paginator(repescagens, 20)
+    page = request.GET.get('page', 1)
+    try:
+        repescagens_page = paginator.page(page)
+    except PageNotAnInteger:
+        repescagens_page = paginator.page(1)
+    except EmptyPage:
+        repescagens_page = paginator.page(paginator.num_pages)
+
+    # Estatísticas
+    total_repescagens = RepescagemLead.objects.count()
+    pendentes = RepescagemLead.objects.filter(status='PENDENTE').count()
+    em_contato = RepescagemLead.objects.filter(status='EM_CONTATO').count()
+    convertidos = RepescagemLead.objects.filter(status='CONVERTIDO').count()
+    lead_lixo = RepescagemLead.objects.filter(status='LEAD_LIXO').count()
+
+    # Motivos disponíveis para filtro
+    from .models import MotivoRecusa
+    motivos = MotivoRecusa.objects.filter(ativo=True)
+
+    context = {
+        'repescagens': repescagens_page,
+        'motivos': motivos,
+        'status_filter': status_filter,
+        'motivo_filter': motivo_filter,
+        'search': search,
+        'total_repescagens': total_repescagens,
+        'pendentes': pendentes,
+        'em_contato': em_contato,
+        'convertidos': convertidos,
+        'lead_lixo': lead_lixo,
+    }
+    return render(request, 'vendas/comercial2/painel_repescagem.html', context) 
 
 # Obtém o modelo User customizado
 User = get_user_model()
@@ -31,7 +114,7 @@ def is_atendente_or_admin(user):
     return user.groups.filter(name__in=['atendente', 'admin', 'Atendentes', 'Admin']).exists()
 
 
-# Outras funções...
+
 
 @login_required
 def perfil_consultor(request):
@@ -307,11 +390,86 @@ def painel_metricas_consultor(request):
     
     return render(request, 'vendas/painel_metricas_consultor.html', context)
 
-from datetime import timedelta
-from dateutil.relativedelta import relativedelta
-import json
 
-from .models import PreVenda, Venda, DocumentoVenda, Servico, Parcela, MotivoRecusa
+
+# View para gerar orçamento da pré-venda em PDF
+@login_required
+@user_passes_test(is_consultor_or_admin)
+def gerar_orcamento_pre_venda_pdf(request, pre_venda_id):
+    pre_venda = get_object_or_404(PreVenda.objects.select_related('lead'), id=pre_venda_id)
+    lead = pre_venda.lead
+
+    # Simular parcelas a partir dos dados da pré-venda
+    parcelas = []
+    try:
+        # Exemplo de campos esperados na PreVenda:
+        # pre_venda.valor_total, pre_venda.valor_entrada, pre_venda.qtd_parcelas, pre_venda.valor_parcela, pre_venda.periodicidade, pre_venda.data_primeira_parcela
+        valor_entrada = getattr(pre_venda, 'valor_entrada', None)
+        valor_total = getattr(pre_venda, 'valor_total', None)
+        qtd_parcelas = getattr(pre_venda, 'qtd_parcelas', None)
+        valor_parcela = getattr(pre_venda, 'valor_parcela', None)
+        periodicidade = getattr(pre_venda, 'periodicidade', 'mensal')  # 'mensal', 'quinzenal', etc
+        data_primeira = getattr(pre_venda, 'data_primeira_parcela', None)
+
+        if all([qtd_parcelas, valor_parcela, data_primeira]):
+            data_venc = data_primeira
+            for i in range(1, qtd_parcelas+1):
+                parcelas.append({
+                    'numero_parcela': i,
+                    'valor': valor_parcela,
+                    'data_vencimento': data_venc,
+                    'status': 'Simulada',
+                })
+                # Avança a data conforme periodicidade
+                if periodicidade == 'mensal':
+                    data_venc += timedelta(days=30)
+                elif periodicidade == 'quinzenal':
+                    data_venc += timedelta(days=15)
+                else:
+                    data_venc += timedelta(days=30)
+    except Exception as e:
+        # Se falhar, deixa parcelas vazio
+        parcelas = []
+
+    context = {
+        'pre_venda': pre_venda,
+        'lead': lead,
+        'parcelas': parcelas,
+        'venda': None,
+        'data_emissao': date.today(),
+        'empresa': {
+            'nome': 'Grupo Mr Baruch Michel da Silva Rodrigues LTDA',
+            'cnpj': '31.406.396/0001-03',
+            'endereco': 'Rua Jequirituba 1666 Slj 02',
+            'bairro': 'Parque América',
+            'cidade': 'São Paulo',
+            'estado': 'SP',
+            'cep': '04822-000',
+            'email': 'grupomrbaruch@hotmail.com',
+        }
+    }
+
+    html = render_to_string('vendas/orcamento_pdf.html', context)
+    response = HttpResponse(html, content_type='text/html')
+    return response
+    """
+    Gera o orçamento da pré-venda em PDF, renderizando o template 'vendas/orcamento_pdf.html'.
+    """
+    pre_venda = get_object_or_404(PreVenda, id=pre_venda_id)
+    # Você pode adicionar lógica para buscar outros dados relacionados, se necessário
+    context = {
+        'pre_venda': pre_venda,
+        'venda': None,  # Para o template saber que é pré-venda
+    }
+    html = render_to_string('vendas/orcamento_pdf.html', context)
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="orcamento_pre_venda_{pre_venda_id}.pdf"'
+    pisa_status = pisa.CreatePDF(
+        io.BytesIO(html.encode('utf-8')), dest=response, encoding='utf-8'
+    )
+    if pisa_status.err:
+        return HttpResponse('Erro ao gerar PDF', status=500)
+    return response
 from marketing.models import Lead, MotivoContato
 from clientes.models import Cliente
 from financeiro.models import PixLevantamento, Parcela as FinanceiroParcela, Comissao
@@ -1701,10 +1859,11 @@ def confirmacao_venda(request, venda_id):
                     
                     if not User.objects.filter(username=username_gerado).exists():
                         # Username único encontrado, cria o usuário
+                        email_to_use = lead.email if getattr(lead, 'email', None) else f"temporario+{username_gerado}@example.com"
                         user = User.objects.create_user(
                             username=username_gerado,
                             password=senha_gerada,
-                            email=lead.email or '',
+                            email=email_to_use,
                             first_name=lead.nome_completo.split()[0] if lead.nome_completo else '',
                             is_active=True
                         )
@@ -1826,73 +1985,69 @@ def gerar_credenciais_cliente(request, venda_id):
         lead = None
         if hasattr(venda.cliente, 'lead') and venda.cliente.lead:
             lead = venda.cliente.lead
-        
-        if not lead or not lead.cpf_cnpj:
+
+        if not lead:
             return JsonResponse({
                 'success': False,
-                'error': 'Lead ou CPF/CNPJ não encontrado'
+                'error': 'Lead não encontrado para este cliente.'
             })
-        
-        # Gera username: nome + dígitos do CPF (aumenta até encontrar único)
-        cpf_limpo = lead.cpf_cnpj.replace('.', '').replace('-', '').replace('/', '')
+
+        # Limpa CPF/CNPJ quando disponível
+        cpf_raw = (lead.cpf_cnpj or '')
+        cpf_limpo = ''.join(ch for ch in str(cpf_raw) if ch.isdigit())
         nome_usuario = lead.nome_completo.split()[0].lower() if lead.nome_completo else 'cliente'
-        
-        # Gera senha: CPF ou CNPJ completo
-        if '/' in lead.cpf_cnpj:
-            senha_gerada = lead.cpf_cnpj.split('/')[0].replace('.', '').replace('-', '')
-        else:
+
+        # Gera senha: usar CPF/CNPJ quando disponível, caso contrário gerar senha temporária
+        if cpf_limpo:
             senha_gerada = cpf_limpo
-        
-        # Tenta criar username único incrementando dígitos do CPF
+        else:
+            # fallback: senha temporária padrão (pode ser alterada depois pelo cliente)
+            senha_gerada = '12345678'
+
+        # Tenta criar username único: usa os primeiros 3 dígitos do CPF/CNPJ quando possível,
+        # senão usa um sufixo numérico aleatório de 3 dígitos
+        import secrets
         username_base = nome_usuario
-        digitos_usados = 3
-        tentativas = 0
-        max_tentativas = len(cpf_limpo)
-        username_gerado = None
-        
-        while tentativas < max_tentativas:
-            username_gerado = f"{username_base}{cpf_limpo[:digitos_usados]}"
-            
-            if not User.objects.filter(username=username_gerado).exists():
-                # Username único encontrado, cria o usuário
-                user = User.objects.create_user(
-                    username=username_gerado,
-                    password=senha_gerada,
-                    email=lead.email or '',
-                    first_name=lead.nome_completo.split()[0] if lead.nome_completo else '',
-                    is_active=True
-                )
-                
-                # Adiciona ao grupo 'cliente'
-                grupo_cliente, created = Group.objects.get_or_create(name='cliente')
-                user.groups.add(grupo_cliente)
-                
-                # Salva referência ao usuário no cliente
-                venda.cliente.usuario_portal = user
-                venda.cliente.save()
-                
-                # Cria progresso do serviço se não existir
-                ProgressoServico.objects.get_or_create(
-                    venda=venda,
-                    defaults={
-                        'etapa_atual': 0,
-                        'data_etapa_1': timezone.now()
-                    }
-                )
-                
-                return JsonResponse({
-                    'success': True,
-                    'username': username_gerado,
-                    'senha': senha_gerada,
-                    'message': f'Credenciais criadas com sucesso! (usando {digitos_usados} dígitos)'
-                })
-            else:
-                digitos_usados += 1
-                tentativas += 1
-        
+        sufixo = cpf_limpo[:3] if len(cpf_limpo) >= 3 else f"{secrets.randbelow(900)+100}"
+        username_gerado = f"{username_base}{sufixo}"
+        attempt = 0
+        while User.objects.filter(username=username_gerado).exists() and attempt < 1000:
+            # se já existe, incrementa um sufixo numérico
+            username_gerado = f"{username_base}{sufixo}{attempt}"
+            attempt += 1
+
+        # Cria o usuário (usa e-mail temporário único se lead.email ausente)
+        email_to_use = lead.email if getattr(lead, 'email', None) else f"temporario+{username_gerado}@example.com"
+        user = User.objects.create_user(
+            username=username_gerado,
+            password=senha_gerada,
+            email=email_to_use,
+            first_name=lead.nome_completo.split()[0] if lead.nome_completo else '',
+            is_active=True
+        )
+
+        # Adiciona ao grupo 'cliente'
+        grupo_cliente, created = Group.objects.get_or_create(name='cliente')
+        user.groups.add(grupo_cliente)
+
+        # Salva referência ao usuário no cliente
+        venda.cliente.usuario_portal = user
+        venda.cliente.save()
+
+        # Cria progresso do serviço se não existir
+        ProgressoServico.objects.get_or_create(
+            venda=venda,
+            defaults={
+                'etapa_atual': 0,
+                'data_etapa_1': timezone.now()
+            }
+        )
+
         return JsonResponse({
-            'success': False,
-            'error': f'Não foi possível criar username único após {tentativas} tentativas'
+            'success': True,
+            'username': username_gerado,
+            'senha': senha_gerada,
+            'message': 'Credenciais criadas com sucesso!'
         })
         
     except Exception as e:
@@ -1905,31 +2060,19 @@ def gerar_credenciais_cliente(request, venda_id):
 @login_required
 @user_passes_test(is_consultor_or_admin)
 def gerar_orcamento_pdf(request, venda_id):
-    """Gera orçamento em PDF para impressão/envio ao cliente"""
-    from django.template.loader import render_to_string
-    from django.http import HttpResponse
+    from financeiro.models import Parcela as FinanceiroParcela
     from datetime import date
-    
-    venda = get_object_or_404(
-        Venda.objects.select_related('cliente__lead', 'servico', 'consultor', 'captador'),
-        id=venda_id
-    )
-    
-    # Buscar parcelas
-    parcelas = Parcela.objects.filter(venda=venda).order_by('numero_parcela')
-    
-    # Buscar pré-venda relacionada
-    pre_venda = None
-    lead = None
-    if hasattr(venda.cliente, 'lead') and venda.cliente.lead:
-        lead = venda.cliente.lead
-        pre_venda = PreVenda.objects.filter(lead=lead).first()
-    
+    venda = get_object_or_404(Venda.objects.select_related('cliente__lead'), id=venda_id)
+    cliente = venda.cliente
+    lead = cliente.lead if hasattr(cliente, 'lead') else None
+    parcelas = FinanceiroParcela.objects.filter(venda=venda).order_by('numero_parcela')
+
     context = {
         'venda': venda,
+        'cliente': cliente,
         'lead': lead,
         'parcelas': parcelas,
-        'pre_venda': pre_venda,
+        'pre_venda': None,
         'data_emissao': date.today(),
         'empresa': {
             'nome': 'Grupo Mr Baruch Michel da Silva Rodrigues LTDA',
@@ -1942,14 +2085,10 @@ def gerar_orcamento_pdf(request, venda_id):
             'email': 'grupomrbaruch@hotmail.com',
         }
     }
-    
-    # Renderizar template HTML
+    # Renderizar template HTML e retornar resposta
     html = render_to_string('vendas/orcamento_pdf.html', context)
-    
-    # Retornar como HTML (para impressão do navegador)
     response = HttpResponse(html, content_type='text/html')
     return response
-
 
 @login_required
 @user_passes_test(is_consultor_or_admin)
@@ -2102,31 +2241,6 @@ def is_comercial2_or_admin(user):
     return user.groups.filter(name__in=['comercial2', 'Comercial2', 'admin', 'Admin']).exists()
 
 
-@login_required
-@user_passes_test(is_comercial2_or_admin)
-def painel_comercial2(request):
-    """
-    Painel principal do Comercial 2 - Repescagem de Leads
-    """
-    from .models import RepescagemLead, EstrategiaRepescagem
-    
-    # Filtros
-    status_filter = request.GET.get('status', '')
-    motivo_filter = request.GET.get('motivo', '')
-    search = request.GET.get('search', '')
-    
-    # Query base
-    repescagens = RepescagemLead.objects.select_related(
-        'lead', 'pre_venda', 'motivo_recusa', 
-        'consultor_original', 'consultor_repescagem'
-    ).all()
-    
-    # Aplicar filtros
-    if status_filter:
-        repescagens = repescagens.filter(status=status_filter)
-    
-    if motivo_filter:
-        repescagens = repescagens.filter(motivo_recusa_id=motivo_filter)
     
     if search:
         repescagens = repescagens.filter(

@@ -49,24 +49,22 @@
 
     <!-- Filtros -->
     <div class="filter-card">
-        <form method="get" action="{% url 'compliance:gestao_pos_venda_lista' %}" class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label">Status do Processo</label>
-                <select name="status" class="form-select">
-                    <option value="">Todos os status</option>
-                    {% for value, label in status_choices %}
-                        <option value="{{ value }}" {% if status_filtro == value %}selected{% endif %}>
-                            {{ label }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-search"></i> Filtrar
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <form method="get" action="{% url 'compliance:gestao_pos_venda_lista' %}" style="display:inline;">
+                <input type="hidden" name="status" value="">
+                <button type="submit" class="btn {% if not status_filtro %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-pill px-4">
+                    Todos
                 </button>
-            </div>
-        </form>
+            </form>
+            {% for value, label in status_choices %}
+                <form method="get" action="{% url 'compliance:gestao_pos_venda_lista' %}" style="display:inline;">
+                    <input type="hidden" name="status" value="{{ value }}">
+                    <button type="submit" class="btn {% if status_filtro == value %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-pill px-4">
+                        {{ label }}
+                    </button>
+                </form>
+            {% endfor %}
+        </div>
     </div>
 
     <!-- Tabela de Gestões -->
@@ -185,10 +183,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    // Auto-submit ao mudar o filtro de status
-    document.querySelector('select[name="status"]').addEventListener('change', function() {
-        this.form.submit();
-    });
-</script>
+<!-- Nenhum JS extra necessário para os botões de filtro -->
 {% endblock %}
