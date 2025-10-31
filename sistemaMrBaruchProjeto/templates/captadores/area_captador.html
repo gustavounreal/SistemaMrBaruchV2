@@ -454,7 +454,12 @@
         <div class="header-captador">
             <div class="header-content">
                 <h1>Área do Captador</h1>
-                <p><i class="fas fa-user"></i> {{ captador.get_full_name|default:'Seu código de indicações é ID: ' }}{{ captador.id }}</p>
+                        {% if captador.get_full_name %}
+                            <p><i class="fas fa-user"></i> {{ captador.get_full_name }}</p>
+                            <p><i class="fas fa-user"></i> Seu código de indicações é: {{ captador.id }}</p>
+                        {% else %}
+                            <p><i class="fas fa-user"></i> Seu código de indicações é: {{ captador.id }}</p>
+                        {% endif %}
                 <p><i class="fas fa-envelope"></i> {{ captador.email }}</p>
             </div>
         </div>
