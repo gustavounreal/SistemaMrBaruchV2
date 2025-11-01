@@ -35,6 +35,9 @@ desktop.ini
 .env.local
 .env.*.local
 
+# Settings específicos de ambiente (dev/prod)
+sistemaMrBaruchProjeto/sistemaMrBaruchProjeto/settings.py
+
 # Gradle
 .gradle/
 build/
@@ -62,7 +65,6 @@ yarn-error.log
 
 # Documentação Markdown
 *.md
-
 
 # Ignorar arquivos fora do projeto
 ../../*
