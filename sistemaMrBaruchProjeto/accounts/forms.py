@@ -110,6 +110,10 @@ class RegisterForm(UserCreationForm):
         user.username = self.cleaned_data['email'].split('@')[0]
         if commit:
             user.save()
+            # Adiciona o usuário ao grupo 'captador' por padrão
+            from django.contrib.auth.models import Group
+            grupo_captador, created = Group.objects.get_or_create(name='captador')
+            user.groups.add(grupo_captador)
         return user
 
 class AtendenteForm(forms.ModelForm):
