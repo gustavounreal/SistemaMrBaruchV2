@@ -277,10 +277,10 @@ def painel_metricas_consultor(request):
     valor_previsto_total = comissao_a_receber
     
     # ====== FAIXA DE COMISSÃO ATUAL ======
-    # Calcular faturamento do mês (entradas + boletos pagos)
+    # Calcular faturamento do mês (SOMENTE ENTRADAS)
     from core.commission_service import CommissionCalculator
     
-    # Somar valor de entradas e parcelas pagas do mês
+    # Somar valor de entradas pagas no mês (comissão calculada SOMENTE sobre entradas)
     faturamento_mes_atual = Decimal('0')
     
     # Entradas pagas no mês
@@ -298,14 +298,8 @@ def painel_metricas_consultor(request):
             status_pagamento_entrada='PAGO'
         ).aggregate(total=django_models.Sum('valor_entrada'))['total'] or Decimal('0')
     
-    # Parcelas pagas no mês
-    parcelas_pagas_mes = parcelas.filter(
-        status='paga',
-        data_pagamento__gte=primeiro_dia_mes,
-        data_pagamento__lte=ultimo_dia_mes
-    ).aggregate(total=django_models.Sum('valor'))['total'] or Decimal('0')
-    
-    faturamento_mes_atual = entradas_mes + parcelas_pagas_mes
+    # Comissão calculada SOMENTE sobre o valor da entrada
+    faturamento_mes_atual = entradas_mes
     percentual_atual = CommissionCalculator.calcular_percentual_consultor(faturamento_mes_atual)
     
     # Calcular próxima faixa

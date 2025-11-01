@@ -26,4 +26,7 @@ urlpatterns = [
     
     # Relatórios
     path('relatorios/inadimplencia/', views.relatorio_inadimplencia, name='relatorio_inadimplencia'),
+    
+    # Clientes Aptos para Liminar
+    path('aptos-liminar/', views.lista_clientes_aptos_liminar, name='lista_aptos_liminar'),
 ]

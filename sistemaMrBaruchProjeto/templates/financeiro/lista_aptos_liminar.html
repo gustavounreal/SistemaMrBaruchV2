@@ -1,0 +1,238 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Clientes Aptos para Liminar{% endblock %}
+
+{% block extra_css %}
+<style>
+    .compliance-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+    
+    .status-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .status-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    
+    .status-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+    
+    .status-card h6 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+    
+    .table-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .badge-dias {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="compliance-header">
+        <h2 class="mb-1"><i class="bi bi-file-earmark-check me-2"></i>Clientes Aptos para Liminar</h2>
+        <p class="mb-0">Lista atualizada automaticamente baseada nos critérios estabelecidos</p>
+    </div>
+
+    <!-- Card de Estatísticas -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="status-card" style="border-top: 4px solid #28a745;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0 text-success">
+                        <i class="bi bi-check-circle-fill"></i> Clientes Aptos
+                    </h6>
+                </div>
+                <div class="status-number text-success mb-2">{{ total_clientes }}</div>
+                <small class="text-muted">Atualizado em {{ data_consulta|date:"d/m/Y" }}</small>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="status-card" style="border-top: 4px solid #17a2b8;">
+                <h6 class="mb-3"><i class="bi bi-info-circle"></i> Critérios de Elegibilidade</h6>
+                <ul class="mb-0">
+                    <li><strong>10 dias</strong> de contrato assinado</li>
+                    <li>Mínimo <strong>R$ 500,00</strong> de pagamento (soma de entrada + parcelas)</li>
+                    <li>Liminar ainda <strong>não iniciada</strong> ou concluída</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros de Data -->
+    <div class="table-card mb-4">
+        <h6 class="mb-3"><i class="bi bi-funnel"></i> Filtros Avançados</h6>
+        <form method="GET" action="{% url 'financeiro:lista_aptos_liminar' %}" class="row g-3">
+            <div class="col-md-4">
+                <label for="data_inicio" class="form-label fw-semibold">
+                    <i class="bi bi-calendar-event"></i> Data Início (Assinatura)
+                </label>
+                <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
+                <small class="text-muted">A partir de qual data de assinatura</small>
+            </div>
+            
+            <div class="col-md-4">
+                <label for="data_fim" class="form-label fw-semibold">
+                    <i class="bi bi-calendar-event"></i> Data Fim (Assinatura)
+                </label>
+                <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
+                <small class="text-muted">Até qual data de assinatura</small>
+            </div>
+            
+            <div class="col-md-4 d-flex align-items-end">
+                <div class="w-100">
+                    <button type="submit" class="btn btn-primary w-100 mb-1">
+                        <i class="bi bi-search"></i> Filtrar
+                    </button>
+                    <a href="{% url 'financeiro:lista_aptos_liminar' %}" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-x-circle"></i> Limpar Filtros
+                    </a>
+                </div>
+            </div>
+        </form>
+        
+        {% if data_inicio or data_fim %}
+        <div class="mt-3 pt-3 border-top">
+            <small class="text-muted me-2"><i class="bi bi-info-circle"></i> Filtros ativos:</small>
+            {% if data_inicio %}
+            <span class="badge bg-primary me-2">
+                De: {{ data_inicio|date:"d/m/Y" }}
+            </span>
+            {% endif %}
+            {% if data_fim %}
+            <span class="badge bg-primary me-2">
+                Até: {{ data_fim|date:"d/m/Y" }}
+            </span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tabela de Clientes -->
+    <div class="table-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">
+                <i class="bi bi-table"></i> 
+                Lista de Clientes - <span class="badge bg-primary">{{ total_clientes }}</span>
+            </h5>
+            <div>
+                <a href="{% url 'financeiro:lista_aptos_liminar' %}?exportar=true{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}" class="btn btn-success">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
+                </a>
+                <a href="{% url 'financeiro:dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+
+        {% if clientes_aptos %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Nome</th>
+                        <th>CPF/CNPJ</th>
+                        <th>Data Contratação</th>
+                        <th>Valor Total Serviço</th>
+                        <th>Total Pago</th>
+                        <th>Dias desde Assinatura</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in clientes_aptos %}
+                    <tr>
+                        <td><strong>#{{ forloop.counter }}</strong></td>
+                        <td>
+                            <i class="bi bi-person-circle text-primary"></i>
+                            {{ item.venda.cliente.lead.nome_completo }}
+                        </td>
+                        <td>
+                            <code>{{ item.venda.cliente.lead.cpf_cnpj|default:"-" }}</code>
+                        </td>
+                        <td>
+                            <i class="bi bi-calendar-event"></i>
+                            {{ item.venda.data_assinatura|date:"d/m/Y H:i" }}
+                        </td>
+                        <td>
+                            <strong class="text-success">R$ {{ item.venda.valor_total|floatformat:2 }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">
+                                R$ {{ item.total_pago|floatformat:2 }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge badge-dias 
+                                {% if item.dias_desde_assinatura >= 30 %}bg-success
+                                {% elif item.dias_desde_assinatura >= 15 %}bg-warning
+                                {% else %}bg-secondary{% endif %}">
+                                {{ item.dias_desde_assinatura }} dias
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'vendas:detalhes_venda' item.venda.id %}" 
+                               class="btn btn-sm btn-outline-primary"
+                               title="Ver Detalhes">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle fa-3x mb-3"></i>
+            <p class="mb-0">Nenhum cliente apto para liminar no momento.</p>
+            <small class="text-muted">Os clientes aparecerão aqui automaticamente quando atenderem aos critérios.</small>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Informações Adicionais -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="alert alert-light">
+                <h6 class="alert-heading"><i class="bi bi-lightbulb"></i> Como funciona?</h6>
+                <hr>
+                <p class="mb-0">
+                    <strong>Esta lista é atualizada automaticamente</strong> sempre que você acessa a página. 
+                    Os clientes são incluídos quando atendem <strong>todos os critérios</strong> simultaneamente 
+                    e são removidos automaticamente quando a liminar é marcada como entregue no sistema.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -610,3 +610,113 @@ def criar_cliente_asaas(lead):
         logger.error(f"Falha ao criar cliente ASAAS para lead {lead.id}: {error_msg}")
         logger.error(f"Response completa do ASAAS: {response}")
         raise ValueError(error_msg)
+
+
+@login_required
+def lista_clientes_aptos_liminar(request):
+    """
+    Lista clientes aptos para envio de liminar baseado nos critérios:
+    - 10 dias de contrato assinado
+    - Mínimo R$500,00 de pagamento (soma entrada + parcelas pagas)
+    - Liminar ainda não iniciada ou concluída
+    """
+    from django.http import HttpResponse
+    import csv
+    from django.db.models import Sum, F
+    
+    hoje = timezone.now().date()
+    
+    # Obter filtros de data
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
+    
+    # Se não houver filtros, usar data padrão (10 dias atrás)
+    if not data_inicio and not data_fim:
+        data_limite_assinatura = hoje - timedelta(days=10)
+        vendas_elegiveis = Venda.objects.filter(
+            contrato_assinado=True,
+            data_assinatura__isnull=False,
+            data_assinatura__date__lte=data_limite_assinatura,
+            liminar_entregue=False
+        )
+    else:
+        # Aplicar filtros de data
+        vendas_elegiveis = Venda.objects.filter(
+            contrato_assinado=True,
+            data_assinatura__isnull=False,
+            liminar_entregue=False
+        )
+        
+        if data_inicio:
+            try:
+                data_inicio_obj = datetime.strptime(data_inicio, '%Y-%m-%d').date()
+                vendas_elegiveis = vendas_elegiveis.filter(data_assinatura__date__gte=data_inicio_obj)
+            except ValueError:
+                pass
+        
+        if data_fim:
+            try:
+                data_fim_obj = datetime.strptime(data_fim, '%Y-%m-%d').date()
+                vendas_elegiveis = vendas_elegiveis.filter(data_assinatura__date__lte=data_fim_obj)
+            except ValueError:
+                pass
+    
+    vendas_elegiveis = vendas_elegiveis.select_related('cliente', 'cliente__lead').prefetch_related('parcelas')
+    
+    # Filtrar por pagamento mínimo de R$500
+    clientes_aptos = []
+    for venda in vendas_elegiveis:
+        # Somar valor de entrada
+        valor_entrada = venda.valor_entrada if not venda.sem_entrada else Decimal('0.00')
+        
+        # Somar parcelas pagas
+        valor_parcelas_pagas = venda.parcelas.filter(
+            status='paga'
+        ).aggregate(total=Sum('valor'))['total'] or Decimal('0.00')
+        
+        total_pago = valor_entrada + valor_parcelas_pagas
+        
+        # Verificar se tem pelo menos 10 dias desde assinatura E pagamento >= 500
+        dias_desde_assinatura = (hoje - venda.data_assinatura.date()).days
+        
+        if total_pago >= Decimal('500.00') and dias_desde_assinatura >= 10:
+            clientes_aptos.append({
+                'venda': venda,
+                'total_pago': total_pago,
+                'dias_desde_assinatura': dias_desde_assinatura
+            })
+    
+    # Verificar se é requisição de exportação
+    exportar = request.GET.get('exportar', False)
+    
+    if exportar:
+        # Criar arquivo CSV
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="clientes_aptos_liminar_{hoje}.csv"'
+        response.write('\ufeff')  # BOM para UTF-8
+        
+        writer = csv.writer(response, delimiter=';')
+        writer.writerow(['Nome', 'CPF/CNPJ', 'Data Contratação', 'Valor Total Serviço', 'Total Pago', 'Dias desde Assinatura'])
+        
+        for item in clientes_aptos:
+            venda = item['venda']
+            writer.writerow([
+                venda.cliente.lead.nome_completo,
+                venda.cliente.lead.cpf_cnpj or '',
+                venda.data_assinatura.strftime('%d/%m/%Y') if venda.data_assinatura else '',
+                f"R$ {venda.valor_total:.2f}".replace('.', ','),
+                f"R$ {item['total_pago']:.2f}".replace('.', ','),
+                item['dias_desde_assinatura']
+            ])
+        
+        return response
+    
+    context = {
+        'clientes_aptos': clientes_aptos,
+        'total_clientes': len(clientes_aptos),
+        'data_consulta': hoje,
+        'data_inicio': data_inicio,
+        'data_fim': data_fim,
+    }
+    
+    return render(request, 'financeiro/lista_aptos_liminar.html', context)
