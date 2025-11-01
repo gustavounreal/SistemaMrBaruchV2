@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ranking Geral - Sistema Mr. Baruch</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <!-- Google Fonts - Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Cores principais */
+            --primary: #FF6B35;
+            --primary-dark: #E55A2B;
+            --secondary: #6A5ACD;
+            --accent: #4A90E2;
+            --accent-light: #5DA8FF;
+            
+            /* Cores do tema escuro */
+            --dark-bg: #0F0F1A;
+            --dark-card: #1A1A2E;
+            --dark-card-hover: #22223A;
+            --dark-border: #2A2A45;
+            --text-primary: #FFFFFF;
+            --text-secondary: #B8B8D0;
+            --text-muted: #8A8AA8;
+            
+            /* Cores de status */
+            --success: #2ECC71;
+            --warning: #F39C12;
+            --danger: #E74C3C;
+            --info: #3498DB;
+            
+            /* Medalhas */
+            --gold: #FFD700;
+            --silver: #C0C0C0;
+            --bronze: #CD7F32;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0F0F1A 0%, #1A1A2E 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        /* Container Principal */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Header */
+        .page-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 20px;
+            padding: 30px 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+        
+        .page-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 0 0 10px 0;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .page-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin: 0;
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* Filtros */
+        .filters-section {
+            background: var(--dark-card);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid var(--dark-border);
+        }
+        
+        .filters-section select {
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--dark-border);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        
+        /* Cards de Ranking */
+        .ranking-card {
+            background: var(--dark-card);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid var(--dark-border);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .ranking-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        }
+        
+        .ranking-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--dark-border);
+        }
+        
+        .ranking-card-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .ranking-card-title i {
+            font-size: 2rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .ranking-card-title h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .ranking-badge {
+            background: var(--dark-bg);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        
+        /* Tabela de Ranking */
+        .ranking-table {
+            width: 100%;
+        }
+        
+        .ranking-row {
+            display: grid;
+            grid-template-columns: 60px 1fr 120px 120px 120px 120px;
+            gap: 15px;
+            padding: 15px;
+            background: var(--dark-bg);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .ranking-row:hover {
+            background: var(--dark-card-hover);
+            transform: translateX(5px);
+        }
+        
+        /* Posição */
+        .rank-position {
+            font-size: 1.5rem;
+            font-weight: 800;
+            text-align: center;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: var(--dark-card);
+        }
+        
+        .rank-position.gold {
+            background: linear-gradient(135deg, var(--gold) 0%, #FFA500 100%);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+        }
+        
+        .rank-position.silver {
+            background: linear-gradient(135deg, var(--silver) 0%, #A8A8A8 100%);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(192, 192, 192, 0.4);
+        }
+        
+        .rank-position.bronze {
+            background: linear-gradient(135deg, var(--bronze) 0%, #A0522D 100%);
+            color: #FFF;
+            box-shadow: 0 4px 15px rgba(205, 127, 50, 0.4);
+        }
+        
+        /* Nome do usuário */
+        .rank-user {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .rank-user-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .rank-user-username {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        
+        /* Estatísticas */
+        .rank-stat {
+            text-align: center;
+        }
+        
+        .rank-stat-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: block;
+        }
+        
+        .rank-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Badges de comissão */
+        .comissao-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .comissao-badge.paga {
+            background: rgba(46, 204, 113, 0.2);
+            color: var(--success);
+        }
+        
+        .comissao-badge.pendente {
+            background: rgba(243, 156, 18, 0.2);
+            color: var(--warning);
+        }
+        
+        /* Botão voltar */
+        .btn-voltar {
+            background: var(--dark-card);
+            color: var(--text-primary);
+            border: 1px solid var(--dark-border);
+            padding: 12px 25px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-voltar:hover {
+            background: var(--dark-card-hover);
+            color: var(--primary);
+            transform: translateX(-5px);
+        }
+        
+        /* Responsivo */
+        @media (max-width: 1200px) {
+            .ranking-row {
+                grid-template-columns: 50px 1fr 100px 100px 100px;
+                gap: 10px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .ranking-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .rank-position {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+            
+            .page-header h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <div class="page-header">
+            <a href="{% url 'relatorios:painel_central' %}" class="btn-voltar">
+                <i class="bi bi-arrow-left"></i> Voltar ao Painel Central
+            </a>
+            <h1><i class="bi bi-trophy-fill"></i> Ranking Geral</h1>
+            <p>Performance de Atendentes, Consultores e Captadores nos últimos {{ periodo_dias }} dias</p>
+        </div>
+        
+        <!-- Filtros -->
+        <div class="filters-section">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Período de Análise</label>
+                    <select name="periodo" class="form-select" onchange="this.form.submit()">
+                        <option value="7" {% if periodo == '7' %}selected{% endif %}>Últimos 7 dias</option>
+                        <option value="15" {% if periodo == '15' %}selected{% endif %}>Últimos 15 dias</option>
+                        <option value="30" {% if periodo == '30' %}selected{% endif %}>Últimos 30 dias</option>
+                        <option value="60" {% if periodo == '60' %}selected{% endif %}>Últimos 60 dias</option>
+                        <option value="90" {% if periodo == '90' %}selected{% endif %}>Últimos 90 dias</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+        
+        <!-- ========== RANKING DE ATENDENTES ========== -->
+        <div class="ranking-card">
+            <div class="ranking-card-header">
+                <div class="ranking-card-title">
+                    <i class="bi bi-headset"></i>
+                    <h3>Ranking de Atendentes</h3>
+                </div>
+                <div class="ranking-badge">
+                    {{ total_atendentes }} atendentes
+                </div>
+            </div>
+            
+            <div class="ranking-table">
+                {% for atendente in ranking_atendentes %}
+                <div class="ranking-row">
+                    <div class="rank-position {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
+                        {{ forloop.counter }}º
+                    </div>
+                    <div class="rank-user">
+                        <span class="rank-user-name">{{ atendente.atendente__first_name }} {{ atendente.atendente__last_name }}</span>
+                        <span class="rank-user-username">@{{ atendente.atendente__username }}</span>
+                    </div>
+                    <div class="rank-stat">
+                        <span class="rank-stat-value">{{ atendente.total_leads }}</span>
+                        <span class="rank-stat-label">Leads</span>
+                    </div>
+                    <div class="rank-stat">
+                        <span class="rank-stat-value">{{ atendente.leads_pagos }}</span>
+                        <span class="rank-stat-label">Pagos</span>
+                    </div>
+                    <div class="rank-stat">
+                        <span class="rank-stat-value">{{ atendente.taxa_conversao }}%</span>
+                        <span class="rank-stat-label">Taxa Conv.</span>
+                    </div>
+                    <div class="rank-stat">
+                        <span class="rank-stat-value">R$ {{ atendente.total_comissao|floatformat:2 }}</span>
+                        <span class="rank-stat-label">Comissões</span>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-center text-muted">Nenhum atendente com atividade no período.</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- ========== RANKING DE CONSULTORES ========== -->
+        <div class="ranking-card">
+            <div class="ranking-card-header">
+                <div class="ranking-card-title">
+                    <i class="bi bi-briefcase"></i>
+                    <h3>Ranking de Consultores</h3>
+                </div>
+                <div class="ranking-badge">
+                    {{ total_consultores }} consultores
+                </div>
+            </div>
+            
+            <div class="ranking-table">
+                {% for consultor in ranking_consultores %}
+                <div class="ranking-row">
+                    <div class="rank-position {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
+                        {{ forloop.counter }}º
+                    </div>
+                    <div class="rank-user">
+                        <span class="rank-user-name">{{ consultor.consultor__first_name }} {{ consultor.consultor__last_name }}</span>
+                        <span class="rank-user-username">@{{ consultor.consultor__username }}</span>
+                    </div>
+                    <div class="rank-stat">
+                        <span class="rank-stat-value">{{ consultor.total_vendas }}</span>
+                        <span class="rank-stat-label">Vendas</span>
+                    </div>
+                    <div class="rank-stat">
+                        <span class="rank-stat-value">R$ {{ consultor.valor_total_vendas|floatformat:2 }}</span>
+                        <span class="rank-stat-label">Valor Total</span>
+                    </div>
+                    <div class="rank-stat">
+                        <span class="rank-stat-value">R$ {{ consultor.ticket_medio|floatformat:2 }}</span>
+                        <span class="rank-stat-label">Ticket Médio</span>
+                    </div>
+                    <div class="rank-stat">
+                        <span class="rank-stat-value">R$ {{ consultor.total_comissao|floatformat:2 }}</span>
+                        <span class="rank-stat-label">Comissões</span>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-center text-muted">Nenhum consultor com vendas no período.</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- ========== RANKING DE CAPTADORES ========== -->
+        <div class="ranking-card">
+            <div class="ranking-card-header">
+                <div class="ranking-card-title">
+                    <i class="bi bi-people"></i>
+                    <h3>Ranking de Captadores</h3>
+                </div>
+                <div class="ranking-badge">
+                    {{ total_captadores }} captadores
+                </div>
+            </div>
+            
+            <div class="ranking-table">
+                {% for captador in ranking_captadores %}
+                <div class="ranking-row">
+                    <div class="rank-position {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
+                        {{ forloop.counter }}º
+                    </div>
+                    <div class="rank-user">
+                        <span class="rank-user-name">{{ captador.captador__first_name }} {{ captador.captador__last_name }}</span>
+                        <span class="rank-user-username">@{{ captador.captador__username }}</span>
+                    </div>
+                    <div class="rank-stat">
+                        <span class="rank-stat-value">{{ captador.total_indicacoes }}</span>
+                        <span class="rank-stat-label">Indicações</span>
+                    </div>
+                    <div class="rank-stat">
+                        <span class="rank-stat-value">R$ {{ captador.valor_total_indicacoes|floatformat:2 }}</span>
+                        <span class="rank-stat-label">Valor Total</span>
+                    </div>
+                    <div class="rank-stat">
+                        <span class="rank-stat-value">R$ {{ captador.ticket_medio|floatformat:2 }}</span>
+                        <span class="rank-stat-label">Ticket Médio</span>
+                    </div>
+                    <div class="rank-stat">
+                        <span class="rank-stat-value">R$ {{ captador.total_comissao|floatformat:2 }}</span>
+                        <span class="rank-stat-label">Comissões</span>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-center text-muted">Nenhum captador com indicações no período.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

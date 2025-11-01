@@ -714,3 +714,158 @@ def dashboard_kpis_comercial2(request):
     
     return render(request, 'relatorios/dashboard_kpis_comercial2.html', context)
 
+
+@login_required
+def ranking_geral(request):
+    """
+    Página de Ranking Geral: Atendentes, Consultores e Captadores
+    Com estatísticas detalhadas e comparativos
+    """
+    from decimal import Decimal
+    from financeiro.models import Comissao
+    
+    # Período de análise (padrão: 30 dias)
+    periodo = request.GET.get('periodo', '30')
+    try:
+        dias = int(periodo)
+    except ValueError:
+        dias = 30
+    
+    data_inicio = timezone.now() - timedelta(days=dias)
+    
+    # ========== RANKING DE ATENDENTES (Por Leads Levantados) ==========
+    ranking_atendentes = Lead.objects.filter(
+        atendente__isnull=False,
+        data_cadastro__gte=data_inicio
+    ).values(
+        'atendente__id',
+        'atendente__first_name',
+        'atendente__last_name',
+        'atendente__username'
+    ).annotate(
+        total_leads=Count('id'),
+        leads_pagos=Count('id', filter=Q(status='LEVANTAMENTO_PAGO')),
+        leads_fez_levantamento=Count('id', filter=Q(fez_levantamento=True))
+    ).order_by('-total_leads')[:20]
+    
+    # Calcular comissões dos atendentes
+    for atendente in ranking_atendentes:
+        atendente_id = atendente['atendente__id']
+        comissoes = ComissaoLead.objects.filter(
+            atendente_id=atendente_id,
+            data_criacao__gte=data_inicio
+        ).aggregate(
+            total_comissao=Sum('valor'),
+            comissoes_pagas=Sum('valor', filter=Q(pago=True)),
+            comissoes_pendentes=Sum('valor', filter=Q(pago=False))
+        )
+        
+        atendente['total_comissao'] = comissoes['total_comissao'] or Decimal('0')
+        atendente['comissoes_pagas'] = comissoes['comissoes_pagas'] or Decimal('0')
+        atendente['comissoes_pendentes'] = comissoes['comissoes_pendentes'] or Decimal('0')
+        
+        # Taxa de conversão para levantamento
+        if atendente['total_leads'] > 0:
+            atendente['taxa_conversao'] = round(
+                (atendente['leads_fez_levantamento'] / atendente['total_leads']) * 100, 1
+            )
+        else:
+            atendente['taxa_conversao'] = 0
+    
+    # ========== RANKING DE CONSULTORES (Por Vendas) ==========
+    ranking_consultores = Venda.objects.filter(
+        consultor__isnull=False,
+        data_criacao__gte=data_inicio
+    ).values(
+        'consultor__id',
+        'consultor__first_name',
+        'consultor__last_name',
+        'consultor__username'
+    ).annotate(
+        total_vendas=Count('id'),
+        valor_total_vendas=Sum('valor_total'),
+        valor_total_entradas=Sum('valor_entrada')
+    ).order_by('-total_vendas')[:20]
+    
+    # Calcular comissões dos consultores
+    for consultor in ranking_consultores:
+        consultor_id = consultor['consultor__id']
+        comissoes = Comissao.objects.filter(
+            usuario_id=consultor_id,
+            tipo_comissao__in=['CONSULTOR_ENTRADA', 'CONSULTOR_PARCELA'],
+            data_calculada__gte=data_inicio
+        ).aggregate(
+            total_comissao=Sum('valor_comissao'),
+            comissoes_pagas=Sum('valor_comissao', filter=Q(status='paga')),
+            comissoes_pendentes=Sum('valor_comissao', filter=Q(status='pendente'))
+        )
+        
+        consultor['total_comissao'] = comissoes['total_comissao'] or Decimal('0')
+        consultor['comissoes_pagas'] = comissoes['comissoes_pagas'] or Decimal('0')
+        consultor['comissoes_pendentes'] = comissoes['comissoes_pendentes'] or Decimal('0')
+        
+        # Ticket médio
+        if consultor['total_vendas'] > 0:
+            consultor['ticket_medio'] = round(
+                consultor['valor_total_vendas'] / consultor['total_vendas'], 2
+            )
+        else:
+            consultor['ticket_medio'] = 0
+    
+    # ========== RANKING DE CAPTADORES (Por Indicações) ==========
+    ranking_captadores = Venda.objects.filter(
+        captador__isnull=False,
+        data_criacao__gte=data_inicio
+    ).values(
+        'captador__id',
+        'captador__first_name',
+        'captador__last_name',
+        'captador__username'
+    ).annotate(
+        total_indicacoes=Count('id'),
+        valor_total_indicacoes=Sum('valor_total')
+    ).order_by('-total_indicacoes')[:20]
+    
+    # Calcular comissões dos captadores
+    for captador in ranking_captadores:
+        captador_id = captador['captador__id']
+        comissoes = Comissao.objects.filter(
+            usuario_id=captador_id,
+            tipo_comissao__in=['CAPTADOR_ENTRADA', 'CAPTADOR_PARCELA'],
+            data_calculada__gte=data_inicio
+        ).aggregate(
+            total_comissao=Sum('valor_comissao'),
+            comissoes_pagas=Sum('valor_comissao', filter=Q(status='paga')),
+            comissoes_pendentes=Sum('valor_comissao', filter=Q(status='pendente'))
+        )
+        
+        captador['total_comissao'] = comissoes['total_comissao'] or Decimal('0')
+        captador['comissoes_pagas'] = comissoes['comissoes_pagas'] or Decimal('0')
+        captador['comissoes_pendentes'] = comissoes['comissoes_pendentes'] or Decimal('0')
+        
+        # Ticket médio por indicação
+        if captador['total_indicacoes'] > 0:
+            captador['ticket_medio'] = round(
+                captador['valor_total_indicacoes'] / captador['total_indicacoes'], 2
+            )
+        else:
+            captador['ticket_medio'] = 0
+    
+    # KPIs Gerais
+    total_atendentes = len(ranking_atendentes)
+    total_consultores = len(ranking_consultores)
+    total_captadores = len(ranking_captadores)
+    
+    context = {
+        'ranking_atendentes': ranking_atendentes,
+        'ranking_consultores': ranking_consultores,
+        'ranking_captadores': ranking_captadores,
+        'total_atendentes': total_atendentes,
+        'total_consultores': total_consultores,
+        'total_captadores': total_captadores,
+        'periodo': periodo,
+        'periodo_dias': dias,
+    }
+    
+    return render(request, 'relatorios/ranking_geral.html', context)
+
