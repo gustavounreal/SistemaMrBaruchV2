@@ -121,64 +121,113 @@
             <p class="mb-0">Análise de leads e gestão pós-venda</p>
         </div>
 
-        <!-- Estatísticas (todas em uma linha) -->
-    <div class="row mb-4 compliance-stats">
-        <div class="col-md-3 mb-3">
-            <div class="stat-card">
-                <div class="stat-value">{{ total_aguardando }}</div>
-                <div class="stat-label">
-                    <i class="bi bi-hourglass-split"></i> Aguardando Análise
+        <!-- Cards de Status (Estilo Kanban) -->
+    <div class="row g-3 mb-4">
+        <!-- Card: Aguardando Análise -->
+        <div class="col-md-3">
+            <div class="status-card" onclick="window.location.href='{% url 'compliance:lista_analises' %}?status=AGUARDANDO'" style="cursor: pointer; border-top: 4px solid #ffc107;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0 text-warning">
+                        <i class="bi bi-hourglass-split"></i> Aguardando Análise
+                    </h6>
                 </div>
-                <a href="{% url 'compliance:lista_analises' %}?status=AGUARDANDO" class="btn btn-sm btn-outline-primary mt-2">
+                <div class="status-number text-warning mb-2">{{ total_aguardando }}</div>
+                <button class="btn btn-sm btn-outline-warning w-100" onclick="event.stopPropagation(); window.location.href='{% url 'compliance:lista_analises' %}?status=AGUARDANDO'">
                     Ver todos
-                </a>
+                </button>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="stat-card">
-                <div class="stat-value text-info">{{ total_em_analise }}</div>
-                <div class="stat-label">
-                    <i class="bi bi-search"></i> Em Análise
+
+        <!-- Card: Em Análise -->
+        <div class="col-md-3">
+            <div class="status-card" onclick="window.location.href='{% url 'compliance:lista_analises' %}?status=EM_ANALISE'" style="cursor: pointer; border-top: 4px solid #17a2b8;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0 text-info">
+                        <i class="bi bi-search"></i> Em Análise
+                    </h6>
                 </div>
-                <a href="{% url 'compliance:lista_analises' %}?status=EM_ANALISE" class="btn btn-sm btn-outline-info mt-2">
+                <div class="status-number text-info mb-2">{{ total_em_analise }}</div>
+                <button class="btn btn-sm btn-outline-info w-100" onclick="event.stopPropagation(); window.location.href='{% url 'compliance:lista_analises' %}?status=EM_ANALISE'">
                     Ver todos
-                </a>
+                </button>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="stat-card">
-                <div class="stat-value text-success">{{ total_atribuidos_hoje }}</div>
-                <div class="stat-label">
-                    <i class="bi bi-check-circle"></i> Atribuídos Hoje
+
+        <!-- Card: Atribuídos Hoje -->
+        <div class="col-md-3">
+            <div class="status-card" onclick="window.location.href='{% url 'compliance:lista_analises' %}?status=ATRIBUIDO'" style="cursor: pointer; border-top: 4px solid #28a745;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0 text-success">
+                        <i class="bi bi-check-circle"></i> Atribuídos Hoje
+                    </h6>
                 </div>
-                <a href="{% url 'compliance:lista_analises' %}?status=ATRIBUIDO" class="btn btn-sm btn-outline-success mt-2">
+                <div class="status-number text-success mb-2">{{ total_atribuidos_hoje }}</div>
+                <button class="btn btn-sm btn-outline-success w-100" onclick="event.stopPropagation(); window.location.href='{% url 'compliance:lista_analises' %}?status=ATRIBUIDO'">
                     Ver todos
-                </a>
+                </button>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="stat-card">
-                <div class="stat-value text-warning">{{ total_aprovados_aguardando }}</div>
-                <div class="stat-label">
-                    <i class="bi bi-clipboard-check"></i> Aprovados - Aguardando Atribuição
+
+        <!-- Card: Aprovados - Aguardando Atribuição -->
+        <div class="col-md-3">
+            <div class="status-card" onclick="window.location.href='{% url 'compliance:lista_analises' %}?status=APROVADO'" style="cursor: pointer; border-top: 4px solid #fd7e14;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0" style="color: #fd7e14;">
+                        <i class="bi bi-clipboard-check"></i> Aprovados - Aguardando
+                    </h6>
                 </div>
-                <a href="{% url 'compliance:lista_analises' %}?status=APROVADO" class="btn btn-sm btn-outline-warning mt-2">
+                <div class="status-number mb-2" style="color: #fd7e14;">{{ total_aprovados_aguardando }}</div>
+                <button class="btn btn-sm w-100" style="color: #fd7e14; border-color: #fd7e14;" onclick="event.stopPropagation(); window.location.href='{% url 'compliance:lista_analises' %}?status=APROVADO'">
                     Ver todos
-                </a>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="stat-card">
-                <div class="stat-value text-warning">{{ total_pos_venda_pendente }}</div>
-                <div class="stat-label">
-                    <i class="bi bi-file-earmark-text"></i> Pós-Venda Pendente
-                </div>
-                <a href="{% url 'compliance:gestao_pos_venda_lista' %}" class="btn btn-sm btn-outline-warning mt-2">
-                    Ver todos
-                </a>
+                </button>
             </div>
         </div>
     </div>
+
+    <!-- Segunda linha: Pós-Venda -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="status-card" onclick="window.location.href='{% url 'compliance:gestao_pos_venda_lista' %}'" style="cursor: pointer; border-top: 4px solid #dc3545;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0 text-danger">
+                        <i class="bi bi-file-earmark-text"></i> Pós-Venda Pendente
+                    </h6>
+                </div>
+                <div class="status-number text-danger mb-2">{{ total_pos_venda_pendente }}</div>
+                <button class="btn btn-sm btn-outline-danger w-100" onclick="event.stopPropagation(); window.location.href='{% url 'compliance:gestao_pos_venda_lista' %}'">
+                    Ver todos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .status-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+        
+        .status-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .status-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        
+        .status-card h6 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+    </style>
     <!-- Leads Aguardando Análise -->
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-white">

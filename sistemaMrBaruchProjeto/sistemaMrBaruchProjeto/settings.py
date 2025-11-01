@@ -15,14 +15,14 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    'd1adcb20f7d3.ngrok-free.app',
+    '8d99b4c718a5.ngrok-free.app',
 ]
 
 # CSRF Trusted Origins para ngrok e outros domínios
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost',
     'http://127.0.0.1',
-    'https://d1adcb20f7d3.ngrok-free.app',
+    'https://8d99b4c718a5.ngrok-free.app',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

@@ -64,6 +64,12 @@
                         <hr>
                         <p class="mb-0"><strong>Observações:</strong><br>{{ pre_venda.observacoes_levantamento|linebreaks }}</p>
                         {% endif %}
+                        <hr>
+                        <div class="text-center">
+                            <a href="{% url 'vendas:orcamento_pre_venda_pdf' pre_venda.id %}" target="_blank" class="btn btn-outline-primary">
+                                <i class="fas fa-print"></i> Imprimir Orçamento Completo
+                            </a>
+                        </div>
                     </div>
 
                     <form method="post" id="aceiteForm">

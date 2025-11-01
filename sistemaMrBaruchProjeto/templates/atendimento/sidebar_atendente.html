@@ -63,7 +63,7 @@ Links baseados nas rotas permitidas
 
 <!-- Botão Toggle Mobile -->
 <button class="mobile-toggle" id="mobileToggleAtendente">
-    <i class="fas fa-bars"></i>
+    <i class="bi bi-list"></i>
 </button>
 
 <style>
@@ -264,6 +264,16 @@ Links baseados nas rotas permitidas
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
+.mobile-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
+}
+
+.mobile-toggle i {
+    display: block;
+    line-height: 1;
+}
+
 /* Responsivo */
 @media (max-width: 992px) {
     .sidebar-atendente {
@@ -300,7 +310,7 @@ Links baseados nas rotas permitidas
 </style>
 
 <script>
-/* Sidebar Atendente - JavaScript Moderno */
+/* Sidebar Atendente */
 document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('sidebarAtendente');
     const mobileToggle = document.getElementById('mobileToggleAtendente');
@@ -370,7 +380,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (err) {
                 console.warn('Clear localStorage failed:', err);
             }
-            
+
             // Deixar o formulário submeter normalmente (POST)
             return true;
         });

@@ -73,6 +73,18 @@ class Venda(models.Model):
         ('MENSAL', 'Mensal'),
     ]
     
+    STATUS_COMPLIANCE_CHOICES = [
+        ('AGUARDANDO_CONFERENCIA', 'Aguardando Conferência'),
+        ('CONFERENCIA_OK', 'Conferência OK'),
+        ('COLETANDO_DOCUMENTOS', 'Coletando Documentos'),
+        ('DOCUMENTOS_OK', 'Documentos OK'),
+        ('EMITINDO_CONTRATO', 'Emitindo Contrato'),
+        ('CONTRATO_ENVIADO', 'Contrato Enviado'),
+        ('AGUARDANDO_ASSINATURA', 'Aguardando Assinatura'),
+        ('CONTRATO_ASSINADO', 'Contrato Assinado'),
+        ('CONCLUIDO', 'Concluído'),
+    ]
+    
     # Relacionamentos
     cliente = models.ForeignKey('clientes.Cliente', on_delete=models.CASCADE)
     servico = models.ForeignKey(Servico, on_delete=models.CASCADE)
@@ -126,6 +138,7 @@ class Venda(models.Model):
     # Status Compliance Pós-Venda
     status_compliance_pos_venda = models.CharField(
         max_length=30,
+        choices=STATUS_COMPLIANCE_CHOICES,
         default='AGUARDANDO_CONFERENCIA',
         help_text='Status do processo pós-venda no Compliance'
     )
@@ -265,11 +278,17 @@ class PreVenda(models.Model):
     observacoes_levantamento = models.TextField(blank=True, help_text="Informações encontradas no levantamento")
 
     # Dados financeiros da pré-venda
+    FREQUENCIA_PAGAMENTO_CHOICES = [
+        ('SEMANAL', 'Semanal'),
+        ('QUINZENAL', 'Quinzenal'),
+        ('MENSAL', 'Mensal'),
+    ]
+    
     valor_total = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     valor_entrada = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     quantidade_parcelas = models.PositiveIntegerField(null=True, blank=True)
     valor_parcela = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    frequencia_pagamento = models.CharField(max_length=20, blank=True, default='MENSAL')
+    frequencia_pagamento = models.CharField(max_length=20, choices=FREQUENCIA_PAGAMENTO_CHOICES, blank=True, default='MENSAL')
     
     # Status e datas
     aceite_cliente = models.BooleanField(default=False, help_text="Cliente aceitou o serviço?")

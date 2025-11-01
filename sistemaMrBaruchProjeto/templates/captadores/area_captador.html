@@ -431,6 +431,15 @@
             .materials-grid {
                 grid-template-columns: repeat(3, 1fr);
             }
+            
+            /* Desktop: Mostrar tabela, ocultar cards */
+            .comissoes-table-desktop {
+                display: block !important;
+            }
+            
+            .comissoes-cards-mobile {
+                display: none !important;
+            }
         }
         
         @media (min-width: 992px) {
@@ -444,6 +453,35 @@
             
             .materials-grid {
                 grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        /* Mobile: Mostrar cards, ocultar tabela */
+        @media (max-width: 767px) {
+            .comissoes-table-desktop {
+                display: none !important;
+            }
+            
+            .comissoes-cards-mobile {
+                display: block !important;
+            }
+            
+            /* Paginação mobile: apenas ícones */
+            .pagination-text {
+                display: none !important;
+            }
+        }
+        
+        /* Desktop: Mostrar textos da paginação */
+        @media (min-width: 768px) {
+            .pagination-text {
+                display: inline !important;
+            }
+            
+            /* Hover effects para paginação */
+            a[href*='page']:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
             }
         }
     </style>
@@ -545,6 +583,184 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Histórico de Comissões -->
+            {% if comissoes_captador %}
+            <div class="section">
+                <h3><i class="fas fa-money-bill-wave"></i> Histórico de Comissões</h3>
+                
+                <!-- Tabela Desktop (oculta em mobile) -->
+                <div class="comissoes-table-desktop" style="overflow-x: auto; display: block;">
+                    <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                        <thead>
+                            <tr style="background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); color: white;">
+                                <th style="padding: 12px; text-align: left; font-size: 0.9rem;">Data</th>
+                                <th style="padding: 12px; text-align: left; font-size: 0.9rem;">Tipo</th>
+                                <th style="padding: 12px; text-align: left; font-size: 0.9rem;">Cliente</th>
+                                <th style="padding: 12px; text-align: center; font-size: 0.9rem;">%</th>
+                                <th style="padding: 12px; text-align: right; font-size: 0.9rem;">Valor</th>
+                                <th style="padding: 12px; text-align: center; font-size: 0.9rem;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comissao in comissoes_captador %}
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 12px; font-size: 0.85rem;">{{ comissao.data_calculada|date:"d/m/Y" }}</td>
+                                <td style="padding: 12px; font-size: 0.85rem;">
+                                    {% if comissao.tipo_comissao == 'CAPTADOR_ENTRADA' %}
+                                        <span style="background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; white-space: nowrap;">Entrada</span>
+                                    {% else %}
+                                        <span style="background: #3b82f6; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; white-space: nowrap;">Parcela {{ comissao.parcela.numero_parcela }}</span>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 12px; font-size: 0.85rem;">{{ comissao.venda.cliente.lead.nome_completo|truncatewords:3 }}</td>
+                                <td style="padding: 12px; text-align: center; font-size: 0.85rem; font-weight: 600;">{{ comissao.percentual_comissao }}%</td>
+                                <td style="padding: 12px; text-align: right; font-size: 0.85rem; font-weight: 600; color: #10b981;">R$ {{ comissao.valor_comissao|floatformat:2 }}</td>
+                                <td style="padding: 12px; text-align: center; font-size: 0.85rem;">
+                                    {% if comissao.status == 'paga' %}
+                                        <span style="background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; white-space: nowrap;">✓ Paga</span>
+                                    {% elif comissao.status == 'pendente' %}
+                                        <span style="background: #f59e0b; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; white-space: nowrap;">⏳ Pendente</span>
+                                    {% else %}
+                                        <span style="background: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; white-space: nowrap;">✗ Cancelada</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: #f8f9fa; font-weight: 600;">
+                                <td colspan="4" style="padding: 12px; text-align: right;">TOTAL:</td>
+                                <td style="padding: 12px; text-align: right; color: #10b981; font-size: 1rem;">R$ {{ comissao_total|floatformat:2 }}</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <!-- Cards Mobile (ocultos em desktop) -->
+                <div class="comissoes-cards-mobile" style="display: none;">
+                    {% for comissao in comissoes_captador %}
+                    <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 4px solid {% if comissao.status == 'paga' %}#10b981{% elif comissao.status == 'pendente' %}#f59e0b{% else %}#ef4444{% endif %};">
+                        <!-- Header do Card -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <div>
+                                {% if comissao.tipo_comissao == 'CAPTADOR_ENTRADA' %}
+                                    <span style="background: #10b981; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">📥 Entrada</span>
+                                {% else %}
+                                    <span style="background: #3b82f6; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">📄 Parcela {{ comissao.parcela.numero_parcela }}</span>
+                                {% endif %}
+                            </div>
+                            <div>
+                                {% if comissao.status == 'paga' %}
+                                    <span style="background: #10b981; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">✓ Paga</span>
+                                {% elif comissao.status == 'pendente' %}
+                                    <span style="background: #f59e0b; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">⏳ Pendente</span>
+                                {% else %}
+                                    <span style="background: #ef4444; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">✗ Cancelada</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Informações do Card -->
+                        <div style="margin-bottom: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+                                <span style="color: #6b7280; font-size: 0.85rem;">📅 Data:</span>
+                                <span style="color: #1f2937; font-weight: 600; font-size: 0.85rem;">{{ comissao.data_calculada|date:"d/m/Y" }}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+                                <span style="color: #6b7280; font-size: 0.85rem;">👤 Cliente:</span>
+                                <span style="color: #1f2937; font-weight: 600; font-size: 0.85rem; text-align: right;">{{ comissao.venda.cliente.lead.nome_completo|truncatewords:3 }}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+                                <span style="color: #6b7280; font-size: 0.85rem;">📊 Percentual:</span>
+                                <span style="color: #1f2937; font-weight: 700; font-size: 0.9rem;">{{ comissao.percentual_comissao }}%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
+                                <span style="color: #6b7280; font-size: 0.85rem;">💰 Valor:</span>
+                                <span style="color: #10b981; font-weight: 700; font-size: 1.1rem;">R$ {{ comissao.valor_comissao|floatformat:2 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <!-- Total Mobile -->
+                    <div style="background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); border-radius: 12px; padding: 16px; margin-top: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: white; font-weight: 700; font-size: 1rem;">💵 TOTAL COMISSÕES:</span>
+                            <span style="color: white; font-weight: 700; font-size: 1.3rem;">R$ {{ comissao_total|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Paginação -->
+                {% if comissoes_captador.paginator.num_pages > 1 %}
+                <div style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <!-- Botão Primeira Página -->
+                    {% if comissoes_captador.has_previous %}
+                        <a href="?page=1" style="padding: 8px 12px; background: #3b82f6; color: white; border-radius: 6px; text-decoration: none; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 4px; transition: all 0.3s;">
+                            <i class="fas fa-angle-double-left"></i>
+                            <span class="pagination-text" style="display: none;">Primeira</span>
+                        </a>
+                        <a href="?page={{ comissoes_captador.previous_page_number }}" style="padding: 8px 12px; background: #3b82f6; color: white; border-radius: 6px; text-decoration: none; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 4px; transition: all 0.3s;">
+                            <i class="fas fa-angle-left"></i>
+                            <span class="pagination-text" style="display: none;">Anterior</span>
+                        </a>
+                    {% else %}
+                        <span style="padding: 8px 12px; background: #e5e7eb; color: #9ca3af; border-radius: 6px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fas fa-angle-double-left"></i>
+                        </span>
+                        <span style="padding: 8px 12px; background: #e5e7eb; color: #9ca3af; border-radius: 6px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fas fa-angle-left"></i>
+                        </span>
+                    {% endif %}
+                    
+                    <!-- Números de Página -->
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                        {% for num in comissoes_captador.paginator.page_range %}
+                            {% if comissoes_captador.number == num %}
+                                <span style="padding: 8px 12px; background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); color: white; border-radius: 6px; font-weight: 700; font-size: 0.85rem; min-width: 36px; text-align: center;">{{ num }}</span>
+                            {% elif num > comissoes_captador.number|add:'-3' and num < comissoes_captador.number|add:'3' %}
+                                <a href="?page={{ num }}" style="padding: 8px 12px; background: white; color: #3b82f6; border: 2px solid #3b82f6; border-radius: 6px; text-decoration: none; font-size: 0.85rem; min-width: 36px; text-align: center; transition: all 0.3s; font-weight: 600;">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Botão Última Página -->
+                    {% if comissoes_captador.has_next %}
+                        <a href="?page={{ comissoes_captador.next_page_number }}" style="padding: 8px 12px; background: #3b82f6; color: white; border-radius: 6px; text-decoration: none; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 4px; transition: all 0.3s;">
+                            <span class="pagination-text" style="display: none;">Próxima</span>
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                        <a href="?page={{ comissoes_captador.paginator.num_pages }}" style="padding: 8px 12px; background: #3b82f6; color: white; border-radius: 6px; text-decoration: none; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 4px; transition: all 0.3s;">
+                            <span class="pagination-text" style="display: none;">Última</span>
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    {% else %}
+                        <span style="padding: 8px 12px; background: #e5e7eb; color: #9ca3af; border-radius: 6px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fas fa-angle-right"></i>
+                        </span>
+                        <span style="padding: 8px 12px; background: #e5e7eb; color: #9ca3af; border-radius: 6px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fas fa-angle-double-right"></i>
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Informação de Paginação -->
+                <div style="text-align: center; margin-top: 12px; color: #6b7280; font-size: 0.85rem;">
+                    Mostrando <strong>{{ comissoes_captador.start_index }}</strong> a <strong>{{ comissoes_captador.end_index }}</strong> de <strong>{{ comissoes_captador.paginator.count }}</strong> comissões
+                </div>
+                {% endif %}
+                
+                <div style="margin-top: 15px; padding: 12px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
+                    <p style="margin: 0; font-size: 0.85rem; color: #1e40af; line-height: 1.6;">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Observação:</strong> As comissões são geradas automaticamente quando os pagamentos são confirmados. 
+                        Comissões pendentes serão pagas conforme o cronograma da empresa.
+                    </p>
+                </div>
+            </div>
+            {% endif %}
             {% else %}
             <!-- Estado vazio -->
             <div class="section empty-state">

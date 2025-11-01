@@ -47,7 +47,7 @@
             }
             
             /* Garantir que gradientes apareçam */
-            .header {
+            .header {  
                 background: #6f42c1 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
@@ -627,9 +627,15 @@
                 <button onclick="window.print()" class="btn-imprimir">
                     Imprimir / Salvar PDF
                 </button>
+                {% if venda %}
                 <a href="{% url 'vendas:confirmacao_venda' venda.id %}" class="btn-voltar">
                     ← Voltar
                 </a>
+                {% elif pre_venda %}
+                <a href="{% url 'vendas:registrar_aceite' pre_venda.id %}" class="btn-voltar">
+                    ← Voltar
+                </a>
+                {% endif %}
             </div>
         </div>
         

@@ -5,6 +5,20 @@
 
 {% block content %}
 <div class="container-fluid py-4">
+    <!-- Debug Info (remover em produção) -->
+    {% if debug %}
+    <div class="alert alert-info">
+        <strong>DEBUG:</strong> 
+        Total contratos enviados: {{ total_contratos|default:contratos_enviados.count }}
+        {% if contratos_enviados %}
+            <br>Contratos: 
+            {% for c in contratos_enviados %}
+                {{ c.numero_contrato }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+        {% endif %}
+    </div>
+    {% endif %}
+    
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
@@ -37,7 +51,8 @@
                 <div class="card-header bg-white border-bottom">
                     <h5 class="mb-0">
                         <i class="bi bi-send text-primary me-2"></i>
-                        Contratos com Cliente ({{ contratos_enviados.count }})
+                        Contratos com Cliente 
+                        <span class="badge bg-primary ms-2">{{ total_contratos|default:contratos_enviados.count }}</span>
                     </h5>
                 </div>
                 <div class="card-body">

@@ -42,13 +42,13 @@ except:
 # ===============================================
 def is_compliance_or_juridico(user):
     """
-    Permissão compartilhada: Compliance e Jurídico podem acessar contratos
+    Permissão compartilhada: Compliance, Jurídico e Comercial podem acessar contratos
     Integração implementada para unificar fluxo de pós-venda
     """
-    if user.is_superuser:
+    if user.is_superuser or user.is_staff:
         return True
     return user.groups.filter(
-        name__in=['compliance', 'juridico', 'admin']
+        name__in=['compliance', 'juridico', 'admin', 'Admin', 'comercial1', 'comercial2']
     ).exists()
 
 
@@ -754,14 +754,28 @@ def painel_contratos_enviados(request):
     """Painel para acompanhar contratos enviados aguardando assinatura"""
     contratos_enviados = Contrato.objects.filter(
         status='ENVIADO'
-    ).select_related('venda', 'cliente', 'cliente__lead').order_by('data_envio')
+    ).select_related(
+        'venda', 
+        'cliente', 
+        'cliente__lead',
+        'usuario_geracao'
+    ).prefetch_related(
+        'venda__parcela_set'
+    ).order_by('-data_envio')  # Ordem decrescente: mais recentes primeiro
     
     # Adicionar informações de tempo para cada contrato
     for contrato in contratos_enviados:
         contrato.dias_cliente = contrato.dias_com_cliente
     
+    # Log para debug
+    print(f"[DEBUG] Total de contratos ENVIADOS: {contratos_enviados.count()}")
+    for c in contratos_enviados:
+        print(f"[DEBUG] Contrato {c.numero_contrato} - Cliente: {c.cliente.lead.nome_completo} - {c.dias_cliente} dias")
+    
     context = {
         'contratos_enviados': contratos_enviados,
+        'total_contratos': contratos_enviados.count(),
+        'debug': True,  # Remover em produção
     }
     
     return render(request, 'juridico/painel_contratos_enviados.html', context)

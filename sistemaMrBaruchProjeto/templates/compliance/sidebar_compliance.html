@@ -342,14 +342,26 @@ Links baseados nas rotas permitidas
     top: 1rem;
     right: 1rem;
     z-index: 1001;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    padding: 0.75rem 1rem;
-    font-size: 1.2rem;
+    background: transparent;
+    color: #667eea;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 1.5rem;
     cursor: pointer;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+    transition: all 0.3s ease;
+}
+
+.mobile-toggle:hover {
+    background: #667eea;
+    color: white;
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.mobile-toggle i {
+    display: block;
+    line-height: 1;
 }
 
 /* Responsivo */

@@ -1,5 +1,6 @@
 {% extends 'base/base.html' %}
 {% load static %}
+{% load compliance_extras %}
 
 {% block title %}Gestão Pós-Venda - Compliance{% endblock %}
 
@@ -47,24 +48,141 @@
         <p class="mb-0">Acompanhamento de documentos e contratos</p>
     </div>
 
-    <!-- Filtros -->
-    <div class="filter-card">
-        <div class="d-flex flex-wrap gap-2 align-items-center">
-            <form method="get" action="{% url 'compliance:gestao_pos_venda_lista' %}" style="display:inline;">
-                <input type="hidden" name="status" value="">
-                <button type="submit" class="btn {% if not status_filtro %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-pill px-4">
-                    Todos
+    <!-- Cards de Status (Estilo Kanban) -->
+    <div class="row g-3 mb-4">
+        <!-- Card: Aguardando Conferência -->
+        <div class="col-md-3">
+            <div class="status-card" onclick="filtrarStatus('AGUARDANDO_CONFERENCIA,CONFERENCIA_CADASTRO')" style="cursor: pointer; border-top: 4px solid #ffc107;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0 text-warning">
+                        <i class="bi bi-hourglass-split"></i> Aguardando Conferência
+                    </h6>
+                </div>
+                <div class="status-number text-warning mb-2">{{ aguardando_conferencia }}</div>
+                <button class="btn btn-sm btn-outline-warning w-100" onclick="event.stopPropagation(); filtrarStatus('AGUARDANDO_CONFERENCIA')">
+                    Ver todos
                 </button>
-            </form>
-            {% for value, label in status_choices %}
-                <form method="get" action="{% url 'compliance:gestao_pos_venda_lista' %}" style="display:inline;">
-                    <input type="hidden" name="status" value="{{ value }}">
-                    <button type="submit" class="btn {% if status_filtro == value %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-pill px-4">
-                        {{ label }}
-                    </button>
-                </form>
-            {% endfor %}
+            </div>
         </div>
+
+        <!-- Card: Coletando Documentos -->
+        <div class="col-md-3">
+            <div class="status-card" onclick="filtrarStatus('COLETANDO_DOCUMENTOS')" style="cursor: pointer; border-top: 4px solid #17a2b8;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0 text-info">
+                        <i class="bi bi-file-earmark-text"></i> Coletando Documentos
+                    </h6>
+                </div>
+                <div class="status-number text-info mb-2">{{ coletando_docs }}</div>
+                <button class="btn btn-sm btn-outline-info w-100" onclick="event.stopPropagation(); filtrarStatus('COLETANDO_DOCUMENTOS')">
+                    Ver todos
+                </button>
+            </div>
+        </div>
+
+        <!-- Card: Aguardando Assinatura -->
+        <div class="col-md-3">
+            <div class="status-card" onclick="filtrarStatus('AGUARDANDO_ASSINATURA')" style="cursor: pointer; border-top: 4px solid #28a745;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0 text-success">
+                        <i class="bi bi-pen"></i> Aguardando Assinatura
+                    </h6>
+                </div>
+                <div class="status-number text-success mb-2">{{ aguardando_assinatura }}</div>
+                <button class="btn btn-sm btn-outline-success w-100" onclick="event.stopPropagation(); filtrarStatus('AGUARDANDO_ASSINATURA')">
+                    Ver todos
+                </button>
+            </div>
+        </div>
+
+        <!-- Card: Concluídos -->
+        <div class="col-md-3">
+            <div class="status-card" onclick="filtrarStatus('CONCLUIDO')" style="cursor: pointer; border-top: 4px solid #6c757d;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0 text-secondary">
+                        <i class="bi bi-check-circle-fill"></i> Concluídos
+                    </h6>
+                </div>
+                <div class="status-number text-secondary mb-2">{{ concluidos }}</div>
+                <button class="btn btn-sm btn-outline-secondary w-100" onclick="event.stopPropagation(); filtrarStatus('CONCLUIDO')">
+                    Ver todos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function filtrarStatus(status) {
+            if (status) {
+                window.location.href = '{% url "compliance:gestao_pos_venda_lista" %}?status=' + status;
+            } else {
+                window.location.href = '{% url "compliance:gestao_pos_venda_lista" %}';
+            }
+        }
+    </script>
+
+    <style>
+        .status-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+        
+        .status-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .status-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        
+        .status-card h6 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+    </style>
+
+    <!-- Filtros Avançados -->
+    <div class="filter-card">
+        <div class="row g-3">
+            <div class="col-md-10">
+                <label class="form-label fw-semibold"><i class="bi bi-funnel"></i> Filtro por Status</label>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{% url 'compliance:gestao_pos_venda_lista' %}" 
+                       class="btn {% if not status_filtro %}btn-primary{% else %}btn-outline-secondary{% endif %} btn-sm">
+                        Todos ({{ total_gestoes }})
+                    </a>
+                    {% for value, label in status_choices %}
+                        <a href="{% url 'compliance:gestao_pos_venda_lista' %}?status={{ value }}" 
+                           class="btn {% if status_filtro == value %}btn-primary{% else %}btn-outline-secondary{% endif %} btn-sm">
+                            {{ label }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <a href="{% url 'compliance:painel' %}" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+        
+        {% if status_filtro %}
+        <div class="mt-3 pt-3 border-top">
+            <small class="text-muted me-2">Filtro ativo:</small>
+            <span class="badge bg-primary me-2">
+                {{ status_choices|lookup:status_filtro }}
+                <a href="{% url 'compliance:gestao_pos_venda_lista' %}" class="text-white ms-1" style="text-decoration: none;">×</a>
+            </span>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Tabela de Gestões -->

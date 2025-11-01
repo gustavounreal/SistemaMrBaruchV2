@@ -330,7 +330,10 @@ def salvar_lead_sem_levantamento(request):
             try:
                 captador = User.objects.get(id=captador_id)
             except User.DoesNotExist:
-                pass
+                return JsonResponse({'success': False, 'message': 'Captador não encontrado.'})
+        else:
+            return JsonResponse({'success': False, 'message': 'ID do captador é obrigatório.'})
+        
         status_inicial = str(ConfiguracaoService.obter_config('LEAD_STATUS_INICIAL', 'NOVO') or 'NOVO')
         lead, created = Lead.objects.get_or_create(
             telefone=telefone,
@@ -340,7 +343,7 @@ def salvar_lead_sem_levantamento(request):
                 'cpf_cnpj': cpf_cnpj,
                 'origem': origem,
                 'status': status_inicial,
-                'captador': captador or request.user,
+                'captador': captador,
                 'atendente': request.user,
             }
         )
@@ -350,7 +353,7 @@ def salvar_lead_sem_levantamento(request):
             lead.email = email
             lead.cpf_cnpj = cpf_cnpj
             lead.origem = origem
-            lead.captador = captador or request.user
+            lead.captador = captador
             lead.atendente = request.user
             lead.status = status_inicial
             lead.save()
@@ -419,7 +422,10 @@ def salvar_lead_api(request):
             try:
                 captador = User.objects.get(id=captador_id)
             except User.DoesNotExist:
-                captador = None
+                return JsonResponse({'success': False, 'message': 'Captador não encontrado.'})
+        else:
+            return JsonResponse({'success': False, 'message': 'ID do captador é obrigatório.'})
+        
         status_inicial = str(ConfiguracaoService.obter_config('LEAD_STATUS_INICIAL', 'CONTATADO') or 'CONTATADO')
         lead, created = Lead.objects.get_or_create(
             telefone=telefone,
@@ -429,7 +435,7 @@ def salvar_lead_api(request):
                 'cpf_cnpj': cpf_cnpj,
                 'origem': origem,
                 'status': status_inicial,
-                'captador': captador or request.user,
+                'captador': captador,
                 'atendente': request.user,
             }
         )
@@ -441,6 +447,7 @@ def salvar_lead_api(request):
             lead.cpf_cnpj = cpf_cnpj
             lead.origem = origem
             lead.status = status_inicial
+            lead.captador = captador
             lead.data_atualizacao = timezone.now()
             lead.save()
 
@@ -927,7 +934,7 @@ import random
 
 @login_required
 def lista_leads_pix(request):
-    """Lista de leads PIX com autenticação híbrida e suporte à paginação"""
+    """Lista de leads PIX cadastrados pelo atendente nas últimas 24 horas"""
     # Verifica se o usuário está autenticado via sessão
     if not request.user.is_authenticated:
         # Tenta autenticação JWT se disponível
@@ -940,10 +947,12 @@ def lista_leads_pix(request):
 
     agora = timezone.now()
     limite = agora - timedelta(hours=24)
+    
+    # CORRIGIDO: Filtra por atendente (quem cadastrou) ao invés de captador
     leads = Lead.objects.filter(
-        captador=request.user,
+        atendente=request.user,
         data_cadastro__gte=limite
-    ).select_related('cliente_asaas').prefetch_related('pix_levantamentos').order_by('-data_cadastro')
+    ).select_related('cliente_asaas', 'captador').prefetch_related('pix_levantamentos').order_by('-data_cadastro')
 
     # Paginação
     page = request.GET.get('page', 1)

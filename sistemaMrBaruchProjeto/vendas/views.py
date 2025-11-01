@@ -396,46 +396,53 @@ def painel_metricas_consultor(request):
 @login_required
 @user_passes_test(is_consultor_or_admin)
 def gerar_orcamento_pre_venda_pdf(request, pre_venda_id):
+    """
+    Gera o orçamento da pré-venda em HTML para impressão/PDF.
+    Usa o mesmo template que orcamento_pdf.html mas com dados da pré-venda.
+    """
     pre_venda = get_object_or_404(PreVenda.objects.select_related('lead'), id=pre_venda_id)
     lead = pre_venda.lead
 
     # Simular parcelas a partir dos dados da pré-venda
     parcelas = []
     try:
-        # Exemplo de campos esperados na PreVenda:
-        # pre_venda.valor_total, pre_venda.valor_entrada, pre_venda.qtd_parcelas, pre_venda.valor_parcela, pre_venda.periodicidade, pre_venda.data_primeira_parcela
-        valor_entrada = getattr(pre_venda, 'valor_entrada', None)
-        valor_total = getattr(pre_venda, 'valor_total', None)
-        qtd_parcelas = getattr(pre_venda, 'qtd_parcelas', None)
+        quantidade_parcelas = getattr(pre_venda, 'quantidade_parcelas', None)
         valor_parcela = getattr(pre_venda, 'valor_parcela', None)
-        periodicidade = getattr(pre_venda, 'periodicidade', 'mensal')  # 'mensal', 'quinzenal', etc
-        data_primeira = getattr(pre_venda, 'data_primeira_parcela', None)
-
-        if all([qtd_parcelas, valor_parcela, data_primeira]):
-            data_venc = data_primeira
-            for i in range(1, qtd_parcelas+1):
+        frequencia = getattr(pre_venda, 'frequencia_pagamento', 'MENSAL')
+        
+        if quantidade_parcelas and valor_parcela:
+            # Estimar data de primeira parcela (30 dias após hoje)
+            data_venc = date.today() + timedelta(days=30)
+            
+            for i in range(1, int(quantidade_parcelas) + 1):
                 parcelas.append({
                     'numero_parcela': i,
                     'valor': valor_parcela,
                     'data_vencimento': data_venc,
-                    'status': 'Simulada',
                 })
-                # Avança a data conforme periodicidade
-                if periodicidade == 'mensal':
-                    data_venc += timedelta(days=30)
-                elif periodicidade == 'quinzenal':
-                    data_venc += timedelta(days=15)
+                
+                # Avança a data conforme periodicidade (case-insensitive)
+                frequencia_upper = frequencia.upper() if frequencia else 'MENSAL'
+                
+                if frequencia_upper == 'MENSAL':
+                    # Usa relativedelta para cálculo mensal preciso
+                    data_venc = data_venc + relativedelta(months=1)
+                elif frequencia_upper == 'QUINZENAL':
+                    data_venc = data_venc + timedelta(days=15)
+                elif frequencia_upper == 'SEMANAL':
+                    data_venc = data_venc + timedelta(days=7)
                 else:
-                    data_venc += timedelta(days=30)
+                    # Padrão: mensal
+                    data_venc = data_venc + relativedelta(months=1)
     except Exception as e:
         # Se falhar, deixa parcelas vazio
+        print(f"Erro ao gerar parcelas da pré-venda: {e}")
         parcelas = []
 
     context = {
         'pre_venda': pre_venda,
-        'lead': lead,
+        'venda': None,  # Indica que é pré-venda, não venda finalizada
         'parcelas': parcelas,
-        'venda': None,
         'data_emissao': date.today(),
         'empresa': {
             'nome': 'Grupo Mr Baruch Michel da Silva Rodrigues LTDA',
@@ -449,27 +456,9 @@ def gerar_orcamento_pre_venda_pdf(request, pre_venda_id):
         }
     }
 
-    html = render_to_string('vendas/orcamento_pdf.html', context)
-    response = HttpResponse(html, content_type='text/html')
-    return response
-    """
-    Gera o orçamento da pré-venda em PDF, renderizando o template 'vendas/orcamento_pdf.html'.
-    """
-    pre_venda = get_object_or_404(PreVenda, id=pre_venda_id)
-    # Você pode adicionar lógica para buscar outros dados relacionados, se necessário
-    context = {
-        'pre_venda': pre_venda,
-        'venda': None,  # Para o template saber que é pré-venda
-    }
-    html = render_to_string('vendas/orcamento_pdf.html', context)
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="orcamento_pre_venda_{pre_venda_id}.pdf"'
-    pisa_status = pisa.CreatePDF(
-        io.BytesIO(html.encode('utf-8')), dest=response, encoding='utf-8'
-    )
-    if pisa_status.err:
-        return HttpResponse('Erro ao gerar PDF', status=500)
-    return response
+    return render(request, 'vendas/orcamento_pdf.html', context)
+
+
 from marketing.models import Lead, MotivoContato
 from clientes.models import Cliente
 from financeiro.models import PixLevantamento, Parcela as FinanceiroParcela, Comissao
@@ -726,7 +715,14 @@ def iniciar_pre_venda(request, lead_id):
                 pre_venda.valor_entrada = Decimal(request.POST.get('valor_entrada', '0'))
                 pre_venda.quantidade_parcelas = int(request.POST.get('quantidade_parcelas', 1))
                 pre_venda.valor_parcela = Decimal(request.POST.get('valor_parcela', '0'))
-                pre_venda.frequencia_pagamento = request.POST.get('frequencia_pagamento', 'MENSAL')
+                
+                # Capturar frequência de pagamento
+                frequencia = request.POST.get('frequencia_pagamento')
+                if frequencia:
+                    pre_venda.frequencia_pagamento = frequencia
+                else:
+                    pre_venda.frequencia_pagamento = 'MENSAL'
+                    
                 pre_venda.status = 'AGUARDANDO_ACEITE'
                 pre_venda.save()
                 
@@ -1197,7 +1193,10 @@ def cadastro_venda(request, pre_venda_id):
     """
     Terceira etapa: Cadastro completo da venda e coleta de documentos
     """
-    pre_venda = get_object_or_404(PreVenda, id=pre_venda_id)
+    pre_venda = get_object_or_404(
+        PreVenda.objects.select_related('lead', 'lead__captador'), 
+        id=pre_venda_id
+    )
     
     if pre_venda.status != 'ACEITO':
         messages.error(request, 'Esta pré-venda não foi aceita pelo cliente.')

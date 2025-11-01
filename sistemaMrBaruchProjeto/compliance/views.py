@@ -240,10 +240,30 @@ def gestao_pos_venda_lista(request):
     """Lista gestões pós-venda pendentes"""
     status_filtro = request.GET.get('status', '')
     
-    gestoes = GestaoDocumentosPosVenda.objects.select_related(
+    # Base queryset
+    gestoes_base = GestaoDocumentosPosVenda.objects.select_related(
         'pre_venda__lead', 'responsavel'
     ).all()
     
+    # Calcular estatísticas na base (antes de filtrar)
+    aguardando_conferencia = gestoes_base.filter(
+        status__in=['AGUARDANDO_CONFERENCIA', 'CONFERENCIA_CADASTRO']
+    ).count()
+    
+    coletando_docs = gestoes_base.filter(
+        status__in=['COLETANDO_DOCUMENTOS', 'COLETA_DOCUMENTOS', 'DOCUMENTOS_OK']
+    ).count()
+    
+    aguardando_assinatura = gestoes_base.filter(
+        status__in=['AGUARDANDO_ASSINATURA', 'ENVIO_CONTRATO', 'EMISSAO_CONTRATO', 'EMITINDO_CONTRATO']
+    ).count()
+    
+    concluidos = gestoes_base.filter(
+        status__in=['CONCLUIDO', 'ASSINATURA_CONFIRMADA', 'CONTRATO_ASSINADO']
+    ).count()
+    
+    # Aplicar filtro se houver
+    gestoes = gestoes_base
     if status_filtro:
         gestoes = gestoes.filter(status=status_filtro)
     
@@ -253,6 +273,11 @@ def gestao_pos_venda_lista(request):
         'gestoes': gestoes,
         'status_choices': StatusPosVendaCompliance.choices,
         'status_filtro': status_filtro,
+        'aguardando_conferencia': aguardando_conferencia,
+        'coletando_docs': coletando_docs,
+        'aguardando_assinatura': aguardando_assinatura,
+        'concluidos': concluidos,
+        'total_gestoes': gestoes_base.count(),
     }
     
     return render(request, 'compliance/gestao_pos_venda_lista.html', context)
@@ -379,11 +404,35 @@ def painel_pos_venda(request):
     # Query base - buscar todas as vendas
     vendas = Venda.objects.select_related(
         'cliente', 'cliente__lead', 'servico', 'consultor', 'captador'
+    ).prefetch_related(
+        'contrato'
     ).order_by('-data_criacao')
     
     # Aplicar filtros
     if filtro_status:
-        vendas = vendas.filter(status_compliance_pos_venda=filtro_status)
+        # Mapear filtros personalizados para os status corretos
+        if filtro_status == 'TODOS':
+            pass  # Não filtra
+        elif filtro_status == 'AGUARDANDO_CONFERENCIA':
+            vendas = vendas.filter(status_compliance_pos_venda=StatusPosVendaCompliance.AGUARDANDO_CONFERENCIA)
+        elif filtro_status == 'CONFERENCIA_OK':
+            vendas = vendas.filter(status_compliance_pos_venda=StatusPosVendaCompliance.CONFERENCIA_OK)
+        elif filtro_status == 'COLETANDO_DOCUMENTOS':
+            vendas = vendas.filter(status_compliance_pos_venda=StatusPosVendaCompliance.COLETANDO_DOCUMENTOS)
+        elif filtro_status == 'DOCUMENTOS_OK':
+            vendas = vendas.filter(status_compliance_pos_venda=StatusPosVendaCompliance.DOCUMENTOS_OK)
+        elif filtro_status == 'EMITINDO_CONTRATO':
+            vendas = vendas.filter(status_compliance_pos_venda=StatusPosVendaCompliance.EMITINDO_CONTRATO)
+        elif filtro_status == 'CONTRATO_ENVIADO':
+            vendas = vendas.filter(status_compliance_pos_venda=StatusPosVendaCompliance.CONTRATO_ENVIADO)
+        elif filtro_status == 'AGUARDANDO_ASSINATURA':
+            vendas = vendas.filter(status_compliance_pos_venda=StatusPosVendaCompliance.AGUARDANDO_ASSINATURA)
+        elif filtro_status == 'CONTRATO_ASSINADO':
+            vendas = vendas.filter(status_compliance_pos_venda=StatusPosVendaCompliance.CONTRATO_ASSINADO)
+        elif filtro_status == 'CONCLUIDO':
+            vendas = vendas.filter(status_compliance_pos_venda=StatusPosVendaCompliance.CONCLUIDO)
+        else:
+            vendas = vendas.filter(status_compliance_pos_venda=filtro_status)
     
     if filtro_pagamento:
         vendas = vendas.filter(status_pagamento_entrada=filtro_pagamento)
@@ -395,21 +444,27 @@ def painel_pos_venda(request):
             Q(id__icontains=filtro_busca)
         )
     
-    # Estatísticas
-    total_vendas = vendas.count()
-    aguardando_conferencia = vendas.filter(
+    # Estatísticas - contar sobre a query base sem filtros aplicados
+    vendas_base = Venda.objects.all()
+    
+    total_vendas = vendas_base.count()
+    aguardando_conferencia = vendas_base.filter(
         status_compliance_pos_venda=StatusPosVendaCompliance.AGUARDANDO_CONFERENCIA
     ).count()
-    coletando_documentos = vendas.filter(
+    coletando_documentos = vendas_base.filter(
         status_compliance_pos_venda=StatusPosVendaCompliance.COLETANDO_DOCUMENTOS
     ).count()
-    aguardando_assinatura = vendas.filter(
+    aguardando_assinatura = vendas_base.filter(
         status_compliance_pos_venda=StatusPosVendaCompliance.AGUARDANDO_ASSINATURA
     ).count()
-    concluidos_hoje = vendas.filter(
+    concluidos_hoje = vendas_base.filter(
         status_compliance_pos_venda=StatusPosVendaCompliance.CONCLUIDO,
         data_atualizacao__date=timezone.now().date()
     ).count()
+    
+    # Log para debug
+    print(f"[DEBUG COMPLIANCE] Filtro status: {filtro_status}")
+    print(f"[DEBUG COMPLIANCE] Total de vendas após filtro: {vendas.count()}")
     
     # Paginação
     paginator = Paginator(vendas, 20)
@@ -432,6 +487,7 @@ def painel_pos_venda(request):
         'filtro_status': filtro_status,
         'filtro_pagamento': filtro_pagamento,
         'filtro_busca': filtro_busca,
+        'resultado_filtrado': vendas.count(),  # Total após aplicar filtros
     }
     
     return render(request, 'compliance/pos_venda/painel.html', context)

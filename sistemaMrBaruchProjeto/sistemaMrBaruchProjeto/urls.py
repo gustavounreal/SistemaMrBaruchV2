@@ -2,12 +2,13 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.http import HttpResponse
+from django.shortcuts import redirect
 from core import views as core_views
 from captadores import views as captadores_views
 
 def home_view(request):
-    return HttpResponse('<h1>Sistema Mr. Baruch</h1><p><a href="/accounts/login/">Fazer Login</a></p>')
+    """Redireciona a página inicial para o login"""
+    return redirect('accounts:login')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -32,8 +33,6 @@ urlpatterns = [
     # Webhook ASAAS (rota direta sem prefixo)
     path('webhook/asaas/', core_views.webhook_asaas, name='webhook_asaas'),
     path('', include('distratos.urls')),
-    
-    path('', home_view, name='home'),
     
     path('', home_view, name='home'),
 ]

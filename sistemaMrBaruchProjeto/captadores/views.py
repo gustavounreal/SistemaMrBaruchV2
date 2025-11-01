@@ -44,10 +44,47 @@ def area_captador(request):
     total_vendas = vendas.count()
     valor_total_indicacoes = vendas.aggregate(total=Sum('valor_total'))['total'] or 0
     
-    # Comissão (percentual configurável do valor total das vendas)
+    # ✅ CORREÇÃO: Buscar comissões reais do captador (não calcular estimativa)
     from decimal import Decimal
-    percentual_comissao = Decimal(str(percentual_comissao_config)) / Decimal('100')  # Converter de % para decimal
-    comissao_total = Decimal(str(valor_total_indicacoes)) * percentual_comissao
+    from financeiro.models import Comissao
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    
+    comissoes_captador_all = Comissao.objects.filter(
+        usuario=captador,
+        tipo_comissao__in=['CAPTADOR_ENTRADA', 'CAPTADOR_PARCELA']
+    ).select_related('venda__cliente__lead', 'parcela').order_by('-data_calculada')
+    
+    # Comissão total (soma de todas as comissões registradas)
+    comissao_total = comissoes_captador_all.aggregate(
+        total=Sum('valor_comissao')
+    )['total'] or Decimal('0')
+    
+    # Comissão recebida (comissões já pagas)
+    comissao_recebida = comissoes_captador_all.filter(
+        status='paga'
+    ).aggregate(total=Sum('valor_comissao'))['total'] or Decimal('0')
+    
+    # Comissão a receber (comissões pendentes)
+    comissao_a_receber = comissoes_captador_all.filter(
+        status='pendente'
+    ).aggregate(total=Sum('valor_comissao'))['total'] or Decimal('0')
+    
+    # Percentual de comissão para exibição (obtém da primeira comissão ou configuração)
+    percentual_comissao = percentual_comissao_config
+    primeira_comissao = comissoes_captador_all.first()
+    if primeira_comissao:
+        percentual_comissao = int(primeira_comissao.percentual_comissao)
+    
+    # ✅ PAGINAÇÃO: 10 comissões por página
+    paginator = Paginator(comissoes_captador_all, 10)
+    page = request.GET.get('page', 1)
+    
+    try:
+        comissoes_captador = paginator.page(page)
+    except PageNotAnInteger:
+        comissoes_captador = paginator.page(1)
+    except EmptyPage:
+        comissoes_captador = paginator.page(paginator.num_pages)
     
     # Buscar todas as parcelas das vendas do captador
     parcelas = Parcela.objects.filter(venda__captador=captador).select_related('venda__cliente__lead')
@@ -58,13 +95,9 @@ def area_captador(request):
     parcelas_vencidas = parcelas.filter(status='vencida').count()
     parcelas_abertas = parcelas.filter(status='aberta').count()
     
-    # Valores
+    # Valores das parcelas (para estatísticas)
     valor_pago = parcelas.filter(status='paga').aggregate(total=Sum('valor'))['total'] or 0
     valor_pendente = parcelas.exclude(status='paga').aggregate(total=Sum('valor'))['total'] or 0
-    
-    # Comissão recebida e a receber (20% do valor das parcelas)
-    comissao_recebida = valor_pago * percentual_comissao
-    comissao_a_receber = valor_pendente * percentual_comissao
     
     # Calcular dias de atraso para parcelas vencidas
     hoje = date.today()
@@ -123,7 +156,7 @@ def area_captador(request):
         'comissao_total': comissao_total,
         'comissao_recebida': comissao_recebida,
         'comissao_a_receber': comissao_a_receber,
-        'percentual_comissao': int(percentual_comissao * 100),
+        'percentual_comissao': percentual_comissao,
         'total_parcelas': total_parcelas,
         'parcelas_pagas': parcelas_pagas,
         'parcelas_vencidas': parcelas_vencidas,
@@ -139,6 +172,7 @@ def area_captador(request):
         'link_curto': link_curto,  # Objeto completo para analytics
         'media_files': media_files,
         'hoje': hoje,
+        'comissoes_captador': comissoes_captador,  # ✅ Adiciona lista de comissões para detalhamento
     }
     
     return render(request, 'captadores/area_captador.html', context)
