@@ -1,199 +1,282 @@
 {% extends 'base/base.html' %}
 {% load static %}
 
-{% block title %}Painel Central de Relatórios{% endblock %}
-
-{% block extra_head %}
-<style>
-  .card-relatorio {
-    transition: all 0.3s ease;
-    border: 1px solid #e0e0e0;
-  }
-  .card-relatorio:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-  }
-  .icon-large {
-    font-size: 3rem;
-  }
-</style>
-{% endblock %}
+{% block title %}Central de Relatórios - Mr. Baruch{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
-  <!-- Header -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h1 class="mb-1"><i class="bi bi-bar-chart-line"></i> Painel Central de Relatórios</h1>
-      <p class="text-muted mb-0">Acesse todos os relatórios e dashboards do sistema</p>
+  
+  <!-- Cabeçalho -->
+  <div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+      <h2 class="fw-bold text-dark mb-1">
+        <i class="bi bi-graph-up-arrow me-2 text-danger"></i>Central de Relatórios
+      </h2>
+      <p class="text-muted mb-0">Análises e indicadores gerenciais do sistema Mr. Baruch</p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+      <a href="/accounts/dashboard/" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Dashboard
+      </a>
     </div>
   </div>
 
-  <!-- Seção: Comercial e Vendas -->
+  <!-- ========== SEÇÃO: COMERCIAL E VENDAS ========== -->
   <div class="mb-5">
-    <h3 class="mb-3"><i class="bi bi-cart-check text-primary"></i> Comercial e Vendas</h3>
+    <div class="d-flex align-items-center mb-3">
+      <div class="bg-primary text-white p-2 rounded me-2">
+        <i class="bi bi-cart-check fs-5"></i>
+      </div>
+      <h4 class="fw-bold mb-0">Comercial e Vendas</h4>
+    </div>
+
     <div class="row g-4">
-      <div class="col-md-4">
-        <div class="card card-relatorio h-100 text-center">
-          <div class="card-body">
-            <i class="bi bi-graph-up text-primary icon-large mb-3"></i>
-            <h5 class="fw-bold mb-2">KPIs Comercial 2</h5>
-            <p class="text-muted small">Métricas e performance de repescagem</p>
-            <a href="{% url 'relatorios:dashboard_kpis_comercial2' %}" class="btn btn-primary">
+      <!-- 1. Leads -->
+      <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 hover-card">
+          <div class="card-body text-center d-flex flex-column">
+            <div class="mb-3">
+              <i class="bi bi-person-lines-fill text-info" style="font-size: 3rem;"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Relatório de Leads</h5>
+            <p class="text-muted small mb-3">Análise detalhada de leads captados</p>
+            <a href="{% url 'relatorios:relatorio_leads' %}" class="btn btn-info w-100 mt-auto">
               <i class="bi bi-box-arrow-up-right"></i> Acessar
             </a>
           </div>
         </div>
       </div>
 
-      <div class="col-md-4">
-        <div class="card card-relatorio h-100 text-center">
-          <div class="card-body">
-            <i class="bi bi-person-lines-fill text-info icon-large mb-3"></i>
-            <h5 class="fw-bold mb-2">Leads</h5>
-            <p class="text-muted small">Relatório detalhado de leads</p>
-            <a href="{% url 'relatorios:relatorio_leads' %}" class="btn btn-info">
+      <!-- 2. Consultores -->
+      <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 hover-card">
+          <div class="card-body text-center d-flex flex-column">
+            <div class="mb-3">
+              <i class="bi bi-person-badge text-success" style="font-size: 3rem;"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Relatório de Consultores</h5>
+            <p class="text-muted small mb-3">Performance de vendas e comissões (Comercial 1)</p>
+            <a href="{% url 'relatorios:relatorio_consultores' %}" class="btn btn-success w-100 mt-auto">
               <i class="bi bi-box-arrow-up-right"></i> Acessar
             </a>
           </div>
         </div>
       </div>
 
-      <div class="col-md-4">
-        <div class="card card-relatorio h-100 text-center">
-          <div class="card-body">
-            <i class="bi bi-speedometer2 text-success icon-large mb-3"></i>
-            <h5 class="fw-bold mb-2">Dashboard Gráficos</h5>
-            <p class="text-muted small">Visualizações e gráficos gerais</p>
-            <a href="{% url 'relatorios:dashboard_graficos' %}" class="btn btn-success">
-              <i class="bi bi-box-arrow-up-right"></i> Acessar
-            </a>
-          </div>
-        </div>
-      </div>
+     
 
-      <div class="col-md-4">
-        <div class="card card-relatorio h-100 text-center">
-          <div class="card-body">
-            <i class="bi bi-trophy-fill text-warning icon-large mb-3"></i>
-            <h5 class="fw-bold mb-2">Ranking Geral</h5>
-            <p class="text-muted small">Ranking de Atendentes, Consultores e Captadores</p>
-            <a href="{% url 'relatorios:ranking_geral' %}" class="btn btn-warning">
+      <!-- 4. Comercial 2 -->
+      <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 hover-card">
+          <div class="card-body text-center d-flex flex-column">
+            <div class="mb-3">
+              <i class="bi bi-graph-up-arrow text-primary" style="font-size: 3rem;"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Comercial 2</h5>
+            <p class="text-muted small mb-3">Métricas e performance de repescagem</p>
+            <a href="{% url 'relatorios:dashboard_kpis_comercial2' %}" class="btn btn-primary w-100 mt-auto">
               <i class="bi bi-box-arrow-up-right"></i> Acessar
             </a>
           </div>
         </div>
-      </div>
+      </div>     
     </div>
   </div>
 
-  <!-- Seção: Financeiro -->
+  <!-- ========== SEÇÃO: Comissões ========== -->
   <div class="mb-5">
-    <h3 class="mb-3"><i class="bi bi-currency-dollar text-success"></i> Financeiro</h3>
+    <div class="d-flex align-items-center mb-3">
+      <div class="bg-success text-white p-2 rounded me-2">
+        <i class="bi bi-currency-dollar fs-5"></i>
+      </div>
+      <h4 class="fw-bold mb-0">Comissões</h4>
+    </div>
+
     <div class="row g-4">
-      <div class="col-md-4">
-        <div class="card card-relatorio h-100 text-center">
-          <div class="card-body">
-            <i class="bi bi-cash-coin text-success icon-large mb-3"></i>
+      <!-- Comissões -->
+      <div class="col-lg-4 col-md-6">
+        <div class="card border-0 shadow-sm h-100 hover-card">
+          <div class="card-body text-center d-flex flex-column">
+            <div class="mb-3">
+              <i class="bi bi-cash-coin text-success" style="font-size: 3rem;"></i>
+            </div>
             <h5 class="fw-bold mb-2">Comissões</h5>
-            <p class="text-muted small">Relatório de comissões pagas e a pagar</p>
-            <a href="{% url 'relatorios:relatorio_comissoes' %}" class="btn btn-success">
+            <p class="text-muted small mb-3">Relatório de comissões pagas e pendentes</p>
+            <a href="{% url 'relatorios:relatorio_comissoes' %}" class="btn btn-success w-100 mt-auto">
               <i class="bi bi-box-arrow-up-right"></i> Acessar
             </a>
           </div>
         </div>
       </div>
 
-      <div class="col-md-4">
-        <div class="card card-relatorio h-100 text-center">
-          <div class="card-body">
-            <i class="bi bi-bank text-warning icon-large mb-3"></i>
+      <!-- Financeiro 
+      <div class="col-lg-4 col-md-6">
+        <div class="card border-0 shadow-sm h-100 hover-card">
+          <div class="card-body text-center d-flex flex-column">
+            <div class="mb-3">
+              <i class="bi bi-bank text-warning" style="font-size: 3rem;"></i>
+            </div>
             <h5 class="fw-bold mb-2">Financeiro</h5>
-            <p class="text-muted small">Relatório financeiro completo</p>
-            <a href="{% url 'relatorios:relatorio_financeiro' %}" class="btn btn-warning">
+            <p class="text-muted small mb-3">Análise financeira completa</p>
+            <a href="{% url 'relatorios:relatorio_financeiro' %}" class="btn btn-warning w-100 mt-auto">
               <i class="bi bi-box-arrow-up-right"></i> Acessar
             </a>
           </div>
         </div>
-      </div>
+      </div>-->
 
-      <div class="col-md-4">
-        <div class="card card-relatorio h-100 text-center">
-          <div class="card-body">
-            <i class="bi bi-receipt text-secondary icon-large mb-3"></i>
+      <!-- Vendas 
+      <div class="col-lg-4 col-md-6">
+        <div class="card border-0 shadow-sm h-100 hover-card">
+          <div class="card-body text-center d-flex flex-column">
+            <div class="mb-3">
+              <i class="bi bi-receipt text-secondary" style="font-size: 3rem;"></i>
+            </div>
             <h5 class="fw-bold mb-2">Vendas</h5>
-            <p class="text-muted small">Relatório de vendas realizadas</p>
-            <a href="{% url 'relatorios:relatorio_vendas' %}" class="btn btn-secondary">
+            <p class="text-muted small mb-3">Relatório de vendas realizadas</p>
+            <a href="{% url 'relatorios:relatorio_vendas' %}" class="btn btn-secondary w-100 mt-auto">
               <i class="bi bi-box-arrow-up-right"></i> Acessar
             </a>
           </div>
         </div>
-      </div>
+      </div>-->
     </div>
   </div>
 
-  <!-- Seção: Compliance e Auditoria -->
+  <!-- ========== SEÇÃO: COMPLIANCE E AUDITORIA ========== -->
   <div class="mb-5">
-    <h3 class="mb-3"><i class="bi bi-shield-check text-danger"></i> Compliance e Auditoria</h3>
+    <div class="d-flex align-items-center mb-3">
+      <div class="bg-danger text-white p-2 rounded me-2">
+        <i class="bi bi-shield-check fs-5"></i>
+      </div>
+      <h4 class="fw-bold mb-0">Compliance e Auditoria</h4>
+    </div>
+
+    
+
     <div class="row g-4">
-      <div class="col-md-4">
-        <div class="card card-relatorio h-100 text-center">
-          <div class="card-body">
-            <i class="bi bi-clipboard-data text-danger icon-large mb-3"></i>
+      <!-- Auditoria -->
+      <div class="col-lg-4 col-md-6">
+        <div class="card border-0 shadow-sm h-100 hover-card">
+          <div class="card-body text-center d-flex flex-column">
+            <div class="mb-3">
+              <i class="bi bi-clipboard-data text-danger" style="font-size: 3rem;"></i>
+            </div>
             <h5 class="fw-bold mb-2">Auditoria de Edições</h5>
-            <p class="text-muted small">Análise completa de alterações nos dados das vendas</p>
-            <a href="{% url 'compliance:relatorio_auditoria' %}" class="btn btn-danger">
+            <p class="text-muted small mb-3">Análise completa de alterações nas vendas</p>
+            <a href="{% url 'compliance:relatorio_auditoria' %}" class="btn btn-danger w-100 mt-auto">
               <i class="bi bi-box-arrow-up-right"></i> Acessar
             </a>
           </div>
         </div>
       </div>
 
-      <div class="col-md-4">
-        <div class="card card-relatorio h-100 text-center">
-          <div class="card-body">
-            <i class="bi bi-shield-fill-check text-primary icon-large mb-3"></i>
+      <!-- Gestão Pós-Venda -->
+      <div class="col-lg-4 col-md-6">
+        <div class="card border-0 shadow-sm h-100 hover-card">
+          <div class="card-body text-center d-flex flex-column">
+            <div class="mb-3">
+              <i class="bi bi-shield-fill-check text-primary" style="font-size: 3rem;"></i>
+            </div>
             <h5 class="fw-bold mb-2">Gestão Pós-Venda</h5>
-            <p class="text-muted small">Acompanhamento do fluxo pós-venda</p>
-            <a href="{% url 'compliance:painel_pos_venda' %}" class="btn btn-primary">
+            <p class="text-muted small mb-3">Acompanhamento do fluxo pós-venda</p>
+            <a href="{% url 'compliance:painel_pos_venda' %}" class="btn btn-primary w-100 mt-auto">
               <i class="bi bi-box-arrow-up-right"></i> Acessar
             </a>
           </div>
         </div>
       </div>
 
-      <div class="col-md-4">
-        <div class="card card-relatorio h-100 text-center opacity-75">
-          <div class="card-body">
-            <i class="bi bi-file-earmark-ruled text-muted icon-large mb-3"></i>
-            <h5 class="fw-bold mb-2">Relatórios de Conformidade</h5>
-            <p class="text-muted small">Em breve...</p>
-            <button class="btn btn-outline-secondary" disabled>
-              <i class="bi bi-lock"></i> Em Desenvolvimento
-            </button>
+       <!-- 3. Compliance -->
+      <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 hover-card">
+          <div class="card-body text-center d-flex flex-column">
+            <div class="mb-3">
+              <i class="bi bi-shield-check text-success" style="font-size: 3rem;"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Relatório Compliance</h5>
+            <p class="text-muted small mb-3">Análises, aprovações e reprovações</p>
+            <a href="{% url 'relatorios:relatorio_compliance' %}" class="btn btn-success w-100 mt-auto">
+              <i class="bi bi-box-arrow-up-right"></i> Acessar
+            </a>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Seção: Outros Relatórios -->
+  <!-- ========== SEÇÃO: OUTROS RELATÓRIOS ========== -->
   <div class="mb-4">
-    <h3 class="mb-3"><i class="bi bi-hourglass-split text-muted"></i> Outros Relatórios</h3>
+    <div class="d-flex align-items-center mb-3">
+      <div class="bg-secondary text-white p-2 rounded me-2">
+        <i class="bi bi-grid-3x3 fs-5"></i>
+      </div>
+      <h4 class="fw-bold mb-0">Outros Relatórios</h4>
+    </div>
+
     <div class="row g-4">
-      <div class="col-md-4">
-        <div class="card card-relatorio h-100 text-center opacity-75">
-          <div class="card-body">
-            <i class="bi bi-file-earmark-text text-muted icon-large mb-3"></i>
-            <h5 class="fw-bold mb-2">Relatórios Personalizados</h5>
-            <p class="text-muted small">Em breve...</p>
-            <button class="btn btn-outline-secondary" disabled>
-              <i class="bi bi-lock"></i> Em Desenvolvimento
-            </button>
+       <!-- 5. Ranking Geral -->
+      <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 hover-card">
+          <div class="card-body text-center d-flex flex-column">
+            <div class="mb-3">
+              <i class="bi bi-trophy-fill text-danger" style="font-size: 3rem;"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Ranking de Todos</h5>
+            <p class="text-muted small mb-3">Atendentes, Consultores e Captadores</p>
+            <a href="{% url 'relatorios:ranking_geral' %}" class="btn btn-danger w-100 mt-auto">
+              <i class="bi bi-box-arrow-up-right"></i> Acessar
+            </a>
           </div>
         </div>
       </div>
+
+      <!-- 6. Dashboard Gráficos (Geral) -->
+      <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 hover-card">
+          <div class="card-body text-center d-flex flex-column">
+            <div class="mb-3">
+              <i class="bi bi-speedometer2 text-warning" style="font-size: 3rem;"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Dashboard Gráficos</h5>
+            <p class="text-muted small mb-3">Visualizações e gráficos gerais</p>
+            <a href="{% url 'relatorios:dashboard_graficos' %}" class="btn btn-warning w-100 mt-auto">
+              <i class="bi bi-box-arrow-up-right"></i> Acessar
+            </a>
+          </div>
+        </div>
+      </div>
+
+
+
     </div>
   </div>
 </div>
+
+<!-- Estilos Customizados -->
+<style>
+  .hover-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
+  }
+  
+  .hover-card.opacity-75:hover {
+    transform: none;
+  }
+  
+  .bg-primary, .bg-success, .bg-danger, .bg-secondary {
+    background-color: var(--bs-primary) !important;
+  }
+  
+  /* Animação suave nos ícones */
+  .hover-card:hover i {
+    transform: scale(1.1);
+    transition: transform 0.3s ease;
+  }
+</style>
 {% endblock %}

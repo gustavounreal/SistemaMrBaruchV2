@@ -611,9 +611,9 @@ def painel_leads_pagos(request):
     # Buscar usuários para filtros
     from django.contrib.auth import get_user_model
     User = get_user_model()
-    captadores = User.objects.filter(groups__name__in=['atendente', 'Atendentes']).distinct()
-    atendentes = User.objects.filter(groups__name__in=['atendente', 'Atendentes']).distinct()
-    consultores = User.objects.filter(groups__name__in=['comercial1', 'admin', 'Admin']).distinct()
+    captadores = User.objects.filter(groups__name='captador').distinct()
+    atendentes = User.objects.filter(groups__name='atendente').distinct()
+    consultores = User.objects.filter(groups__name='comercial1').distinct()
     
     # Métricas adicionais (apenas do consultor logado)
     total_pre_vendas_aceitas = pre_vendas_aceitas.count()

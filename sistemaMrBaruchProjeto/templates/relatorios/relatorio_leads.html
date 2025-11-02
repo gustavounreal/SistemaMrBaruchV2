@@ -8,14 +8,17 @@
   
   <!-- Cabeçalho -->
   <div class="row mb-4 align-items-center">
-    <div class="col-md-8">
+    <div class="col-md-6">
       <h2 class="fw-bold text-dark mb-1">
         <i class="bi bi-people-fill me-2 text-primary"></i>Relatório de Leads
       </h2>
       <p class="text-muted mb-0">Análise detalhada de leads com filtros e exportação</p>
     </div>
-    <div class="col-md-4 text-md-end mt-3 mt-md-0">
-      <a href="{% url 'relatorios:painel_relatorios' %}" class="btn btn-outline-secondary me-2">
+    <div class="col-md-6 text-md-end mt-3 mt-md-0">
+      <button class="btn btn-info me-2" type="button" data-bs-toggle="collapse" data-bs-target="#legendaStatus" aria-expanded="false" aria-controls="legendaStatus">
+        <i class="bi bi-book me-1"></i> Legenda de Status
+      </button>
+      <a href="{% url 'relatorios:painel_central' %}" class="btn btn-outline-secondary me-2">
         <i class="bi bi-arrow-left"></i> Voltar
       </a>
       <a href="{% url 'relatorios:exportar_relatorio' 'leads' %}?{{ request.GET.urlencode }}" class="btn btn-success">
@@ -47,9 +50,16 @@
           <label class="form-label fw-semibold">Status</label>
           <select name="status" class="form-select">
             <option value="todos" {% if status_selecionado == 'todos' %}selected{% endif %}>Todos</option>
-            <option value="PAGO" {% if status_selecionado == 'PAGO' %}selected{% endif %}>Pago</option>
-            <option value="PENDENTE" {% if status_selecionado == 'PENDENTE' %}selected{% endif %}>Pendente</option>
-            <option value="EXPIRADO" {% if status_selecionado == 'EXPIRADO' %}selected{% endif %}>Expirado</option>
+            <option value="NOVO" {% if status_selecionado == 'NOVO' %}selected{% endif %}>Novo</option>
+            <option value="CONTATADO" {% if status_selecionado == 'CONTATADO' %}selected{% endif %}>Contatado</option>
+            <option value="INTERESSADO" {% if status_selecionado == 'INTERESSADO' %}selected{% endif %}>Interessado</option>
+            <option value="LEVANTAMENTO_PENDENTE" {% if status_selecionado == 'LEVANTAMENTO_PENDENTE' %}selected{% endif %}>Levantamento Pendente</option>
+            <option value="LEVANTAMENTO_PAGO" {% if status_selecionado == 'LEVANTAMENTO_PAGO' %}selected{% endif %}>Levantamento Pago</option>
+            <option value="EM_COMPLIANCE" {% if status_selecionado == 'EM_COMPLIANCE' %}selected{% endif %}>Em Compliance</option>
+            <option value="APROVADO_COMPLIANCE" {% if status_selecionado == 'APROVADO_COMPLIANCE' %}selected{% endif %}>Aprovado Compliance</option>
+            <option value="QUALIFICADO" {% if status_selecionado == 'QUALIFICADO' %}selected{% endif %}>Qualificado</option>
+            <option value="CONTRATADO" {% if status_selecionado == 'CONTRATADO' %}selected{% endif %}>Contratado</option>
+            <option value="PERDIDO" {% if status_selecionado == 'PERDIDO' %}selected{% endif %}>Perdido</option>
           </select>
         </div>
 
@@ -88,7 +98,7 @@
     <div class="col-xl-3 col-md-6">
       <div class="card border-0 shadow-sm bg-success text-white">
         <div class="card-body">
-          <h6 class="text-white-50 mb-2">Leads Pagos</h6>
+          <h6 class="text-white-50 mb-2">Levantamento Pago</h6>
           <h3 class="fw-bold mb-0">{{ leads_pagos }}</h3>
           <small class="text-white-50">R$ <span class="format-brl">{{ valor_total|floatformat:2 }}</span></small>
         </div>
@@ -96,19 +106,19 @@
     </div>
 
     <div class="col-xl-3 col-md-6">
-      <div class="card border-0 shadow-sm bg-warning text-white">
+      <div class="card border-0 shadow-sm bg-warning text-dark">
         <div class="card-body">
-          <h6 class="text-white-50 mb-2">Leads Pendentes</h6>
+          <h6 class="text-dark-50 mb-2">Levantamento Pendente</h6>
           <h3 class="fw-bold mb-0">{{ leads_pendentes }}</h3>
         </div>
       </div>
     </div>
 
     <div class="col-xl-3 col-md-6">
-      <div class="card border-0 shadow-sm bg-danger text-white">
+      <div class="card border-0 shadow-sm bg-info text-white">
         <div class="card-body">
-          <h6 class="text-white-50 mb-2">Leads Expirados</h6>
-          <h3 class="fw-bold mb-0">{{ leads_expirados }}</h3>
+          <h6 class="text-white-50 mb-2">Em Compliance</h6>
+          <h3 class="fw-bold mb-0">{{ leads_em_compliance }}</h3>
         </div>
       </div>
     </div>
@@ -119,20 +129,245 @@
     <div class="col-md-12">
       <div class="card border-0 shadow-sm">
         <div class="card-body">
-          <h5 class="card-title fw-bold mb-3">
-            <i class="bi bi-pie-chart-fill text-info me-2"></i>Distribuição por Status
-          </h5>
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="card-title fw-bold mb-0">
+              <i class="bi bi-pie-chart-fill text-info me-2"></i>Distribuição por Status
+            </h5>
+            <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#legendaStatus" aria-expanded="false" aria-controls="legendaStatus">
+              <i class="bi bi-info-circle me-1"></i>Ver Legenda dos Status
+            </button>
+          </div>
+          
+          <!-- Legenda Colapsável -->
+          <div class="collapse mb-3" id="legendaStatus">
+            <div class="card card-body bg-light">
+              <h6 class="fw-bold mb-3"><i class="bi bi-book me-2"></i>Legenda dos Status</h6>
+              <div class="row g-3">
+                <!-- Fase 1: Captura -->
+                <div class="col-md-6 col-lg-4">
+                  <div class="status-legend-item">
+                    <div class="d-flex align-items-start">
+                      <span class="badge bg-secondary me-2 flex-shrink-0">
+                        <i class="bi bi-star me-1"></i>NOVO
+                      </span>
+                      <div>
+                        <strong>Novo Lead</strong>
+                        <p class="mb-0 small text-muted">Lead recém-cadastrado no sistema, ainda não foi contatado.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-4">
+                  <div class="status-legend-item">
+                    <div class="d-flex align-items-start">
+                      <span class="badge bg-info me-2 flex-shrink-0">
+                        <i class="bi bi-telephone me-1"></i>CONTATADO
+                      </span>
+                      <div>
+                        <strong>Lead Contatado</strong>
+                        <p class="mb-0 small text-muted">Primeiro contato realizado, lead respondeu ao atendimento.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-4">
+                  <div class="status-legend-item">
+                    <div class="d-flex align-items-start">
+                      <span class="badge bg-primary me-2 flex-shrink-0">
+                        <i class="bi bi-heart me-1"></i>INTERESSADO
+                      </span>
+                      <div>
+                        <strong>Lead Interessado</strong>
+                        <p class="mb-0 small text-muted">Demonstrou interesse nos serviços, em negociação.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Fase 2: Levantamento -->
+                <div class="col-md-6 col-lg-4">
+                  <div class="status-legend-item">
+                    <div class="d-flex align-items-start">
+                      <span class="badge bg-warning text-dark me-2 flex-shrink-0">
+                        <i class="bi bi-clock me-1"></i>LEVANTAMENTO PENDENTE
+                      </span>
+                      <div>
+                        <strong>Aguardando Pagamento</strong>
+                        <p class="mb-0 small text-muted">Solicitou levantamento, aguardando confirmação do pagamento via PIX.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-4">
+                  <div class="status-legend-item">
+                    <div class="d-flex align-items-start">
+                      <span class="badge bg-success me-2 flex-shrink-0">
+                        <i class="bi bi-check-circle me-1"></i>LEVANTAMENTO PAGO
+                      </span>
+                      <div>
+                        <strong>Pagamento Confirmado</strong>
+                        <p class="mb-0 small text-muted">Pagamento do levantamento confirmado. Gera comissão para atendente.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Fase 3: Compliance -->
+                <div class="col-md-6 col-lg-4">
+                  <div class="status-legend-item">
+                    <div class="d-flex align-items-start">
+                      <span class="badge bg-info me-2 flex-shrink-0">
+                        <i class="bi bi-shield-check me-1"></i>EM COMPLIANCE
+                      </span>
+                      <div>
+                        <strong>Análise em Andamento</strong>
+                        <p class="mb-0 small text-muted">Lead em análise pela equipe de Compliance.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-4">
+                  <div class="status-legend-item">
+                    <div class="d-flex align-items-start">
+                      <span class="badge bg-success me-2 flex-shrink-0">
+                        <i class="bi bi-check-all me-1"></i>APROVADO COMPLIANCE
+                      </span>
+                      <div>
+                        <strong>Aprovado pelo Compliance</strong>
+                        <p class="mb-0 small text-muted">Passou pela análise, aguardando consultor para proposta.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Fase 4: Vendas -->
+                <div class="col-md-6 col-lg-4">
+                  <div class="status-legend-item">
+                    <div class="d-flex align-items-start">
+                      <span class="badge bg-success me-2 flex-shrink-0">
+                        <i class="bi bi-award me-1"></i>QUALIFICADO
+                      </span>
+                      <div>
+                        <strong>Lead Qualificado</strong>
+                        <p class="mb-0 small text-muted">Pronto para fechar contrato, proposta sendo elaborada.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-4">
+                  <div class="status-legend-item">
+                    <div class="d-flex align-items-start">
+                      <span class="badge bg-primary me-2 flex-shrink-0">
+                        <i class="bi bi-file-earmark-text me-1"></i>CONTRATADO
+                      </span>
+                      <div>
+                        <strong>Contrato Fechado</strong>
+                        <p class="mb-0 small text-muted">Lead convertido em cliente com contrato assinado.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Fase 5: Negativo -->
+                <div class="col-md-6 col-lg-4">
+                  <div class="status-legend-item">
+                    <div class="d-flex align-items-start">
+                      <span class="badge bg-danger me-2 flex-shrink-0">
+                        <i class="bi bi-x-circle me-1"></i>PERDIDO
+                      </span>
+                      <div>
+                        <strong>Lead Perdido</strong>
+                        <p class="mb-0 small text-muted">Desistiu, não respondeu ou não teve interesse em prosseguir.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Fluxo Visual -->
+              <div class="mt-4 pt-3 border-top">
+                <h6 class="fw-bold mb-3"><i class="bi bi-diagram-3 me-2"></i>Fluxo dos Status</h6>
+                <div class="status-flow">
+                  <span class="badge bg-secondary">NOVO</span>
+                  <i class="bi bi-arrow-right mx-2"></i>
+                  <span class="badge bg-info">CONTATADO</span>
+                  <i class="bi bi-arrow-right mx-2"></i>
+                  <span class="badge bg-primary">INTERESSADO</span>
+                  <i class="bi bi-arrow-right mx-2"></i>
+                  <span class="badge bg-warning text-dark">LEVANTAMENTO PENDENTE</span>
+                  <i class="bi bi-arrow-right mx-2"></i>
+                  <span class="badge bg-success">LEVANTAMENTO PAGO</span>
+                  <i class="bi bi-arrow-right mx-2"></i>
+                  <span class="badge bg-info">EM COMPLIANCE</span>
+                  <i class="bi bi-arrow-right mx-2"></i>
+                  <span class="badge bg-success">APROVADO</span>
+                  <i class="bi bi-arrow-right mx-2"></i>
+                  <span class="badge bg-success">QUALIFICADO</span>
+                  <i class="bi bi-arrow-right mx-2"></i>
+                  <span class="badge bg-primary">CONTRATADO</span>
+                </div>
+                <div class="text-center mt-2">
+                  <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Em qualquer etapa, o lead pode ir para <span class="badge bg-danger">PERDIDO</span>
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+          
           <div class="row">
             {% for status in distribuicao_status %}
             <div class="col-md-4 mb-3">
-              <div class="d-flex align-items-center">
+              <div class="d-flex align-items-center p-3 bg-white rounded shadow-sm">
                 <div class="me-3">
-                  {% if status.status == 'PAGO' %}
-                  <span class="badge bg-success" style="font-size: 1rem; padding: 0.5rem 1rem;">{{ status.status }}</span>
-                  {% elif status.status == 'PENDENTE' %}
-                  <span class="badge bg-warning text-dark" style="font-size: 1rem; padding: 0.5rem 1rem;">{{ status.status }}</span>
+                  {% if status.status == 'LEVANTAMENTO_PAGO' %}
+                  <span class="badge bg-success" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                    <i class="bi bi-check-circle me-1"></i>LEVANTAMENTO PAGO
+                  </span>
+                  {% elif status.status == 'LEVANTAMENTO_PENDENTE' %}
+                  <span class="badge bg-warning text-dark" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                    <i class="bi bi-clock me-1"></i>LEVANTAMENTO PENDENTE
+                  </span>
+                  {% elif status.status == 'EM_COMPLIANCE' %}
+                  <span class="badge bg-info" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                    <i class="bi bi-shield-check me-1"></i>EM COMPLIANCE
+                  </span>
+                  {% elif status.status == 'APROVADO_COMPLIANCE' %}
+                  <span class="badge bg-success" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                    <i class="bi bi-check-all me-1"></i>APROVADO
+                  </span>
+                  {% elif status.status == 'CONTRATADO' %}
+                  <span class="badge bg-primary" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                    <i class="bi bi-file-earmark-text me-1"></i>CONTRATADO
+                  </span>
+                  {% elif status.status == 'PERDIDO' %}
+                  <span class="badge bg-danger" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                    <i class="bi bi-x-circle me-1"></i>PERDIDO
+                  </span>
+                  {% elif status.status == 'NOVO' %}
+                  <span class="badge bg-secondary" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                    <i class="bi bi-star me-1"></i>NOVO
+                  </span>
+                  {% elif status.status == 'CONTATADO' %}
+                  <span class="badge bg-info" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                    <i class="bi bi-telephone me-1"></i>CONTATADO
+                  </span>
+                  {% elif status.status == 'INTERESSADO' %}
+                  <span class="badge bg-primary" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                    <i class="bi bi-heart me-1"></i>INTERESSADO
+                  </span>
+                  {% elif status.status == 'QUALIFICADO' %}
+                  <span class="badge bg-success" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                    <i class="bi bi-award me-1"></i>QUALIFICADO
+                  </span>
                   {% else %}
-                  <span class="badge bg-danger" style="font-size: 1rem; padding: 0.5rem 1rem;">{{ status.status }}</span>
+                  <span class="badge bg-secondary" style="font-size: 1rem; padding: 0.5rem 1rem;">{{ status.status }}</span>
                   {% endif %}
                 </div>
                 <div>
@@ -153,55 +388,88 @@
   <!-- Tabela de Leads -->
   <div class="card border-0 shadow-sm">
     <div class="card-body">
-      <h5 class="card-title fw-bold mb-3">
-        <i class="bi bi-table text-primary me-2"></i>Últimos 100 Leads
-      </h5>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="card-title fw-bold mb-0">
+          <i class="bi bi-table text-primary me-2"></i>Leads Encontrados
+        </h5>
+        <div class="d-flex align-items-center gap-2">
+          <label class="mb-0 me-2">Exibir:</label>
+          <select id="itemsPerPage" class="form-select form-select-sm" style="width: auto;">
+            <option value="10">10</option>
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <span class="text-muted">por página</span>
+        </div>
+      </div>
+      
       <div class="table-responsive">
-        <table class="table table-hover align-middle">
+        <table class="table table-hover align-middle" id="leadsTable">
           <thead class="table-light">
             <tr>
               <th>ID</th>
               <th>Nome Completo</th>
               <th>Telefone</th>
-              <th>CPF</th>
+              <th>CPF/CNPJ</th>
               <th>Status</th>
-              <th>Valor</th>
+              <th>Valor Comissão</th>
               <th>Data Cadastro</th>
               <th>Atendente</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="leadsTableBody">
             {% for lead in leads %}
-            <tr>
+            <tr class="lead-row">
               <td class="fw-bold">#{{ lead.id }}</td>
               <td>
                 <i class="bi bi-person-circle text-primary me-1"></i>
                 {{ lead.nome_completo }}
               </td>
               <td>{{ lead.telefone }}</td>
-              <td>{{ lead.cpf|default:"-" }}</td>
+              <td>{{ lead.get_cpf_cnpj_display }}</td>
               <td>
-                {% if lead.status == 'PAGO' %}
-                <span class="badge bg-success">Pago</span>
-                {% elif lead.status == 'PENDENTE' %}
-                <span class="badge bg-warning text-dark">Pendente</span>
+                {% if lead.status == 'LEVANTAMENTO_PAGO' %}
+                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Levantamento Pago</span>
+                {% elif lead.status == 'LEVANTAMENTO_PENDENTE' %}
+                <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Levantamento Pendente</span>
+                {% elif lead.status == 'EM_COMPLIANCE' %}
+                <span class="badge bg-info"><i class="bi bi-shield-check me-1"></i>Em Compliance</span>
+                {% elif lead.status == 'APROVADO_COMPLIANCE' %}
+                <span class="badge bg-success"><i class="bi bi-check-all me-1"></i>Aprovado Compliance</span>
+                {% elif lead.status == 'CONTRATADO' %}
+                <span class="badge bg-primary"><i class="bi bi-file-earmark-text me-1"></i>Contratado</span>
+                {% elif lead.status == 'PERDIDO' %}
+                <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Perdido</span>
+                {% elif lead.status == 'NOVO' %}
+                <span class="badge bg-secondary"><i class="bi bi-star me-1"></i>Novo</span>
+                {% elif lead.status == 'CONTATADO' %}
+                <span class="badge bg-info"><i class="bi bi-telephone me-1"></i>Contatado</span>
+                {% elif lead.status == 'INTERESSADO' %}
+                <span class="badge bg-primary"><i class="bi bi-heart me-1"></i>Interessado</span>
+                {% elif lead.status == 'QUALIFICADO' %}
+                <span class="badge bg-success"><i class="bi bi-award me-1"></i>Qualificado</span>
                 {% else %}
-                <span class="badge bg-danger">Expirado</span>
+                <span class="badge bg-secondary">{{ lead.get_status_display }}</span>
                 {% endif %}
               </td>
-              <td class="fw-bold">
-                {% if lead.status == 'PAGO' %}
-                <span class="text-success">R$ 50,00</span>
+              <td class="fw-bold valor-monetario">
+                {% if lead.status == 'LEVANTAMENTO_PAGO' %}
+                <span class="text-success">R$ {{ lead.comissoes.first.valor|default:"0.00"|floatformat:2 }}</span>
                 {% else %}
-                <span class="text-muted">R$ 0,00</span>
+                <span class="text-muted">R$ 0.00</span>
                 {% endif %}
               </td>
-              <td>{{ lead.data_cadastro|date:"d/m/Y H:i" }}</td>
               <td>
-                {% if lead.captador %}
-                {{ lead.captador.get_full_name|default:lead.captador.username }}
+                <i class="bi bi-calendar3 me-1"></i>
+                {{ lead.data_cadastro|date:"d/m/Y H:i" }}
+              </td>
+              <td>
+                {% if lead.atendente %}
+                <i class="bi bi-person-badge me-1"></i>
+                {{ lead.atendente.get_full_name|default:lead.atendente.username }}
                 {% else %}
-                <span class="text-muted">N/A</span>
+                <span class="text-muted"><i class="bi bi-dash-circle me-1"></i>N/A</span>
                 {% endif %}
               </td>
             </tr>
@@ -216,8 +484,320 @@
           </tbody>
         </table>
       </div>
+      
+      <!-- Paginação -->
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="text-muted" id="paginationInfo">
+          Mostrando <span id="showingStart">0</span> a <span id="showingEnd">0</span> de <span id="totalItems">0</span> leads
+        </div>
+        <nav aria-label="Navegação de página">
+          <ul class="pagination mb-0" id="pagination">
+            <!-- Gerado dinamicamente pelo JavaScript -->
+          </ul>
+        </nav>
+      </div>
     </div>
   </div>
 
 </div>
+
+{% block extra_js %}
+<style>
+  /* Estilos da Legenda de Status */
+  .status-legend-item {
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    height: 100%;
+    transition: all 0.3s ease;
+  }
+  
+  .status-legend-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #0d6efd;
+  }
+  
+  .status-legend-item strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #212529;
+    font-size: 0.9rem;
+  }
+  
+  .status-legend-item .badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+    white-space: nowrap;
+  }
+  
+  /* Fluxo de Status */
+  .status-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    border: 2px dashed #dee2e6;
+  }
+  
+  .status-flow .badge {
+    font-size: 0.8rem;
+    padding: 0.5em 0.8em;
+    animation: pulse 2s infinite;
+  }
+  
+  .status-flow .bi-arrow-right {
+    color: #6c757d;
+    font-size: 1.2rem;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+  
+  /* Animação do collapse */
+  #legendaStatus {
+    animation: fadeIn 0.3s ease;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .pagination .page-link {
+    color: #0d6efd;
+    border: 1px solid #dee2e6;
+    padding: 0.5rem 0.75rem;
+    margin: 0 2px;
+    border-radius: 0.375rem;
+    transition: all 0.3s ease;
+  }
+  
+  .pagination .page-link:hover {
+    background-color: #0d6efd;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(13, 110, 253, 0.3);
+  }
+  
+  .pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+    font-weight: 600;
+  }
+  
+  .pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #dee2e6;
+  }
+  
+  .lead-row {
+    transition: all 0.2s ease;
+  }
+  
+  .lead-row:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+</style>
+
+<script>
+  // Script para formatar valores monetários no padrão brasileiro
+  document.addEventListener('DOMContentLoaded', function() {
+      function formatarMoeda(valor) {
+          let numero = valor.replace('R$', '').trim();
+          numero = parseFloat(numero);
+          
+          if (isNaN(numero)) {
+              return valor;
+          }
+          
+          return 'R$ ' + numero.toLocaleString('pt-BR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+          });
+      }
+      
+      // Formata todos os valores monetários
+      const elementosMonetarios = document.querySelectorAll('.valor-monetario, .format-brl');
+      
+      elementosMonetarios.forEach(function(elemento) {
+          const texto = elemento.textContent;
+          if (texto.includes('R$')) {
+              elemento.textContent = formatarMoeda(texto);
+          }
+      });
+      
+      // Sistema de Paginação
+      let currentPage = 1;
+      let itemsPerPage = 25;
+      let allRows = [];
+      
+      function initPagination() {
+          allRows = Array.from(document.querySelectorAll('.lead-row'));
+          
+          if (allRows.length === 0) {
+              document.getElementById('paginationInfo').style.display = 'none';
+              document.getElementById('pagination').style.display = 'none';
+              return;
+          }
+          
+          updatePagination();
+      }
+      
+      function updatePagination() {
+          const totalItems = allRows.length;
+          const totalPages = Math.ceil(totalItems / itemsPerPage);
+          
+          // Atualiza informações
+          const start = (currentPage - 1) * itemsPerPage + 1;
+          const end = Math.min(currentPage * itemsPerPage, totalItems);
+          
+          document.getElementById('showingStart').textContent = start;
+          document.getElementById('showingEnd').textContent = end;
+          document.getElementById('totalItems').textContent = totalItems;
+          
+          // Mostra/oculta linhas
+          allRows.forEach((row, index) => {
+              const shouldShow = index >= (currentPage - 1) * itemsPerPage && 
+                                index < currentPage * itemsPerPage;
+              row.style.display = shouldShow ? '' : 'none';
+          });
+          
+          // Gera botões de paginação
+          renderPagination(totalPages);
+      }
+      
+      function renderPagination(totalPages) {
+          const pagination = document.getElementById('pagination');
+          pagination.innerHTML = '';
+          
+          if (totalPages <= 1) {
+              pagination.style.display = 'none';
+              return;
+          }
+          
+          pagination.style.display = 'flex';
+          
+          // Botão Anterior
+          const prevLi = document.createElement('li');
+          prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+          prevLi.innerHTML = `<a class="page-link" href="#" aria-label="Anterior">
+              <i class="bi bi-chevron-left"></i>
+          </a>`;
+          if (currentPage !== 1) {
+              prevLi.querySelector('a').onclick = (e) => {
+                  e.preventDefault();
+                  currentPage--;
+                  updatePagination();
+              };
+          }
+          pagination.appendChild(prevLi);
+          
+          // Páginas
+          const maxVisible = 5;
+          let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+          let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+          
+          if (endPage - startPage < maxVisible - 1) {
+              startPage = Math.max(1, endPage - maxVisible + 1);
+          }
+          
+          // Primeira página
+          if (startPage > 1) {
+              const li = createPageButton(1);
+              pagination.appendChild(li);
+              
+              if (startPage > 2) {
+                  const dots = document.createElement('li');
+                  dots.className = 'page-item disabled';
+                  dots.innerHTML = '<span class="page-link">...</span>';
+                  pagination.appendChild(dots);
+              }
+          }
+          
+          // Páginas visíveis
+          for (let i = startPage; i <= endPage; i++) {
+              const li = createPageButton(i);
+              pagination.appendChild(li);
+          }
+          
+          // Última página
+          if (endPage < totalPages) {
+              if (endPage < totalPages - 1) {
+                  const dots = document.createElement('li');
+                  dots.className = 'page-item disabled';
+                  dots.innerHTML = '<span class="page-link">...</span>';
+                  pagination.appendChild(dots);
+              }
+              
+              const li = createPageButton(totalPages);
+              pagination.appendChild(li);
+          }
+          
+          // Botão Próximo
+          const nextLi = document.createElement('li');
+          nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+          nextLi.innerHTML = `<a class="page-link" href="#" aria-label="Próximo">
+              <i class="bi bi-chevron-right"></i>
+          </a>`;
+          if (currentPage !== totalPages) {
+              nextLi.querySelector('a').onclick = (e) => {
+                  e.preventDefault();
+                  currentPage++;
+                  updatePagination();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+              };
+          }
+          pagination.appendChild(nextLi);
+      }
+      
+      function createPageButton(pageNum) {
+          const li = document.createElement('li');
+          li.className = `page-item ${currentPage === pageNum ? 'active' : ''}`;
+          li.innerHTML = `<a class="page-link" href="#">${pageNum}</a>`;
+          
+          li.querySelector('a').onclick = (e) => {
+              e.preventDefault();
+              currentPage = pageNum;
+              updatePagination();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+          };
+          
+          return li;
+      }
+      
+      // Event listener para mudança de items por página
+      document.getElementById('itemsPerPage').addEventListener('change', function() {
+          itemsPerPage = parseInt(this.value);
+          currentPage = 1;
+          updatePagination();
+      });
+      
+      // Inicializa paginação
+      initPagination();
+  });
+</script>
+{% endblock %}
 {% endblock %}

@@ -1,0 +1,756 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Relatório de Compliance - Mr. Baruch{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  
+  <!-- Cabeçalho -->
+  <div class="row mb-4 align-items-center">
+    <div class="col-md-6">
+      <h2 class="fw-bold text-dark mb-1">
+        <i class="bi bi-shield-check me-2 text-success"></i>Relatório de Compliance
+      </h2>
+      <p class="text-muted mb-0">Análises, aprovações, reprovações e performance do setor</p>
+    </div>
+    <div class="col-md-6 text-md-end mt-3 mt-md-0">
+      <button class="btn btn-info me-2" type="button" data-bs-toggle="collapse" data-bs-target="#legendaStatus" aria-expanded="false">
+        <i class="bi bi-book me-1"></i> Legenda de Status
+      </button>
+      <a href="{% url 'relatorios:painel_central' %}" class="btn btn-outline-secondary me-2">
+        <i class="bi bi-arrow-left"></i> Voltar
+      </a>
+      <a href="{% url 'relatorios:exportar_relatorio' 'compliance' %}?{{ request.GET.urlencode }}" class="btn btn-success">
+        <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
+      </a>
+    </div>
+  </div>
+
+  <!-- Legenda de Status (Colapsável) -->
+  <div class="collapse mb-4" id="legendaStatus">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title fw-bold mb-3">
+          <i class="bi bi-info-circle text-info me-2"></i>Legenda de Status de Análises
+        </h5>
+        
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="status-legend-item">
+              <strong><span class="badge bg-secondary"><i class="bi bi-clock"></i> AGUARDANDO</span></strong>
+              <small class="text-muted d-block mt-1">Aguardando início da análise de compliance</small>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="status-legend-item">
+              <strong><span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> EM_ANALISE</span></strong>
+              <small class="text-muted d-block mt-1">Análise em andamento pelo analista</small>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="status-legend-item">
+              <strong><span class="badge bg-success"><i class="bi bi-check-circle"></i> APROVADO</span></strong>
+              <small class="text-muted d-block mt-1">Lead aprovado, aguardando atribuição ao consultor</small>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="status-legend-item">
+              <strong><span class="badge bg-primary"><i class="bi bi-person-check"></i> ATRIBUIDO</span></strong>
+              <small class="text-muted d-block mt-1">Lead atribuído a um consultor específico</small>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="status-legend-item">
+              <strong><span class="badge bg-danger"><i class="bi bi-x-circle"></i> REPROVADO</span></strong>
+              <small class="text-muted d-block mt-1">Lead não passou na análise de compliance</small>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="status-legend-item">
+              <strong><span class="badge bg-info text-white"><i class="bi bi-chat-dots"></i> EM_PRE_VENDA</span></strong>
+              <small class="text-muted d-block mt-1">Lead em processo de pré-venda com consultor</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fluxo Visual -->
+        <h6 class="fw-bold mb-3 text-center">Fluxo de Análise de Compliance</h6>
+        <div class="status-flow">
+          <span class="badge bg-secondary">AGUARDANDO</span>
+          <i class="bi bi-arrow-right"></i>
+          <span class="badge bg-warning text-dark">EM_ANALISE</span>
+          <i class="bi bi-arrow-right"></i>
+          <span class="badge bg-success">APROVADO</span>
+          <i class="bi bi-arrow-right"></i>
+          <span class="badge bg-primary">ATRIBUIDO</span>
+          <i class="bi bi-arrow-right"></i>
+          <span class="badge bg-info text-white">EM_PRE_VENDA</span>
+        </div>
+        <div class="text-center mt-2">
+          <small class="text-muted">
+            <i class="bi bi-info-circle me-1"></i>
+            Em qualquer etapa, a análise pode resultar em <span class="badge bg-danger">REPROVADO</span>
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title fw-bold mb-3">
+        <i class="bi bi-funnel-fill text-primary me-2"></i>Filtros
+      </h5>
+      <form method="get" class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Período</label>
+          <select name="periodo" class="form-select">
+            <option value="7" {% if periodo_selecionado == '7' %}selected{% endif %}>Últimos 7 dias</option>
+            <option value="15" {% if periodo_selecionado == '15' %}selected{% endif %}>Últimos 15 dias</option>
+            <option value="30" {% if periodo_selecionado == '30' %}selected{% endif %}>Últimos 30 dias</option>
+            <option value="60" {% if periodo_selecionado == '60' %}selected{% endif %}>Últimos 60 dias</option>
+            <option value="90" {% if periodo_selecionado == '90' %}selected{% endif %}>Últimos 90 dias</option>
+            <option value="todos" {% if periodo_selecionado == 'todos' %}selected{% endif %}>Todos</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Status</label>
+          <select name="status" class="form-select">
+            <option value="todos" {% if status_selecionado == 'todos' %}selected{% endif %}>Todos</option>
+            <option value="AGUARDANDO" {% if status_selecionado == 'AGUARDANDO' %}selected{% endif %}>Aguardando</option>
+            <option value="EM_ANALISE" {% if status_selecionado == 'EM_ANALISE' %}selected{% endif %}>Em Análise</option>
+            <option value="APROVADO" {% if status_selecionado == 'APROVADO' %}selected{% endif %}>Aprovado</option>
+            <option value="ATRIBUIDO" {% if status_selecionado == 'ATRIBUIDO' %}selected{% endif %}>Atribuído</option>
+            <option value="REPROVADO" {% if status_selecionado == 'REPROVADO' %}selected{% endif %}>Reprovado</option>
+            <option value="EM_PRE_VENDA" {% if status_selecionado == 'EM_PRE_VENDA' %}selected{% endif %}>Em Pré-Venda</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Classificação</label>
+          <select name="classificacao" class="form-select">
+            <option value="todas" {% if classificacao_selecionada == 'todas' %}selected{% endif %}>Todas</option>
+            <option value="BRONZE" {% if classificacao_selecionada == 'BRONZE' %}selected{% endif %}>🥉 Bronze</option>
+            <option value="PRATA" {% if classificacao_selecionada == 'PRATA' %}selected{% endif %}>🥈 Prata</option>
+            <option value="OURO" {% if classificacao_selecionada == 'OURO' %}selected{% endif %}>🥇 Ouro</option>
+            <option value="PLATINA" {% if classificacao_selecionada == 'PLATINA' %}selected{% endif %}>💎 Platina</option>
+            <option value="NAO_CLASSIFICADO" {% if classificacao_selecionada == 'NAO_CLASSIFICADO' %}selected{% endif %}>Não Classificado</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Analista</label>
+          <select name="analista" class="form-select">
+            <option value="">Todos os Analistas</option>
+            {% for analista in analistas_filtro %}
+              <option value="{{ analista.id }}" {% if analista_selecionado == analista.id|stringformat:"s" %}selected{% endif %}>
+                {{ analista.get_full_name|default:analista.email }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-12">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-search"></i> Filtrar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- KPIs Principais -->
+  <div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm bg-primary text-white">
+        <div class="card-body">
+          <h6 class="text-uppercase mb-2 opacity-75">Total de Análises</h6>
+          <h2 class="fw-bold mb-0">{{ total_analises }}</h2>
+          <small class="opacity-75">No período selecionado</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm bg-success text-white">
+        <div class="card-body">
+          <h6 class="text-uppercase mb-2 opacity-75">Taxa de Aprovação</h6>
+          <h2 class="fw-bold mb-0">{{ perc_aprovadas }}%</h2>
+          <small class="opacity-75">{{ analises_aprovadas }} aprovadas</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm bg-danger text-white">
+        <div class="card-body">
+          <h6 class="text-uppercase mb-2 opacity-75">Taxa de Reprovação</h6>
+          <h2 class="fw-bold mb-0">{{ perc_reprovadas }}%</h2>
+          <small class="opacity-75">{{ analises_reprovadas }} reprovadas</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm bg-info text-white">
+        <div class="card-body">
+          <h6 class="text-uppercase mb-2 opacity-75">Tempo Médio</h6>
+          <h2 class="fw-bold mb-0">{{ tempo_medio_analise }}</h2>
+          <small class="opacity-75">dias por análise</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status e Classificações -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title fw-bold mb-3">
+            <i class="bi bi-pie-chart text-primary me-2"></i>Distribuição por Status
+          </h5>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-secondary">Aguardando</span>
+                <strong>{{ analises_aguardando }}</strong>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-secondary" style="width: {{ perc_aguardando }}%"></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-warning text-dark">Em Análise</span>
+                <strong>{{ analises_em_andamento }}</strong>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-warning" style="width: {{ perc_em_andamento }}%"></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-success">Aprovado</span>
+                <strong>{{ analises_aprovadas }}</strong>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-success" style="width: {{ perc_aprovadas }}%"></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-primary">Atribuído</span>
+                <strong>{{ analises_atribuidas }}</strong>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-primary" style="width: {{ perc_atribuidas }}%"></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-danger">Reprovado</span>
+                <strong>{{ analises_reprovadas }}</strong>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-danger" style="width: {{ perc_reprovadas }}%"></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-info text-white">Em Pré-Venda</span>
+                <strong>{{ analises_em_pre_venda }}</strong>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-info" style="width: {{ perc_em_pre_venda }}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title fw-bold mb-3">
+            <i class="bi bi-trophy text-warning me-2"></i>Distribuição por Classificação
+          </h5>
+          {% if distribuicao_classificacao %}
+            <div class="list-group list-group-flush">
+              {% for item in distribuicao_classificacao %}
+                <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                  <div>
+                    {% if item.classificacao == 'BRONZE' %}
+                      <span class="badge bg-warning text-dark">🥉 Bronze</span>
+                    {% elif item.classificacao == 'PRATA' %}
+                      <span class="badge bg-secondary">🥈 Prata</span>
+                    {% elif item.classificacao == 'OURO' %}
+                      <span class="badge bg-warning">🥇 Ouro</span>
+                    {% elif item.classificacao == 'PLATINA' %}
+                      <span class="badge bg-primary">💎 Platina</span>
+                    {% else %}
+                      <span class="badge bg-light text-dark">Não Classificado</span>
+                    {% endif %}
+                  </div>
+                  <span class="badge bg-primary rounded-pill">{{ item.quantidade }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted text-center py-3">Nenhuma classificação no período</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ranking de Analistas -->
+  {% if ranking_analistas %}
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title fw-bold mb-3">
+        <i class="bi bi-award text-success me-2"></i>Ranking de Analistas
+      </h5>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Analista</th>
+              <th class="text-center">Total Análises</th>
+              <th class="text-center">Aprovadas</th>
+              <th class="text-center">Reprovadas</th>
+              <th class="text-end">Taxa de Aprovação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for analista in ranking_analistas %}
+              <tr>
+                <td><strong>{{ forloop.counter }}°</strong></td>
+                <td>
+                  <i class="bi bi-person-badge text-success me-2"></i>
+                  {{ analista.nome }}
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-primary">{{ analista.total_analises }}</span>
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-success">{{ analista.aprovadas }}</span>
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-danger">{{ analista.reprovadas }}</span>
+                </td>
+                <td class="text-end fw-bold text-success">
+                  {{ analista.taxa_aprovacao }}%
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Motivos de Reprovação e Leads por Consultor -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title fw-bold mb-3">
+            <i class="bi bi-exclamation-triangle text-danger me-2"></i>Principais Motivos de Reprovação
+          </h5>
+          {% if motivos_reprovacao %}
+            <div class="list-group list-group-flush">
+              {% for motivo in motivos_reprovacao %}
+                <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                  <div>
+                    <small class="text-muted">{{ motivo.motivo_reprovacao|truncatewords:10 }}</small>
+                  </div>
+                  <span class="badge bg-danger rounded-pill">{{ motivo.quantidade }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted text-center py-3">Nenhuma reprovação no período</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title fw-bold mb-3">
+            <i class="bi bi-person-check text-primary me-2"></i>Leads por Consultor Atribuído
+          </h5>
+          {% if leads_por_consultor %}
+            <div class="list-group list-group-flush">
+              {% for item in leads_por_consultor %}
+                <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                  <div>
+                    <i class="bi bi-person-circle text-primary me-1"></i>
+                    <strong>{{ item.consultor_atribuido__first_name }} {{ item.consultor_atribuido__last_name }}</strong>
+                  </div>
+                  <span class="badge bg-primary rounded-pill">{{ item.quantidade }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted text-center py-3">Nenhum lead atribuído no período</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela de Análises -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="card-title fw-bold mb-0">
+          <i class="bi bi-table text-primary me-2"></i>Análises Detalhadas
+        </h5>
+        <div class="d-flex align-items-center gap-2">
+          <label class="small mb-0 me-2">Itens por página:</label>
+          <select class="form-select form-select-sm" id="itemsPerPage" style="width: auto;">
+            <option value="10">10</option>
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="table-responsive">
+        <table class="table table-hover align-middle" id="analisesTable">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Lead</th>
+              <th>CPF/CNPJ</th>
+              <th class="text-center">Classificação</th>
+              <th>Analista</th>
+              <th>Status</th>
+              <th>Data Análise</th>
+              <th>Consultor</th>
+              <th class="text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for analise in analises %}
+              <tr class="analise-row">
+                <td><strong>#{{ analise.id }}</strong></td>
+                <td>
+                  <i class="bi bi-person-fill text-primary me-1"></i>
+                  {{ analise.lead.nome_completo }}
+                </td>
+                <td>
+                  <small class="text-muted">{{ analise.lead.cpf_cnpj }}</small>
+                </td>
+                <td class="text-center">
+                  {% if analise.classificacao == 'BRONZE' %}
+                    <span class="badge bg-warning text-dark" title="Até R$ 10.000">🥉</span>
+                  {% elif analise.classificacao == 'PRATA' %}
+                    <span class="badge bg-secondary" title="R$ 10.001 a R$ 50.000">🥈</span>
+                  {% elif analise.classificacao == 'OURO' %}
+                    <span class="badge bg-warning" title="R$ 50.001 a R$ 100.000">🥇</span>
+                  {% elif analise.classificacao == 'PLATINA' %}
+                    <span class="badge bg-primary" title="Acima de R$ 100.000">💎</span>
+                  {% else %}
+                    <span class="badge bg-light text-dark">N/C</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if analise.analista_responsavel %}
+                    <small>{{ analise.analista_responsavel.get_full_name|default:analise.analista_responsavel.email }}</small>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if analise.status == 'AGUARDANDO' %}
+                    <span class="badge bg-secondary"><i class="bi bi-clock"></i> Aguardando</span>
+                  {% elif analise.status == 'EM_ANALISE' %}
+                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Em Análise</span>
+                  {% elif analise.status == 'APROVADO' %}
+                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Aprovado</span>
+                  {% elif analise.status == 'ATRIBUIDO' %}
+                    <span class="badge bg-primary"><i class="bi bi-person-check"></i> Atribuído</span>
+                  {% elif analise.status == 'REPROVADO' %}
+                    <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Reprovado</span>
+                  {% elif analise.status == 'EM_PRE_VENDA' %}
+                    <span class="badge bg-info text-white"><i class="bi bi-chat-dots"></i> Em Pré-Venda</span>
+                  {% else %}
+                    <span class="badge bg-light text-dark">{{ analise.status }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <i class="bi bi-calendar3 me-1"></i>
+                  <small>{{ analise.data_criacao|date:"d/m/Y H:i" }}</small>
+                </td>
+                <td>
+                  {% if analise.consultor_atribuido %}
+                    <small>{{ analise.consultor_atribuido.get_full_name|default:analise.consultor_atribuido.email }}</small>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td class="text-center">
+                  <a href="{% url 'compliance:detalhes_lead' analise.lead.id %}" class="btn btn-sm btn-outline-primary" title="Ver Detalhes do Lead">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="9" class="text-center text-muted py-4">
+                  <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                  Nenhuma análise encontrada no período selecionado
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Paginação -->
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="text-muted" id="paginationInfo">
+          Mostrando <strong id="showingStart">1</strong> a <strong id="showingEnd">25</strong> de <strong id="totalItems">{{ total_analises }}</strong> análises
+        </div>
+        <nav aria-label="Navegação de página">
+          <ul class="pagination mb-0" id="pagination">
+            <!-- Gerado dinamicamente por JavaScript -->
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% block extra_js %}
+
+<style>
+  /* Estilos da Legenda de Status */
+  .status-legend-item {
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    height: 100%;
+    transition: all 0.3s ease;
+  }
+  
+  .status-legend-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #198754;
+  }
+  
+  /* Fluxo de Status */
+  .status-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    border: 2px dashed #dee2e6;
+  }
+  
+  .status-flow .badge {
+    font-size: 0.8rem;
+    padding: 0.5em 0.8em;
+  }
+  
+  .status-flow .bi-arrow-right {
+    color: #6c757d;
+    font-size: 1.2rem;
+  }
+  
+  .pagination .page-link {
+    color: #0d6efd;
+    border: 1px solid #dee2e6;
+    padding: 0.5rem 0.75rem;
+    margin: 0 2px;
+    border-radius: 0.375rem;
+    transition: all 0.3s ease;
+  }
+  
+  .pagination .page-link:hover {
+    background-color: #0d6efd;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(13, 110, 253, 0.3);
+  }
+  
+  .pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+    font-weight: 600;
+  }
+  
+  .analise-row {
+    transition: all 0.2s ease;
+  }
+  
+  .analise-row:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+</style>
+
+<script>
+  // Sistema de Paginação
+  document.addEventListener('DOMContentLoaded', function() {
+      let currentPage = 1;
+      let itemsPerPage = 25;
+      let allRows = [];
+      
+      function initPagination() {
+          allRows = Array.from(document.querySelectorAll('.analise-row'));
+          
+          if (allRows.length === 0) {
+              document.getElementById('paginationInfo').style.display = 'none';
+              document.getElementById('pagination').style.display = 'none';
+              return;
+          }
+          
+          updatePagination();
+      }
+      
+      function updatePagination() {
+          const totalItems = allRows.length;
+          const totalPages = Math.ceil(totalItems / itemsPerPage);
+          
+          const start = (currentPage - 1) * itemsPerPage + 1;
+          const end = Math.min(currentPage * itemsPerPage, totalItems);
+          
+          document.getElementById('showingStart').textContent = start;
+          document.getElementById('showingEnd').textContent = end;
+          document.getElementById('totalItems').textContent = totalItems;
+          
+          allRows.forEach((row, index) => {
+              const shouldShow = index >= (currentPage - 1) * itemsPerPage && 
+                                index < currentPage * itemsPerPage;
+              row.style.display = shouldShow ? '' : 'none';
+          });
+          
+          renderPagination(totalPages);
+      }
+      
+      function renderPagination(totalPages) {
+          const pagination = document.getElementById('pagination');
+          pagination.innerHTML = '';
+          
+          if (totalPages <= 1) {
+              pagination.style.display = 'none';
+              return;
+          }
+          
+          pagination.style.display = 'flex';
+          
+          // Botão Anterior
+          const prevLi = document.createElement('li');
+          prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+          prevLi.innerHTML = `<a class="page-link" href="#"><i class="bi bi-chevron-left"></i></a>`;
+          if (currentPage !== 1) {
+              prevLi.querySelector('a').onclick = (e) => {
+                  e.preventDefault();
+                  currentPage--;
+                  updatePagination();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+              };
+          }
+          pagination.appendChild(prevLi);
+          
+          // Páginas
+          const maxVisible = 5;
+          let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+          let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+          
+          if (endPage - startPage < maxVisible - 1) {
+              startPage = Math.max(1, endPage - maxVisible + 1);
+          }
+          
+          if (startPage > 1) {
+              const li = createPageButton(1);
+              pagination.appendChild(li);
+              
+              if (startPage > 2) {
+                  const ellipsisLi = document.createElement('li');
+                  ellipsisLi.className = 'page-item disabled';
+                  ellipsisLi.innerHTML = '<span class="page-link">...</span>';
+                  pagination.appendChild(ellipsisLi);
+              }
+          }
+          
+          for (let i = startPage; i <= endPage; i++) {
+              const li = createPageButton(i);
+              pagination.appendChild(li);
+          }
+          
+          if (endPage < totalPages) {
+              if (endPage < totalPages - 1) {
+                  const ellipsisLi = document.createElement('li');
+                  ellipsisLi.className = 'page-item disabled';
+                  ellipsisLi.innerHTML = '<span class="page-link">...</span>';
+                  pagination.appendChild(ellipsisLi);
+              }
+              
+              const li = createPageButton(totalPages);
+              pagination.appendChild(li);
+          }
+          
+          // Botão Próximo
+          const nextLi = document.createElement('li');
+          nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+          nextLi.innerHTML = `<a class="page-link" href="#"><i class="bi bi-chevron-right"></i></a>`;
+          if (currentPage !== totalPages) {
+              nextLi.querySelector('a').onclick = (e) => {
+                  e.preventDefault();
+                  currentPage++;
+                  updatePagination();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+              };
+          }
+          pagination.appendChild(nextLi);
+      }
+      
+      function createPageButton(pageNum) {
+          const li = document.createElement('li');
+          li.className = `page-item ${currentPage === pageNum ? 'active' : ''}`;
+          li.innerHTML = `<a class="page-link" href="#">${pageNum}</a>`;
+          
+          li.querySelector('a').onclick = (e) => {
+              e.preventDefault();
+              currentPage = pageNum;
+              updatePagination();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+          };
+          
+          return li;
+      }
+      
+      document.getElementById('itemsPerPage').addEventListener('change', function() {
+          itemsPerPage = parseInt(this.value);
+          currentPage = 1;
+          updatePagination();
+      });
+      
+      initPagination();
+  });
+</script>
+{% endblock %}
+{% endblock %}

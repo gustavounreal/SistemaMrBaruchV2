@@ -1,3 +1,4 @@
+{% load humanize %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -22,7 +23,7 @@
     
     <style>
         :root {
-            /* Cores principais - Tema Escuro */
+            /* Cores principais - Tema Escuro FIXO */
             --primary: #FF6B35;     /* Laranja vibrante */
             --primary-dark: #E55A2B;
             --secondary: #6A5ACD;    /* Roxo azulado */
@@ -52,17 +53,6 @@
             --gradient-blue-purple: linear-gradient(135deg, var(--accent) 0%, var(--secondary) 100%);
         }
         
-        /* Tema Claro */
-        [data-theme="light"] {
-            --dark-bg: #F8F9FA;
-            --dark-card: #FFFFFF;
-            --dark-card-hover: #F0F2F5;
-            --dark-border: #E1E5E9;
-            --text-primary: #2D3748;
-            --text-secondary: #4A5568;
-            --text-muted: #718096;
-        }
-        
         * {
             margin: 0;
             padding: 0;
@@ -76,34 +66,6 @@
             color: var(--text-primary);
             min-height: 100vh;
             overflow-x: hidden;
-        }
-        
-        /* ==================== TOGGLE THEME ==================== */
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            background: var(--dark-card);
-            border: 1px solid var(--dark-border);
-            border-radius: 50px;
-            padding: 10px 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            cursor: pointer;
-        }
-        
-        .theme-toggle i {
-            font-size: 1.2rem;
-            color: var(--text-secondary);
-        }
-        
-        .theme-toggle .toggle-text {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-primary);
         }
         
         /* ==================== CONTAINER PRINCIPAL ==================== */
@@ -505,25 +467,10 @@
             .chart-container {
                 height: 300px;
             }
-            
-            .theme-toggle {
-                top: 10px;
-                right: 10px;
-                padding: 8px 12px;
-            }
-            
-            .theme-toggle .toggle-text {
-                display: none;
-            }
         }
     </style>
 </head>
 <body>
-    <!-- Toggle de Tema -->
-    <div class="theme-toggle" id="themeToggle">
-        <i class="bi bi-moon-fill" id="themeIcon"></i>
-        <span class="toggle-text" id="themeText">Modo Escuro</span>
-    </div>
 
     <div class="dashboard-container">
         
@@ -532,8 +479,8 @@
             <h1>
                 <i class="bi bi-graph-up-arrow"></i> Dashboard de Métricas
             </h1>
-            <p class="text-muted">Análise visual completa de todas as métricas do sistema</p>
-            <a href="/relatorios/painel_relatorios/" class="btn btn-back mt-3">
+            <p style="color: #FFFFFF; opacity: 0.9;">Análise visual completa de todas as métricas do sistema</p>
+            <a href="{% url 'relatorios:painel_central' %}" class="btn btn-back mt-3">
                 <i class="bi bi-arrow-left"></i> Voltar aos Relatórios
             </a>
         </div>
@@ -543,21 +490,21 @@
             <div class="col-md-4">
                 <div class="kpi-card gradient-bg-1">
                     <i class="bi bi-people-fill"></i>
-                    <h2>1,247</h2>
+                    <h2>{{ kpis.total_leads }}</h2>
                     <p>Total de Leads</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="kpi-card gradient-bg-2">
                     <i class="bi bi-check-circle-fill"></i>
-                    <h2>342</h2>
+                    <h2>{{ kpis.total_vendas }}</h2>
                     <p>Vendas Fechadas</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="kpi-card gradient-bg-3">
                     <i class="bi bi-percent"></i>
-                    <h2>27.4%</h2>
+                    <h2>{{ kpis.taxa_conversao_geral }}%</h2>
                     <p>Taxa de Conversão</p>
                 </div>
             </div>
@@ -567,21 +514,21 @@
             <div class="col-md-4">
                 <div class="kpi-card gradient-bg-4">
                     <i class="bi bi-currency-dollar"></i>
-                    <h2>R$ 124,560</h2>
+                    <h2>R$ {{ kpis.receita_total|floatformat:2|intcomma }}</h2>
                     <p>Receita Total</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="kpi-card gradient-bg-5">
                     <i class="bi bi-cart-check-fill"></i>
-                    <h2>R$ 364</h2>
+                    <h2>R$ {{ kpis.ticket_medio|floatformat:2|intcomma }}</h2>
                     <p>Ticket Médio</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="kpi-card gradient-bg-6">
                     <i class="bi bi-calendar-check"></i>
-                    <h2>187</h2>
+                    <h2>{{ kpis.leads_mes_atual }}</h2>
                     <p>Leads Este Mês</p>
                 </div>
             </div>
@@ -745,41 +692,10 @@
     </div>
 
     <script>
-        // ==================== TOGGLE DE TEMA ====================
-        const themeToggle = document.getElementById('themeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-        const themeText = document.getElementById('themeText');
-        const htmlElement = document.documentElement;
-        
-        // Verificar preferência salva ou padrão do sistema
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        htmlElement.setAttribute('data-theme', savedTheme);
-        updateThemeToggle(savedTheme);
-        
-        themeToggle.addEventListener('click', () => {
-            const currentTheme = htmlElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
-            htmlElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeToggle(newTheme);
-            updateChartsForTheme(newTheme);
-        });
-        
-        function updateThemeToggle(theme) {
-            if (theme === 'dark') {
-                themeIcon.className = 'bi bi-moon-fill';
-                themeText.textContent = 'Modo Escuro';
-            } else {
-                themeIcon.className = 'bi bi-sun-fill';
-                themeText.textContent = 'Modo Claro';
-            }
-        }
-        
-        // ==================== CONFIGURAÇÃO GLOBAL CHART.JS ====================
+        // ==================== CONFIGURAÇÃO GLOBAL CHART.JS (TEMA ESCURO FIXO) ====================
         Chart.defaults.font.family = "'Poppins', 'Inter', 'Segoe UI', Arial, sans-serif";
         Chart.defaults.font.size = 14;
-        Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary');
+        Chart.defaults.color = '#B8B8D0'; // text-secondary do tema escuro
         Chart.defaults.responsive = true;
         Chart.defaults.maintainAspectRatio = false;
         
@@ -1317,18 +1233,32 @@
             }
         }));
         
-        // Função para atualizar gráficos quando o tema mudar
-        function updateChartsForTheme(theme) {
-            // Destruir gráficos existentes
-            charts.forEach(chart => chart.destroy());
-            charts = [];
+        // Script para formatar valores monetários no padrão brasileiro
+        document.addEventListener('DOMContentLoaded', function() {
+            function formatarMoeda(valor) {
+                let numero = valor.replace('R$', '').trim();
+                numero = parseFloat(numero);
+                
+                if (isNaN(numero)) {
+                    return valor;
+                }
+                
+                return 'R$ ' + numero.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
             
-            // Recriar gráficos com novo tema
-            setTimeout(() => {
-                charts.push(createLeadsChart());
-                // Adicione aqui a criação dos outros gráficos
-            }, 300);
-        }
+            // Formata todos os valores monetários
+            const elementosMonetarios = document.querySelectorAll('.card-value, .metric-value, .valor-monetario, [data-format="currency"]');
+            
+            elementosMonetarios.forEach(function(elemento) {
+                const texto = elemento.textContent;
+                if (texto.includes('R$')) {
+                    elemento.textContent = formatarMoeda(texto);
+                }
+            });
+        });
     </script>
 </body>
 </html>

@@ -16,6 +16,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
     <style>
         :root {
             /* Cores principais */
@@ -183,7 +186,7 @@
         
         .ranking-row {
             display: grid;
-            grid-template-columns: 60px 1fr 120px 120px 120px 120px;
+            grid-template-columns: 60px 1fr 120px 120px 120px 120px 50px;
             gap: 15px;
             padding: 15px;
             background: var(--dark-bg);
@@ -191,11 +194,154 @@
             margin-bottom: 10px;
             align-items: center;
             transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
         }
         
         .ranking-row:hover {
             background: var(--dark-card-hover);
-            transform: translateX(5px);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 107, 53, 0.2);
+        }
+        
+        /* Botão de expansão */
+        .expand-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(255, 107, 53, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .ranking-row:hover .expand-btn {
+            background: var(--primary);
+            color: #fff;
+        }
+        
+        .expand-btn i {
+            transition: transform 0.3s ease;
+        }
+        
+        .ranking-row.expanded .expand-btn i {
+            transform: rotate(180deg);
+        }
+        
+        /* Detalhes expandidos */
+        .ranking-details {
+            display: none;
+            grid-column: 1 / -1;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid var(--dark-border);
+            animation: slideDown 0.3s ease;
+        }
+        
+        .ranking-row.expanded .ranking-details {
+            display: block;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Grid de detalhes */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .detail-card {
+            background: var(--dark-card);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--dark-border);
+        }
+        
+        .detail-card h4 {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--dark-border);
+        }
+        
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+        
+        .detail-value {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .detail-value.positive {
+            color: var(--success);
+        }
+        
+        .detail-value.negative {
+            color: var(--danger);
+        }
+        
+        /* Gráfico */
+        .chart-container {
+            position: relative;
+            height: 250px;
+            background: var(--dark-card);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--dark-border);
+        }
+        
+        /* Badge de status */
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .status-badge.ativo {
+            background: rgba(46, 204, 113, 0.2);
+            color: var(--success);
+        }
+        
+        .status-badge.inativo {
+            background: rgba(231, 76, 60, 0.2);
+            color: var(--danger);
         }
         
         /* Posição */
@@ -309,16 +455,21 @@
         /* Responsivo */
         @media (max-width: 1200px) {
             .ranking-row {
-                grid-template-columns: 50px 1fr 100px 100px 100px;
+                grid-template-columns: 50px 1fr 100px 100px 100px 40px;
                 gap: 10px;
                 font-size: 0.9rem;
+            }
+            
+            .details-grid {
+                grid-template-columns: 1fr;
             }
         }
         
         @media (max-width: 768px) {
             .ranking-row {
-                grid-template-columns: 1fr;
+                grid-template-columns: 40px 1fr 40px;
                 gap: 10px;
+                padding: 12px;
             }
             
             .rank-position {
@@ -327,8 +478,30 @@
                 font-size: 1.2rem;
             }
             
+            .rank-stat {
+                display: none;
+            }
+            
+            .rank-user {
+                flex: 1;
+            }
+            
+            .expand-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 1rem;
+            }
+            
             .page-header h1 {
                 font-size: 1.8rem;
+            }
+            
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                height: 200px;
             }
         }
     </style>
@@ -374,7 +547,7 @@
             
             <div class="ranking-table">
                 {% for atendente in ranking_atendentes %}
-                <div class="ranking-row">
+                <div class="ranking-row" onclick="toggleDetails(this)">
                     <div class="rank-position {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
                         {{ forloop.counter }}º
                     </div>
@@ -398,6 +571,61 @@
                         <span class="rank-stat-value">R$ {{ atendente.total_comissao|floatformat:2 }}</span>
                         <span class="rank-stat-label">Comissões</span>
                     </div>
+                    <div class="expand-btn">
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    
+                    <!-- Detalhes Expandidos -->
+                    <div class="ranking-details">
+                        <div class="details-grid">
+                            <!-- Card de Performance -->
+                            <div class="detail-card">
+                                <h4><i class="bi bi-graph-up"></i> Performance Detalhada</h4>
+                                <div class="detail-item">
+                                    <span class="detail-label">Total de Leads</span>
+                                    <span class="detail-value">{{ atendente.total_leads }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Leads Pagos</span>
+                                    <span class="detail-value positive">{{ atendente.leads_pagos }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Leads Pendentes</span>
+                                    <span class="detail-value">{{ atendente.leads_pendentes }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Taxa de Conversão</span>
+                                    <span class="detail-value {% if atendente.taxa_conversao >= 50 %}positive{% endif %}">{{ atendente.taxa_conversao }}%</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Card Financeiro -->
+                            <div class="detail-card">
+                                <h4><i class="bi bi-cash-stack"></i> Resumo Financeiro</h4>
+                                <div class="detail-item">
+                                    <span class="detail-label">Comissões Totais</span>
+                                    <span class="detail-value">R$ {{ atendente.total_comissao|floatformat:2 }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Comissões Pagas</span>
+                                    <span class="detail-value positive">R$ {{ atendente.comissao_paga|default:"0.00"|floatformat:2 }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Comissões Pendentes</span>
+                                    <span class="detail-value">R$ {{ atendente.comissao_pendente|default:"0.00"|floatformat:2 }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Média por Lead</span>
+                                    <span class="detail-value">R$ {{ atendente.media_comissao|default:"0.00"|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gráfico de Desempenho -->
+                        <div class="chart-container">
+                            <canvas id="chart-atendente-{{ forloop.counter }}"></canvas>
+                        </div>
+                    </div>
                 </div>
                 {% empty %}
                 <p class="text-center text-muted">Nenhum atendente com atividade no período.</p>
@@ -419,7 +647,7 @@
             
             <div class="ranking-table">
                 {% for consultor in ranking_consultores %}
-                <div class="ranking-row">
+                <div class="ranking-row" onclick="toggleDetails(this)">
                     <div class="rank-position {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
                         {{ forloop.counter }}º
                     </div>
@@ -443,6 +671,61 @@
                         <span class="rank-stat-value">R$ {{ consultor.total_comissao|floatformat:2 }}</span>
                         <span class="rank-stat-label">Comissões</span>
                     </div>
+                    <div class="expand-btn">
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    
+                    <!-- Detalhes Expandidos -->
+                    <div class="ranking-details">
+                        <div class="details-grid">
+                            <!-- Card de Vendas -->
+                            <div class="detail-card">
+                                <h4><i class="bi bi-cart-check"></i> Análise de Vendas</h4>
+                                <div class="detail-item">
+                                    <span class="detail-label">Total de Vendas</span>
+                                    <span class="detail-value">{{ consultor.total_vendas }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Valor Total</span>
+                                    <span class="detail-value positive">R$ {{ consultor.valor_total_vendas|floatformat:2 }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Ticket Médio</span>
+                                    <span class="detail-value">R$ {{ consultor.ticket_medio|floatformat:2 }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Maior Venda</span>
+                                    <span class="detail-value">R$ {{ consultor.maior_venda|default:"0.00"|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Card Financeiro -->
+                            <div class="detail-card">
+                                <h4><i class="bi bi-wallet2"></i> Comissões e Ganhos</h4>
+                                <div class="detail-item">
+                                    <span class="detail-label">Comissões Totais</span>
+                                    <span class="detail-value">R$ {{ consultor.total_comissao|floatformat:2 }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Comissões Pagas</span>
+                                    <span class="detail-value positive">R$ {{ consultor.comissao_paga|default:"0.00"|floatformat:2 }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">A Receber</span>
+                                    <span class="detail-value">R$ {{ consultor.comissao_pendente|default:"0.00"|floatformat:2 }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Média por Venda</span>
+                                    <span class="detail-value">R$ {{ consultor.media_comissao_venda|default:"0.00"|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gráfico de Desempenho -->
+                        <div class="chart-container">
+                            <canvas id="chart-consultor-{{ forloop.counter }}"></canvas>
+                        </div>
+                    </div>
                 </div>
                 {% empty %}
                 <p class="text-center text-muted">Nenhum consultor com vendas no período.</p>
@@ -464,7 +747,7 @@
             
             <div class="ranking-table">
                 {% for captador in ranking_captadores %}
-                <div class="ranking-row">
+                <div class="ranking-row" onclick="toggleDetails(this)">
                     <div class="rank-position {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
                         {{ forloop.counter }}º
                     </div>
@@ -488,6 +771,61 @@
                         <span class="rank-stat-value">R$ {{ captador.total_comissao|floatformat:2 }}</span>
                         <span class="rank-stat-label">Comissões</span>
                     </div>
+                    <div class="expand-btn">
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    
+                    <!-- Detalhes Expandidos -->
+                    <div class="ranking-details">
+                        <div class="details-grid">
+                            <!-- Card de Indicações -->
+                            <div class="detail-card">
+                                <h4><i class="bi bi-person-plus"></i> Análise de Indicações</h4>
+                                <div class="detail-item">
+                                    <span class="detail-label">Total de Indicações</span>
+                                    <span class="detail-value">{{ captador.total_indicacoes }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Indicações Convertidas</span>
+                                    <span class="detail-value positive">{{ captador.indicacoes_convertidas|default:"0" }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Taxa de Conversão</span>
+                                    <span class="detail-value">{{ captador.taxa_conversao|default:"0" }}%</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Ticket Médio</span>
+                                    <span class="detail-value">R$ {{ captador.ticket_medio|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Card Financeiro -->
+                            <div class="detail-card">
+                                <h4><i class="bi bi-currency-dollar"></i> Retorno Financeiro</h4>
+                                <div class="detail-item">
+                                    <span class="detail-label">Comissões Totais</span>
+                                    <span class="detail-value">R$ {{ captador.total_comissao|floatformat:2 }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Comissões Pagas</span>
+                                    <span class="detail-value positive">R$ {{ captador.comissao_paga|default:"0.00"|floatformat:2 }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">A Receber</span>
+                                    <span class="detail-value">R$ {{ captador.comissao_pendente|default:"0.00"|floatformat:2 }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Média por Indicação</span>
+                                    <span class="detail-value">R$ {{ captador.media_comissao|default:"0.00"|floatformat:2 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gráfico de Desempenho -->
+                        <div class="chart-container">
+                            <canvas id="chart-captador-{{ forloop.counter }}"></canvas>
+                        </div>
+                    </div>
                 </div>
                 {% empty %}
                 <p class="text-center text-muted">Nenhum captador com indicações no período.</p>
@@ -498,5 +836,179 @@
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Script para formatar valores monetários -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Função para formatar valores monetários no padrão brasileiro
+            function formatarMoeda(valor) {
+                // Remove "R$" e espaços
+                let numero = valor.replace('R$', '').trim();
+                
+                // Converte para número
+                numero = parseFloat(numero);
+                
+                // Se não for um número válido, retorna o valor original
+                if (isNaN(numero)) {
+                    return valor;
+                }
+                
+                // Formata no padrão brasileiro (1.234.567,89)
+                return 'R$ ' + numero.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+            
+            // Seleciona todos os elementos com valores monetários
+            const elementosMonetarios = document.querySelectorAll('.rank-stat-value, .detail-value, .resumo-valor');
+            
+            elementosMonetarios.forEach(function(elemento) {
+                const texto = elemento.textContent;
+                
+                // Verifica se o texto contém "R$"
+                if (texto.includes('R$')) {
+                    elemento.textContent = formatarMoeda(texto);
+                }
+            });
+        });
+        
+        // Função para alternar detalhes
+        function toggleDetails(row) {
+            // Prevenir propagação do click nos elementos internos
+            if (event.target.closest('.ranking-details')) {
+                return;
+            }
+            
+            row.classList.toggle('expanded');
+            
+            // Se expandiu, criar gráfico
+            if (row.classList.contains('expanded')) {
+                const canvas = row.querySelector('canvas');
+                if (canvas && !canvas.chart) {
+                    createChart(canvas, row);
+                }
+            }
+        }
+        
+        // Função para criar gráficos
+        function createChart(canvas, row) {
+            const ctx = canvas.getContext('2d');
+            
+            // Extrai dados do row
+            const stats = row.querySelectorAll('.rank-stat-value');
+            const labels = [];
+            const values = [];
+            
+            row.querySelectorAll('.rank-stat').forEach(stat => {
+                const label = stat.querySelector('.rank-stat-label').textContent;
+                const value = stat.querySelector('.rank-stat-value').textContent;
+                
+                // Remove "R$" e converte para número se for valor monetário
+                let numValue = value.replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
+                numValue = parseFloat(numValue);
+                
+                if (!isNaN(numValue) && label !== 'Taxa Conv.') {
+                    labels.push(label);
+                    values.push(numValue);
+                }
+            });
+            
+            // Define cores baseadas no tipo de ranking
+            let colors = [];
+            if (canvas.id.includes('atendente')) {
+                colors = ['#4A90E2', '#5DA8FF', '#6BB6FF', '#7CC4FF'];
+            } else if (canvas.id.includes('consultor')) {
+                colors = ['#6A5ACD', '#7B6DDE', '#8C7FEF', '#9D91FF'];
+            } else if (canvas.id.includes('captador')) {
+                colors = ['#FF6B35', '#FF7A47', '#FF8959', '#FF986B'];
+            }
+            
+            canvas.chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Performance',
+                        data: values,
+                        backgroundColor: colors,
+                        borderColor: colors.map(c => c),
+                        borderWidth: 2,
+                        borderRadius: 8,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#1A1A2E',
+                            titleColor: '#FFFFFF',
+                            bodyColor: '#B8B8D0',
+                            borderColor: '#2A2A45',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    let value = context.parsed.y;
+                                    
+                                    // Formata valores monetários
+                                    if (label.includes('Valor') || label.includes('Ticket') || label.includes('Comissões')) {
+                                        return label + ': R$ ' + value.toLocaleString('pt-BR', {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        });
+                                    }
+                                    
+                                    return label + ': ' + value;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#2A2A45',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#8A8AA8',
+                                font: {
+                                    size: 11
+                                },
+                                callback: function(value) {
+                                    // Formata números grandes
+                                    if (value >= 1000000) {
+                                        return (value / 1000000).toFixed(1) + 'M';
+                                    } else if (value >= 1000) {
+                                        return (value / 1000).toFixed(0) + 'K';
+                                    }
+                                    return value;
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#B8B8D0',
+                                font: {
+                                    size: 11,
+                                    weight: '600'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>

@@ -99,17 +99,26 @@ def relatorio_leads(request):
     
     # Estatísticas do período
     total_leads = leads.count()
-    leads_pagos = leads.filter(status='PAGO').count()
-    leads_pendentes = leads.filter(status='PENDENTE').count()
-    leads_expirados = leads.filter(status='EXPIRADO').count()
+    leads_pagos = leads.filter(status='LEVANTAMENTO_PAGO').count()
+    leads_pendentes = leads.filter(status='LEVANTAMENTO_PENDENTE').count()
+    leads_perdidos = leads.filter(status='PERDIDO').count()
+    leads_em_compliance = leads.filter(status='EM_COMPLIANCE').count()
+    leads_aprovado_compliance = leads.filter(status='APROVADO_COMPLIANCE').count()
     
-    # Valor total (assumindo R$ 50,00 por lead pago)
-    valor_total = leads_pagos * 50.00
+    # Valor total baseado em comissões reais
+    from comissoes.models import ComissaoLead
+    comissoes_periodo = ComissaoLead.objects.filter(
+        lead__in=leads.filter(status='LEVANTAMENTO_PAGO')
+    )
+    valor_total = comissoes_periodo.aggregate(total=Sum('valor'))['total'] or 0
     
-    # Atendentes para filtro
-    atendentes = User.objects.filter(
-        id__in=Lead.objects.values_list('captador', flat=True).distinct()
-    ).order_by('first_name')
+    # Se não houver comissões registradas, calcular com valor padrão
+    if valor_total == 0 and leads_pagos > 0:
+        valor_comissao = ComissaoLead.obter_valor_comissao()
+        valor_total = leads_pagos * float(valor_comissao)
+    
+     # Atendentes para filtro (usar grupos ao invés de leads existentes)
+    atendentes = User.objects.filter(groups__name='atendente').distinct().order_by('first_name')
     
     # Distribuição por status
     distribuicao_status = leads.values('status').annotate(
@@ -121,7 +130,9 @@ def relatorio_leads(request):
         'total_leads': total_leads,
         'leads_pagos': leads_pagos,
         'leads_pendentes': leads_pendentes,
-        'leads_expirados': leads_expirados,
+        'leads_perdidos': leads_perdidos,
+        'leads_em_compliance': leads_em_compliance,
+        'leads_aprovado_compliance': leads_aprovado_compliance,
         'valor_total': valor_total,
         'atendentes': atendentes,
         'distribuicao_status': distribuicao_status,
@@ -149,12 +160,14 @@ def relatorio_vendas(request):
 @login_required
 def relatorio_comissoes(request):
     """
-    Relatório de comissões com análises financeiras.
+    Relatório de comissões com análises financeiras para consultores, captadores e atendentes.
     """
+    from django.core.paginator import Paginator
+    
     # Filtros
     periodo = request.GET.get('periodo', '30')  # dias
-    status_pago = request.GET.get('pago', 'todos')
-    atendente_id = request.GET.get('atendente')
+    status_filter = request.GET.get('status', 'todos')
+    usuario_id = request.GET.get('usuario')
     
     # Data inicial
     if periodo == 'todos':
@@ -166,32 +179,101 @@ def relatorio_comissoes(request):
         except ValueError:
             data_inicio = timezone.now() - timedelta(days=30)
     
-    # Query base
-    comissoes = ComissaoLead.objects.select_related('atendente', 'lead')
+    # ========== COMISSÕES BASE ==========
+    from financeiro.models import Comissao
+    
+    comissoes_base = Comissao.objects.select_related('usuario', 'venda', 'parcela')
     
     if data_inicio:
-        comissoes = comissoes.filter(data_criacao__gte=data_inicio)
+        comissoes_base = comissoes_base.filter(data_calculada__gte=data_inicio)
     
-    if status_pago == 'pago':
-        comissoes = comissoes.filter(pago=True)
-    elif status_pago == 'pendente':
-        comissoes = comissoes.filter(pago=False)
+    if status_filter != 'todos':
+        comissoes_base = comissoes_base.filter(status=status_filter)
     
-    if atendente_id:
-        comissoes = comissoes.filter(atendente_id=atendente_id)
+    if usuario_id:
+        comissoes_base = comissoes_base.filter(usuario_id=usuario_id)
     
-    comissoes = comissoes.order_by('-data_criacao')
+    # ========== CAPTADORES ==========
+    comissoes_captadores = comissoes_base.filter(tipo_comissao__icontains='CAPTADOR').order_by('-data_calculada')
+    paginator_captadores = Paginator(comissoes_captadores, 20)
+    page_captadores = request.GET.get('page_captadores', 1)
+    captadores_paginadas = paginator_captadores.get_page(page_captadores)
     
-    # Estatísticas
-    total_comissoes = comissoes.aggregate(total=Sum('valor'))['total'] or 0
-    total_pagas = comissoes.filter(pago=True).aggregate(total=Sum('valor'))['total'] or 0
-    total_pendentes = comissoes.filter(pago=False).aggregate(total=Sum('valor'))['total'] or 0
-    quantidade_total = comissoes.count()
-    quantidade_pagas = comissoes.filter(pago=True).count()
-    quantidade_pendentes = comissoes.filter(pago=False).count()
+    # ========== CONSULTORES ==========
+    comissoes_consultores = comissoes_base.filter(tipo_comissao__icontains='CONSULTOR').order_by('-data_calculada')
+    paginator_consultores = Paginator(comissoes_consultores, 20)
+    page_consultores = request.GET.get('page_consultores', 1)
+    consultores_paginadas = paginator_consultores.get_page(page_consultores)
     
-    # Ranking de atendentes
-    ranking = comissoes.values(
+    # ========== ATENDENTES ==========
+    comissoes_atendentes = ComissaoLead.objects.select_related('atendente', 'lead')
+    
+    if data_inicio:
+        comissoes_atendentes = comissoes_atendentes.filter(data_criacao__gte=data_inicio)
+    
+    if status_filter == 'paga':
+        comissoes_atendentes = comissoes_atendentes.filter(pago=True)
+    elif status_filter == 'pendente':
+        comissoes_atendentes = comissoes_atendentes.filter(pago=False)
+    
+    if usuario_id:
+        comissoes_atendentes = comissoes_atendentes.filter(atendente_id=usuario_id)
+    
+    comissoes_atendentes = comissoes_atendentes.order_by('-data_criacao')
+    
+    paginator_atendentes = Paginator(comissoes_atendentes, 20)
+    page_atendentes = request.GET.get('page_atendentes', 1)
+    atendentes_paginadas = paginator_atendentes.get_page(page_atendentes)
+    
+    # ========== ESTATÍSTICAS CAPTADORES ==========
+    total_captadores = comissoes_captadores.aggregate(total=Sum('valor_comissao'))['total'] or 0
+    total_captadores_pagas = comissoes_captadores.filter(status='paga').aggregate(total=Sum('valor_comissao'))['total'] or 0
+    total_captadores_pendentes = comissoes_captadores.filter(status='pendente').aggregate(total=Sum('valor_comissao'))['total'] or 0
+    qtd_captadores = comissoes_captadores.count()
+    qtd_captadores_pagas = comissoes_captadores.filter(status='paga').count()
+    qtd_captadores_pendentes = comissoes_captadores.filter(status='pendente').count()
+    
+    # ========== ESTATÍSTICAS CONSULTORES ==========
+    total_consultores = comissoes_consultores.aggregate(total=Sum('valor_comissao'))['total'] or 0
+    total_consultores_pagas = comissoes_consultores.filter(status='paga').aggregate(total=Sum('valor_comissao'))['total'] or 0
+    total_consultores_pendentes = comissoes_consultores.filter(status='pendente').aggregate(total=Sum('valor_comissao'))['total'] or 0
+    qtd_consultores = comissoes_consultores.count()
+    qtd_consultores_pagas = comissoes_consultores.filter(status='paga').count()
+    qtd_consultores_pendentes = comissoes_consultores.filter(status='pendente').count()
+    
+    # ========== ESTATÍSTICAS ATENDENTES ==========
+    total_atendentes = comissoes_atendentes.aggregate(total=Sum('valor'))['total'] or 0
+    total_atendentes_pagas = comissoes_atendentes.filter(pago=True).aggregate(total=Sum('valor'))['total'] or 0
+    total_atendentes_pendentes = comissoes_atendentes.filter(pago=False).aggregate(total=Sum('valor'))['total'] or 0
+    qtd_atendentes = comissoes_atendentes.count()
+    qtd_atendentes_pagas = comissoes_atendentes.filter(pago=True).count()
+    qtd_atendentes_pendentes = comissoes_atendentes.filter(pago=False).count()
+    
+    # ========== TOTAL GERAL ==========
+    total_geral = float(total_captadores) + float(total_consultores) + float(total_atendentes)
+    total_geral_pagas = float(total_captadores_pagas) + float(total_consultores_pagas) + float(total_atendentes_pagas)
+    total_geral_pendentes = float(total_captadores_pendentes) + float(total_consultores_pendentes) + float(total_atendentes_pendentes)
+    
+    # ========== RANKINGS ==========
+    ranking_captadores = comissoes_captadores.values(
+        'usuario__first_name', 'usuario__last_name', 'usuario_id'
+    ).annotate(
+        total_valor=Sum('valor_comissao'),
+        quantidade=Count('id'),
+        pagas=Count('id', filter=Q(status='paga')),
+        pendentes=Count('id', filter=Q(status='pendente'))
+    ).order_by('-total_valor')[:10]
+    
+    ranking_consultores = comissoes_consultores.values(
+        'usuario__first_name', 'usuario__last_name', 'usuario_id'
+    ).annotate(
+        total_valor=Sum('valor_comissao'),
+        quantidade=Count('id'),
+        pagas=Count('id', filter=Q(status='paga')),
+        pendentes=Count('id', filter=Q(status='pendente'))
+    ).order_by('-total_valor')[:10]
+    
+    ranking_atendentes = comissoes_atendentes.values(
         'atendente__first_name', 'atendente__last_name', 'atendente_id'
     ).annotate(
         total_valor=Sum('valor'),
@@ -200,24 +282,60 @@ def relatorio_comissoes(request):
         pendentes=Count('id', filter=Q(pago=False))
     ).order_by('-total_valor')[:10]
     
-    # Atendentes para filtro
-    atendentes = User.objects.filter(
-        id__in=ComissaoLead.objects.values_list('atendente', flat=True).distinct()
-    ).order_by('first_name')
+    # ========== USUÁRIOS PARA FILTRO (USANDO GRUPOS) ==========
+    # Buscar TODOS os usuários por grupo, não apenas os que têm comissões
+    usuarios_captadores = User.objects.filter(groups__name='captador').distinct()
+    usuarios_consultores = User.objects.filter(groups__name='comercial1').distinct()
+    usuarios_atendentes = User.objects.filter(groups__name='atendente').distinct()
+    
+    # Combinar todos os usuários
+    usuarios = (usuarios_captadores | usuarios_consultores | usuarios_atendentes).distinct().order_by('first_name')
     
     context = {
-        'comissoes': comissoes[:100],
-        'total_comissoes': total_comissoes,
-        'total_pagas': total_pagas,
-        'total_pendentes': total_pendentes,
-        'quantidade_total': quantidade_total,
-        'quantidade_pagas': quantidade_pagas,
-        'quantidade_pendentes': quantidade_pendentes,
-        'ranking': ranking,
-        'atendentes': atendentes,
+        # Comissões paginadas
+        'comissoes_captadores': captadores_paginadas,
+        'comissoes_consultores': consultores_paginadas,
+        'comissoes_atendentes': atendentes_paginadas,
+        
+        # Estatísticas Captadores
+        'total_captadores': total_captadores,
+        'total_captadores_pagas': total_captadores_pagas,
+        'total_captadores_pendentes': total_captadores_pendentes,
+        'qtd_captadores': qtd_captadores,
+        'qtd_captadores_pagas': qtd_captadores_pagas,
+        'qtd_captadores_pendentes': qtd_captadores_pendentes,
+        
+        # Estatísticas Consultores
+        'total_consultores': total_consultores,
+        'total_consultores_pagas': total_consultores_pagas,
+        'total_consultores_pendentes': total_consultores_pendentes,
+        'qtd_consultores': qtd_consultores,
+        'qtd_consultores_pagas': qtd_consultores_pagas,
+        'qtd_consultores_pendentes': qtd_consultores_pendentes,
+        
+        # Estatísticas Atendentes
+        'total_atendentes': total_atendentes,
+        'total_atendentes_pagas': total_atendentes_pagas,
+        'total_atendentes_pendentes': total_atendentes_pendentes,
+        'qtd_atendentes': qtd_atendentes,
+        'qtd_atendentes_pagas': qtd_atendentes_pagas,
+        'qtd_atendentes_pendentes': qtd_atendentes_pendentes,
+        
+        # Total Geral
+        'total_geral': total_geral,
+        'total_geral_pagas': total_geral_pagas,
+        'total_geral_pendentes': total_geral_pendentes,
+        
+        # Rankings
+        'ranking_captadores': ranking_captadores,
+        'ranking_consultores': ranking_consultores,
+        'ranking_atendentes': ranking_atendentes,
+        
+        # Filtros
+        'usuarios': usuarios,
         'periodo_selecionado': periodo,
-        'pago_selecionado': status_pago,
-        'atendente_selecionado': atendente_id,
+        'status_selecionado': status_filter,
+        'usuario_selecionado': usuario_id,
     }
     
     return render(request, 'relatorios/relatorio_comissoes.html', context)
@@ -430,13 +548,27 @@ def dashboard_graficos(request):
     
     for dia in range(7):
         # 0 = Monday, 6 = Sunday
-        count = Lead.objects.filter(data_cadastro__week_day=dia+2).count()  # Django week_day: 1=Sunday
+        # Django week_day: 1=Sunday, 2=Monday, ..., 7=Saturday
+        count = Lead.objects.filter(data_cadastro__week_day=dia+2 if dia < 6 else 1).count()
         leads_por_dia.append(count)
     
-    # ========== GRÁFICO 12: TEMPO MÉDIO POR ETAPA (Barra) ==========
-    # Calculando tempos médios (simulado para demonstração)
-    tempo_labels = ['Lead → Levantamento', 'Levantamento → PIX', 'PIX → Pré-Venda', 'Pré-Venda → Venda']
-    tempo_values = [2.5, 1.2, 3.8, 5.5]  # Dias (pode ser calculado com datas reais)
+    # ========== GRÁFICO 12: VENDAS POR MÊS (Barra) ==========
+    vendas_por_mes = []
+    
+    for i in range(11, -1, -1):
+        mes_data = hoje - timedelta(days=30*i)
+        inicio_mes = mes_data.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if mes_data.month == 12:
+            fim_mes = inicio_mes.replace(year=inicio_mes.year + 1, month=1)
+        else:
+            fim_mes = inicio_mes.replace(month=inicio_mes.month + 1)
+        
+        count = Venda.objects.filter(
+            data_venda__gte=inicio_mes,
+            data_venda__lt=fim_mes
+        ).count()
+        
+        vendas_por_mes.append(count)
     
     # ========== KPIs PRINCIPAIS ==========
     kpis = {
@@ -493,9 +625,8 @@ def dashboard_graficos(request):
         'dias_semana': json.dumps(dias_semana),
         'leads_por_dia': json.dumps(leads_por_dia),
         
-        # Gráfico 12: Barra - Tempo
-        'tempo_labels': json.dumps(tempo_labels),
-        'tempo_values': json.dumps(tempo_values),
+        # Gráfico 12: Vendas por Mês
+        'vendas_por_mes': json.dumps(vendas_por_mes),
         
         # KPIs
         'kpis': kpis,
@@ -868,4 +999,340 @@ def ranking_geral(request):
     }
     
     return render(request, 'relatorios/ranking_geral.html', context)
+
+
+@login_required
+def relatorio_consultores(request):
+    """
+    Relatório detalhado de performance dos consultores (Comercial 1).
+    Mostra vendas, pré-vendas, conversões e comissões.
+    """
+    from decimal import Decimal
+    
+    # Filtros
+    periodo = request.GET.get('periodo', '30')  # dias
+    consultor_id = request.GET.get('consultor')
+    status_filtro = request.GET.get('status', 'todos')
+    
+    # Data inicial baseada no período
+    if periodo == 'todos':
+        data_inicio = None
+        dias = 'todos'
+    else:
+        try:
+            dias = int(periodo)
+            data_inicio = timezone.now() - timedelta(days=dias)
+        except ValueError:
+            dias = 30
+            data_inicio = timezone.now() - timedelta(days=30)
+    
+    # Query base para vendas
+    vendas = Venda.objects.select_related('cliente', 'servico', 'consultor', 'captador')
+    
+    if data_inicio:
+        vendas = vendas.filter(data_venda__gte=data_inicio)
+    
+    if consultor_id:
+        vendas = vendas.filter(consultor_id=consultor_id)
+    
+    if status_filtro != 'todos':
+        vendas = vendas.filter(status=status_filtro)
+    
+    # Query base para pré-vendas
+    pre_vendas = PreVenda.objects.select_related('lead', 'atendente')
+    
+    if data_inicio:
+        pre_vendas = pre_vendas.filter(data_criacao__gte=data_inicio)
+    
+    if consultor_id:
+        # Pré-vendas onde o atendente é o consultor selecionado
+        pre_vendas = pre_vendas.filter(atendente_id=consultor_id)
+    
+    if status_filtro != 'todos':
+        pre_vendas = pre_vendas.filter(status=status_filtro)
+    
+    # Estatísticas de Vendas
+    total_vendas = vendas.count()
+    vendas_concluidas = vendas.filter(status='CONCLUIDO').count()
+    vendas_em_andamento = vendas.filter(status='EM_ANDAMENTO').count()
+    vendas_canceladas = vendas.filter(status='CANCELADO').count()
+    vendas_contrato_assinado = vendas.filter(status='CONTRATO_ASSINADO').count()
+    
+    # Valores totais
+    valor_total_vendas = vendas.aggregate(total=Sum('valor_total'))['total'] or Decimal('0')
+    valor_total_entradas = vendas.aggregate(total=Sum('valor_entrada'))['total'] or Decimal('0')
+    valor_medio_venda = (valor_total_vendas / total_vendas) if total_vendas > 0 else Decimal('0')
+    
+    # Estatísticas de Pré-Vendas
+    total_pre_vendas = pre_vendas.count()
+    pre_vendas_pendentes = pre_vendas.filter(status='PENDENTE').count()
+    pre_vendas_aceitas = pre_vendas.filter(status='ACEITO').count()
+    pre_vendas_recusadas = pre_vendas.filter(status='RECUSADO').count()
+    pre_vendas_convertidas = pre_vendas.filter(status='CONVERTIDO').count()
+    
+    # Taxa de conversão
+    taxa_conversao = (pre_vendas_convertidas / total_pre_vendas * 100) if total_pre_vendas > 0 else 0
+    
+    # Comissões dos consultores
+    from financeiro.models import Comissao
+    
+    comissoes = Comissao.objects.filter(
+        tipo_comissao__in=['CONSULTOR_ENTRADA', 'CONSULTOR_PARCELA']
+    )
+    
+    if data_inicio:
+        comissoes = comissoes.filter(data_calculada__gte=data_inicio)
+    
+    if consultor_id:
+        comissoes = comissoes.filter(usuario_id=consultor_id)
+    
+    total_comissoes = comissoes.aggregate(total=Sum('valor_comissao'))['total'] or Decimal('0')
+    comissoes_pagas = comissoes.filter(status='paga').aggregate(total=Sum('valor_comissao'))['total'] or Decimal('0')
+    comissoes_pendentes = comissoes.filter(status='pendente').aggregate(total=Sum('valor_comissao'))['total'] or Decimal('0')
+    
+    # Consultores para filtro (grupo comercial1)
+    consultores = User.objects.filter(
+        groups__name='comercial1'
+    ).order_by('first_name')
+    
+    # Distribuição por status de venda
+    distribuicao_status = vendas.values('status').annotate(
+        quantidade=Count('id'),
+        valor_total=Sum('valor_total')
+    ).order_by('-quantidade')
+    
+    # Ranking de consultores (se nenhum consultor específico for selecionado)
+    ranking_consultores = []
+    if not consultor_id:
+        consultores_query = User.objects.filter(groups__name='comercial1')
+        
+        for cons in consultores_query:
+            vendas_consultor = vendas.filter(consultor=cons)
+            pre_vendas_consultor = pre_vendas.filter(atendente=cons)
+            comissoes_consultor = comissoes.filter(usuario=cons)
+            
+            total_vendas_cons = vendas_consultor.count()
+            valor_vendas_cons = vendas_consultor.aggregate(total=Sum('valor_total'))['total'] or Decimal('0')
+            total_comissoes_cons = comissoes_consultor.aggregate(total=Sum('valor_comissao'))['total'] or Decimal('0')
+            
+            if total_vendas_cons > 0 or total_comissoes_cons > 0:
+                ranking_consultores.append({
+                    'id': cons.id,
+                    'nome': cons.get_full_name() or cons.email,
+                    'total_vendas': total_vendas_cons,
+                    'valor_total_vendas': valor_vendas_cons,
+                    'total_pre_vendas': pre_vendas_consultor.count(),
+                    'pre_vendas_convertidas': pre_vendas_consultor.filter(status='CONVERTIDO').count(),
+                    'total_comissoes': total_comissoes_cons,
+                    'comissoes_pagas': comissoes_consultor.filter(status='paga').aggregate(total=Sum('valor_comissao'))['total'] or Decimal('0'),
+                    'ticket_medio': (valor_vendas_cons / total_vendas_cons) if total_vendas_cons > 0 else Decimal('0'),
+                })
+        
+        # Ordenar por valor total de vendas
+        ranking_consultores = sorted(ranking_consultores, key=lambda x: x['valor_total_vendas'], reverse=True)
+    
+    # Serviços mais vendidos
+    servicos_vendidos = vendas.values(
+        'servico__nome', 'servico__tipo'
+    ).annotate(
+        quantidade=Count('id'),
+        valor_total=Sum('valor_total')
+    ).order_by('-quantidade')[:5]
+    
+    # Calcular porcentagens para gráficos
+    perc_contrato_assinado = (vendas_contrato_assinado / total_vendas * 100) if total_vendas > 0 else 0
+    perc_em_andamento = (vendas_em_andamento / total_vendas * 100) if total_vendas > 0 else 0
+    perc_concluidas = (vendas_concluidas / total_vendas * 100) if total_vendas > 0 else 0
+    perc_canceladas = (vendas_canceladas / total_vendas * 100) if total_vendas > 0 else 0
+    
+    context = {
+        'vendas': vendas.order_by('-data_venda')[:100],  # Limitar a 100 registros
+        'total_vendas': total_vendas,
+        'vendas_concluidas': vendas_concluidas,
+        'vendas_em_andamento': vendas_em_andamento,
+        'vendas_canceladas': vendas_canceladas,
+        'vendas_contrato_assinado': vendas_contrato_assinado,
+        'perc_contrato_assinado': round(perc_contrato_assinado, 1),
+        'perc_em_andamento': round(perc_em_andamento, 1),
+        'perc_concluidas': round(perc_concluidas, 1),
+        'perc_canceladas': round(perc_canceladas, 1),
+        'valor_total_vendas': valor_total_vendas,
+        'valor_total_entradas': valor_total_entradas,
+        'valor_medio_venda': valor_medio_venda,
+        'total_pre_vendas': total_pre_vendas,
+        'pre_vendas_pendentes': pre_vendas_pendentes,
+        'pre_vendas_aceitas': pre_vendas_aceitas,
+        'pre_vendas_recusadas': pre_vendas_recusadas,
+        'pre_vendas_convertidas': pre_vendas_convertidas,
+        'taxa_conversao': round(taxa_conversao, 2),
+        'total_comissoes': total_comissoes,
+        'comissoes_pagas': comissoes_pagas,
+        'comissoes_pendentes': comissoes_pendentes,
+        'consultores': consultores,
+        'distribuicao_status': distribuicao_status,
+        'servicos_vendidos': servicos_vendidos,
+        'ranking_consultores': ranking_consultores,
+        'periodo_selecionado': periodo,
+        'status_selecionado': status_filtro,
+        'consultor_selecionado': consultor_id,
+    }
+    
+    return render(request, 'relatorios/relatorio_consultores.html', context)
+
+
+@login_required
+def relatorio_compliance(request):
+    """
+    Relatório completo do setor de Compliance.
+    Análises, aprovações, reprovações, tempo médio, etc.
+    """
+    from compliance.models import AnaliseCompliance, StatusAnaliseCompliance, ClassificacaoLead
+    from decimal import Decimal
+    
+    # Filtros
+    periodo = request.GET.get('periodo', '30')
+    status_filtro = request.GET.get('status', 'todos')
+    classificacao_filtro = request.GET.get('classificacao', 'todas')
+    analista_id = request.GET.get('analista', '')
+    
+    # Filtra por período
+    if periodo != 'todos':
+        dias = int(periodo)
+        data_limite = timezone.now() - timedelta(days=dias)
+        analises = AnaliseCompliance.objects.filter(data_criacao__gte=data_limite)
+    else:
+        analises = AnaliseCompliance.objects.all()
+    
+    # Filtra por status
+    if status_filtro != 'todos':
+        analises = analises.filter(status=status_filtro)
+    
+    # Filtra por classificação
+    if classificacao_filtro != 'todas':
+        analises = analises.filter(classificacao=classificacao_filtro)
+    
+    # Filtra por analista
+    if analista_id:
+        analises = analises.filter(analista_responsavel_id=analista_id)
+    
+    # Seleciona campos relacionados para otimização
+    analises = analises.select_related('lead', 'analista_responsavel', 'consultor_atribuido')
+    
+    # Estatísticas gerais
+    total_analises = analises.count()
+    analises_aguardando = analises.filter(status='AGUARDANDO').count()
+    analises_em_andamento = analises.filter(status='EM_ANALISE').count()
+    analises_aprovadas = analises.filter(status='APROVADO').count()
+    analises_atribuidas = analises.filter(status='ATRIBUIDO').count()
+    analises_reprovadas = analises.filter(status='REPROVADO').count()
+    analises_em_pre_venda = analises.filter(status='EM_PRE_VENDA').count()
+    
+    # Percentuais
+    perc_aprovadas = (analises_aprovadas / total_analises * 100) if total_analises > 0 else 0
+    perc_reprovadas = (analises_reprovadas / total_analises * 100) if total_analises > 0 else 0
+    perc_em_andamento = (analises_em_andamento / total_analises * 100) if total_analises > 0 else 0
+    perc_aguardando = (analises_aguardando / total_analises * 100) if total_analises > 0 else 0
+    perc_atribuidas = (analises_atribuidas / total_analises * 100) if total_analises > 0 else 0
+    perc_em_pre_venda = (analises_em_pre_venda / total_analises * 100) if total_analises > 0 else 0
+    
+    # Distribuição por classificação
+    distribuicao_classificacao = analises.values('classificacao').annotate(
+        quantidade=Count('id')
+    ).order_by('classificacao')
+    
+    # Distribuição por status
+    distribuicao_status = analises.values('status').annotate(
+        quantidade=Count('id')
+    ).order_by('status')
+    
+    # Tempo médio de análise (em dias)
+    analises_finalizadas = analises.filter(
+        Q(status='APROVADO') | Q(status='REPROVADO') | Q(status='ATRIBUIDO')
+    ).filter(data_analise__isnull=False)
+    
+    tempo_medio_analise = 0
+    if analises_finalizadas.exists():
+        from django.db.models import Avg, ExpressionWrapper, DurationField
+        tempo_medio = analises_finalizadas.aggregate(
+            media=Avg(ExpressionWrapper(
+                F('data_analise') - F('data_criacao'),
+                output_field=DurationField()
+            ))
+        )['media']
+        if tempo_medio:
+            tempo_medio_analise = tempo_medio.total_seconds() / 86400  # Converte para dias
+    
+    # Ranking de analistas (buscar do grupo compliance)
+    ranking_analistas = []
+    analistas = User.objects.filter(groups__name='compliance').distinct()
+    
+    for analista in analistas:
+        analises_analista = analises.filter(analista_responsavel=analista)
+        total = analises_analista.count()
+        aprovadas = analises_analista.filter(status__in=['APROVADO', 'ATRIBUIDO', 'EM_PRE_VENDA']).count()
+        reprovadas = analises_analista.filter(status='REPROVADO').count()
+        taxa_aprovacao = (aprovadas / total * 100) if total > 0 else 0
+        
+        ranking_analistas.append({
+            'nome': analista.get_full_name() or analista.email,
+            'total_analises': total,
+            'aprovadas': aprovadas,
+            'reprovadas': reprovadas,
+            'taxa_aprovacao': round(taxa_aprovacao, 1),
+        })
+    
+    ranking_analistas = sorted(ranking_analistas, key=lambda x: x['total_analises'], reverse=True)[:10]
+    
+    # Motivos de reprovação mais comuns
+    motivos_reprovacao = analises.filter(
+        status='REPROVADO',
+        motivo_reprovacao__isnull=False
+    ).values('motivo_reprovacao').annotate(
+        quantidade=Count('id')
+    ).order_by('-quantidade')[:5]
+    
+    # Leads por consultor atribuído
+    leads_por_consultor = analises.filter(
+        consultor_atribuido__isnull=False
+    ).values(
+        'consultor_atribuido__first_name',
+        'consultor_atribuido__last_name'
+    ).annotate(
+        quantidade=Count('id')
+    ).order_by('-quantidade')[:10]
+    
+    # Analistas disponíveis para filtro (usar grupo compliance)
+    analistas_filtro = User.objects.filter(
+        groups__name='compliance'
+    ).distinct().order_by('first_name')
+    
+    context = {
+        'analises': analises.order_by('-data_criacao')[:100],
+        'total_analises': total_analises,
+        'analises_aguardando': analises_aguardando,
+        'analises_em_andamento': analises_em_andamento,
+        'analises_aprovadas': analises_aprovadas,
+        'analises_atribuidas': analises_atribuidas,
+        'analises_reprovadas': analises_reprovadas,
+        'analises_em_pre_venda': analises_em_pre_venda,
+        'perc_aprovadas': round(perc_aprovadas, 1),
+        'perc_reprovadas': round(perc_reprovadas, 1),
+        'perc_em_andamento': round(perc_em_andamento, 1),
+        'perc_aguardando': round(perc_aguardando, 1),
+        'perc_atribuidas': round(perc_atribuidas, 1),
+        'perc_em_pre_venda': round(perc_em_pre_venda, 1),
+        'distribuicao_classificacao': distribuicao_classificacao,
+        'distribuicao_status': distribuicao_status,
+        'tempo_medio_analise': round(tempo_medio_analise, 1),
+        'ranking_analistas': ranking_analistas,
+        'motivos_reprovacao': motivos_reprovacao,
+        'leads_por_consultor': leads_por_consultor,
+        'analistas_filtro': analistas_filtro,
+        'periodo_selecionado': periodo,
+        'status_selecionado': status_filtro,
+        'classificacao_selecionada': classificacao_filtro,
+        'analista_selecionado': analista_id,
+    }
+    
+    return render(request, 'relatorios/relatorio_compliance.html', context)
 

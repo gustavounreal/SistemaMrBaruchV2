@@ -1,5 +1,6 @@
 {% extends 'base/base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}Relatório de Comissões - Mr. Baruch{% endblock %}
 
@@ -10,16 +11,16 @@
   <div class="row mb-4 align-items-center">
     <div class="col-md-8">
       <h2 class="fw-bold text-dark mb-1">
-        <i class="bi bi-trophy-fill me-2 text-warning"></i>Relatório de Comissões
+        <i class="bi bi-cash-coin me-2 text-success"></i>Relatório de Comissões
       </h2>
-      <p class="text-muted mb-0">Análise financeira detalhada de comissões</p>
+      <p class="text-muted mb-0">Análise completa de comissões: Captadores, Consultores e Atendentes</p>
     </div>
     <div class="col-md-4 text-md-end mt-3 mt-md-0">
-      <a href="{% url 'relatorios:painel_relatorios' %}" class="btn btn-outline-secondary me-2">
+      <a href="{% url 'relatorios:painel_central' %}" class="btn btn-outline-secondary me-2">
         <i class="bi bi-arrow-left"></i> Voltar
       </a>
       <a href="{% url 'relatorios:exportar_relatorio' 'comissoes' %}?{{ request.GET.urlencode }}" class="btn btn-success">
-        <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
+        <i class="bi bi-file-earmark-spreadsheet"></i> Exportar
       </a>
     </div>
   </div>
@@ -28,44 +29,54 @@
   <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
       <h5 class="card-title fw-bold mb-3">
-        <i class="bi bi-funnel-fill text-warning me-2"></i>Filtros
+        <i class="bi bi-funnel-fill text-primary me-2"></i>Filtros
       </h5>
       <form method="get" class="row g-3">
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label class="form-label fw-semibold">Período</label>
           <select name="periodo" class="form-select">
-            <option value="7" {% if periodo_selecionado == '7' %}selected{% endif %}>Últimos 7 dias</option>
-            <option value="30" {% if periodo_selecionado == '30' %}selected{% endif %}>Últimos 30 dias</option>
-            <option value="60" {% if periodo_selecionado == '60' %}selected{% endif %}>Últimos 60 dias</option>
-            <option value="90" {% if periodo_selecionado == '90' %}selected{% endif %}>Últimos 90 dias</option>
-            <option value="365" {% if periodo_selecionado == '365' %}selected{% endif %}>Último ano</option>
+            <option value="7" {% if periodo_selecionado == '7' %}selected{% endif %}>7 dias</option>
+            <option value="30" {% if periodo_selecionado == '30' %}selected{% endif %}>30 dias</option>
+            <option value="60" {% if periodo_selecionado == '60' %}selected{% endif %}>60 dias</option>
+            <option value="90" {% if periodo_selecionado == '90' %}selected{% endif %}>90 dias</option>
+            <option value="365" {% if periodo_selecionado == '365' %}selected{% endif %}>1 ano</option>
             <option value="todos" {% if periodo_selecionado == 'todos' %}selected{% endif %}>Todos</option>
           </select>
         </div>
 
-        <div class="col-md-3">
-          <label class="form-label fw-semibold">Status de Pagamento</label>
-          <select name="pago" class="form-select">
-            <option value="todos" {% if pago_selecionado == 'todos' %}selected{% endif %}>Todos</option>
-            <option value="pago" {% if pago_selecionado == 'pago' %}selected{% endif %}>Pago</option>
-            <option value="pendente" {% if pago_selecionado == 'pendente' %}selected{% endif %}>Pendente</option>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold">Status</label>
+          <select name="status" class="form-select">
+            <option value="todos" {% if status_selecionado == 'todos' %}selected{% endif %}>Todos</option>
+            <option value="paga" {% if status_selecionado == 'paga' %}selected{% endif %}>Pagas</option>
+            <option value="pendente" {% if status_selecionado == 'pendente' %}selected{% endif %}>Pendentes</option>
+            <option value="cancelada" {% if status_selecionado == 'cancelada' %}selected{% endif %}>Canceladas</option>
           </select>
         </div>
 
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Atendente</label>
-          <select name="atendente" class="form-select">
-            <option value="">Todos os atendentes</option>
-            {% for atendente in atendentes %}
-            <option value="{{ atendente.id }}" {% if atendente_selecionado == atendente.id|stringformat:"s" %}selected{% endif %}>
-              {{ atendente.get_full_name|default:atendente.username }}
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Tipo</label>
+          <select name="tipo" class="form-select">
+            <option value="todos" {% if tipo_selecionado == 'todos' %}selected{% endif %}>Todos</option>
+            <option value="CAPTADOR" {% if tipo_selecionado == 'CAPTADOR' %}selected{% endif %}>Captadores</option>
+            <option value="CONSULTOR" {% if tipo_selecionado == 'CONSULTOR' %}selected{% endif %}>Consultores</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Usuário</label>
+          <select name="usuario" class="form-select">
+            <option value="">Todos</option>
+            {% for usuario in usuarios %}
+            <option value="{{ usuario.id }}" {% if usuario_selecionado == usuario.id|stringformat:"s" %}selected{% endif %}>
+              {{ usuario.get_full_name|default:usuario.username }}
             </option>
             {% endfor %}
           </select>
         </div>
 
         <div class="col-md-2 d-flex align-items-end">
-          <button type="submit" class="btn btn-warning w-100">
+          <button type="submit" class="btn btn-primary w-100">
             <i class="bi bi-search"></i> Filtrar
           </button>
         </div>
@@ -73,14 +84,13 @@
     </div>
   </div>
 
-  <!-- Estatísticas do Período -->
+  <!-- KPIs Gerais -->
   <div class="row g-4 mb-4">
     <div class="col-xl-2 col-md-4">
-      <div class="card border-0 shadow-sm bg-warning text-white">
-        <div class="card-body">
-          <h6 class="text-white-50 mb-2 small">Total Comissões</h6>
-          <h4 class="fw-bold mb-0">{{ quantidade_total }}</h4>
-          <small class="text-white-50">R$ <span class="format-brl">{{ total_comissoes|floatformat:2 }}</span></small>
+      <div class="card border-0 shadow-sm bg-gradient" style="background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%) !important;">
+        <div class="card-body text-white">
+          <h6 class="text-white opacity-75 mb-2 small">TOTAL GERAL</h6>
+          <h4 class="fw-bold mb-0">R$ {{ total_geral|floatformat:2|intcomma }}</h4>
         </div>
       </div>
     </div>
@@ -88,109 +98,160 @@
     <div class="col-xl-2 col-md-4">
       <div class="card border-0 shadow-sm bg-success text-white">
         <div class="card-body">
-          <h6 class="text-white-50 mb-2 small">Pagas</h6>
-          <h4 class="fw-bold mb-0">{{ quantidade_pagas }}</h4>
-          <small class="text-white-50">R$ <span class="format-brl">{{ total_pagas|floatformat:2 }}</span></small>
+          <h6 class="text-white opacity-75 mb-2 small">Captadores</h6>
+          <h4 class="fw-bold mb-0">R$ {{ total_captadores|floatformat:2|intcomma }}</h4>
+          <small class="text-white opacity-75">{{ qtd_captadores }} comissões</small>
         </div>
       </div>
     </div>
 
     <div class="col-xl-2 col-md-4">
-      <div class="card border-0 shadow-sm bg-danger text-white">
-        <div class="card-body">
-          <h6 class="text-white-50 mb-2 small">Pendentes</h6>
-          <h4 class="fw-bold mb-0">{{ quantidade_pendentes }}</h4>
-          <small class="text-white-50">R$ <span class="format-brl">{{ total_pendentes|floatformat:2 }}</span></small>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6">
       <div class="card border-0 shadow-sm bg-info text-white">
         <div class="card-body">
-          <h6 class="text-white-50 mb-2 small">Ticket Médio</h6>
-          <h4 class="fw-bold mb-0">
-            {% if quantidade_total > 0 %}
-            R$ {% widthratio total_comissoes quantidade_total 1 %}
-            {% else %}
-            R$ 0,00
-            {% endif %}
-          </h4>
+          <h6 class="text-white opacity-75 mb-2 small">Consultores</h6>
+          <h4 class="fw-bold mb-0">R$ {{ total_consultores|floatformat:2|intcomma }}</h4>
+          <small class="text-white opacity-75">{{ qtd_consultores }} comissões</small>
         </div>
       </div>
     </div>
 
-    <div class="col-xl-3 col-md-6">
+    <div class="col-xl-2 col-md-4">
       <div class="card border-0 shadow-sm bg-primary text-white">
         <div class="card-body">
-          <h6 class="text-white-50 mb-2 small">Taxa Pagamento</h6>
-          <h4 class="fw-bold mb-0">
-            {% if quantidade_total > 0 %}
-            {% widthratio quantidade_pagas quantidade_total 100 %}%
-            {% else %}
-            0%
-            {% endif %}
-          </h4>
+          <h6 class="text-white opacity-75 mb-2 small">Atendentes</h6>
+          <h4 class="fw-bold mb-0">R$ {{ total_atendentes|floatformat:2|intcomma }}</h4>
+          <small class="text-white opacity-75">{{ qtd_atendentes }} comissões</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4">
+      <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);">
+        <div class="card-body text-white">
+          <h6 class="text-white opacity-75 mb-2 small">Pagas</h6>
+          <h4 class="fw-bold mb-0">R$ {{ total_geral_pagas|floatformat:2|intcomma }}</h4>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4">
+      <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%);">
+        <div class="card-body text-white">
+          <h6 class="text-white opacity-75 mb-2 small">Pendentes</h6>
+          <h4 class="fw-bold mb-0">R$ {{ total_geral_pendentes|floatformat:2|intcomma }}</h4>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Ranking de Atendentes -->
-  <div class="row mb-4">
-    <div class="col-12">
+  <!-- Tabs Independentes -->
+  <ul class="nav nav-tabs mb-4" id="comissoesTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="captadores-tab" data-bs-toggle="tab" data-bs-target="#captadores" type="button" role="tab">
+        <i class="bi bi-person-check me-2"></i>Captadores
+        <span class="badge bg-success ms-2">{{ qtd_captadores }}</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="consultores-tab" data-bs-toggle="tab" data-bs-target="#consultores" type="button" role="tab">
+        <i class="bi bi-person-badge me-2"></i>Consultores
+        <span class="badge bg-info ms-2">{{ qtd_consultores }}</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="atendentes-tab" data-bs-toggle="tab" data-bs-target="#atendentes" type="button" role="tab">
+        <i class="bi bi-people me-2"></i>Atendentes
+        <span class="badge bg-primary ms-2">{{ qtd_atendentes }}</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="rankings-tab" data-bs-toggle="tab" data-bs-target="#rankings" type="button" role="tab">
+        <i class="bi bi-trophy me-2"></i>Rankings
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content" id="comissoesTabContent">
+    
+    <!-- TAB 1: CAPTADORES -->
+    <div class="tab-pane fade show active" id="captadores" role="tabpanel">
       <div class="card border-0 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title fw-bold mb-3">
-            <i class="bi bi-star-fill text-warning me-2"></i>Ranking de Atendentes (Top 10)
+        <div class="card-header bg-white">
+          <h5 class="mb-0 fw-bold">
+            <i class="bi bi-person-check text-success me-2"></i>Comissões de Captadores
           </h5>
+        </div>
+        <div class="card-body p-0">
           <div class="table-responsive">
-            <table class="table table-hover align-middle">
+            <table class="table table-hover mb-0">
               <thead class="table-light">
                 <tr>
-                  <th>Posição</th>
-                  <th>Atendente</th>
-                  <th class="text-center">Total Comissões</th>
-                  <th class="text-center">Pagas</th>
-                  <th class="text-center">Pendentes</th>
-                  <th class="text-end">Valor Total</th>
+                  <th>Data</th>
+                  <th>Captador</th>
+                  <th>Tipo</th>
+                  <th>Venda</th>
+                  <th>Parcela</th>
+                  <th class="text-end">Percentual</th>
+                  <th class="text-end">Valor</th>
+                  <th>Status</th>
+                  <th>Pagamento</th>
                 </tr>
               </thead>
               <tbody>
-                {% for rank in ranking %}
+                {% for comissao in comissoes_captadores %}
                 <tr>
+                  <td>{{ comissao.data_calculada|date:"d/m/Y H:i" }}</td>
                   <td>
-                    <span class="badge 
-                      {% if forloop.counter == 1 %}bg-warning
-                      {% elif forloop.counter == 2 %}bg-secondary
-                      {% elif forloop.counter == 3 %}bg-danger
-                      {% else %}bg-light text-dark{% endif %} 
-                      fs-6 px-3 py-2">
-                      #{{ forloop.counter }}
+                    <strong>{{ comissao.usuario.get_full_name|default:comissao.usuario.username }}</strong>
+                  </td>
+                  <td>
+                    <span class="badge bg-success">
+                      <i class="bi bi-person-check"></i> Captador
                     </span>
+                    {% if 'ENTRADA' in comissao.tipo_comissao %}
+                      <small class="text-muted">(Entrada)</small>
+                    {% elif 'PARCELA' in comissao.tipo_comissao %}
+                      <small class="text-muted">(Parcela)</small>
+                    {% endif %}
                   </td>
                   <td>
-                    <i class="bi bi-person-circle text-primary me-2"></i>
-                    <strong>{{ rank.atendente__first_name }} {{ rank.atendente__last_name }}</strong>
+                    <a href="{% url 'vendas:detalhes_venda' comissao.venda.id %}" class="text-decoration-none">
+                      Venda #{{ comissao.venda.id }}
+                    </a>
                   </td>
-                  <td class="text-center">
-                    <span class="badge bg-info">{{ rank.quantidade }}</span>
+                  <td>
+                    {% if comissao.parcela %}
+                      Parcela #{{ comissao.parcela.numero_parcela }}
+                    {% else %}
+                      -
+                    {% endif %}
                   </td>
-                  <td class="text-center">
-                    <span class="badge bg-success">{{ rank.pagas }}</span>
+                  <td class="text-end">{{ comissao.percentual_comissao }}%</td>
+                  <td class="text-end">
+                    <strong class="text-success">R$ {{ comissao.valor_comissao|floatformat:2|intcomma }}</strong>
                   </td>
-                  <td class="text-center">
-                    <span class="badge bg-danger">{{ rank.pendentes }}</span>
+                  <td>
+                    {% if comissao.status == 'paga' %}
+                      <span class="badge bg-success">Paga</span>
+                    {% elif comissao.status == 'pendente' %}
+                      <span class="badge bg-warning">Pendente</span>
+                    {% else %}
+                      <span class="badge bg-danger">Cancelada</span>
+                    {% endif %}
                   </td>
-                  <td class="text-end fw-bold text-success">
-                    R$ {{ rank.total_valor|floatformat:2 }}
+                  <td>
+                    {% if comissao.data_pagamento %}
+                      {{ comissao.data_pagamento|date:"d/m/Y" }}
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
                   </td>
                 </tr>
                 {% empty %}
                 <tr>
-                  <td colspan="6" class="text-center text-muted py-4">
-                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                    Nenhum dado disponível no período
+                  <td colspan="9" class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                    Nenhuma comissão de captador encontrada no período
                   </td>
                 </tr>
                 {% endfor %}
@@ -198,75 +259,394 @@
             </table>
           </div>
         </div>
+        
+        <!-- Paginação Captadores -->
+        {% if comissoes_captadores.has_other_pages %}
+        <div class="card-footer bg-white">
+          <nav>
+            <ul class="pagination justify-content-center mb-0">
+              {% if comissoes_captadores.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?page_captadores=1{% for key, value in request.GET.items %}{% if key != 'page_captadores' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Primeira</a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page_captadores={{ comissoes_captadores.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page_captadores' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Anterior</a>
+                </li>
+              {% endif %}
+              
+              <li class="page-item active">
+                <span class="page-link">
+                  Página {{ comissoes_captadores.number }} de {{ comissoes_captadores.paginator.num_pages }}
+                </span>
+              </li>
+              
+              {% if comissoes_captadores.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?page_captadores={{ comissoes_captadores.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page_captadores' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Próxima</a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page_captadores={{ comissoes_captadores.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page_captadores' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Última</a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
       </div>
     </div>
-  </div>
 
-  <!-- Tabela de Comissões -->
-  <div class="card border-0 shadow-sm">
-    <div class="card-body">
-      <h5 class="card-title fw-bold mb-3">
-        <i class="bi bi-table text-warning me-2"></i>Últimas 100 Comissões
-      </h5>
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>ID</th>
-              <th>Atendente</th>
-              <th>Lead</th>
-              <th class="text-end">Valor</th>
-              <th class="text-center">Status</th>
-              <th>Data Criação</th>
-              <th>Data Pagamento</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for comissao in comissoes %}
-            <tr>
-              <td class="fw-bold">#{{ comissao.id }}</td>
-              <td>
-                <i class="bi bi-person-circle text-primary me-1"></i>
-                {{ comissao.atendente.get_full_name|default:comissao.atendente.username }}
-              </td>
-              <td>{{ comissao.lead.nome_completo }}</td>
-              <td class="text-end fw-bold text-success">
-                R$ {{ comissao.valor|floatformat:2 }}
-              </td>
-              <td class="text-center">
-                {% if comissao.pago %}
-                <span class="badge bg-success">
-                  <i class="bi bi-check-circle-fill me-1"></i>Pago
+    <!-- TAB 2: CONSULTORES -->
+    <div class="tab-pane fade" id="consultores" role="tabpanel">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white">
+          <h5 class="mb-0 fw-bold">
+            <i class="bi bi-person-badge text-info me-2"></i>Comissões de Consultores
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Data</th>
+                  <th>Consultor</th>
+                  <th>Tipo</th>
+                  <th>Venda</th>
+                  <th>Parcela</th>
+                  <th class="text-end">Percentual</th>
+                  <th class="text-end">Valor</th>
+                  <th>Status</th>
+                  <th>Pagamento</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for comissao in comissoes_consultores %}
+                <tr>
+                  <td>{{ comissao.data_calculada|date:"d/m/Y H:i" }}</td>
+                  <td>
+                    <strong>{{ comissao.usuario.get_full_name|default:comissao.usuario.username }}</strong>
+                  </td>
+                  <td>
+                    <span class="badge bg-info">
+                      <i class="bi bi-person-badge"></i> Consultor
+                    </span>
+                    {% if 'ENTRADA' in comissao.tipo_comissao %}
+                      <small class="text-muted">(Entrada)</small>
+                    {% elif 'PARCELA' in comissao.tipo_comissao %}
+                      <small class="text-muted">(Parcela)</small>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <a href="{% url 'vendas:detalhes_venda' comissao.venda.id %}" class="text-decoration-none">
+                      Venda #{{ comissao.venda.id }}
+                    </a>
+                  </td>
+                  <td>
+                    {% if comissao.parcela %}
+                      Parcela #{{ comissao.parcela.numero_parcela }}
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+                  <td class="text-end">{{ comissao.percentual_comissao }}%</td>
+                  <td class="text-end">
+                    <strong class="text-info">R$ {{ comissao.valor_comissao|floatformat:2|intcomma }}</strong>
+                  </td>
+                  <td>
+                    {% if comissao.status == 'paga' %}
+                      <span class="badge bg-success">Paga</span>
+                    {% elif comissao.status == 'pendente' %}
+                      <span class="badge bg-warning">Pendente</span>
+                    {% else %}
+                      <span class="badge bg-danger">Cancelada</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if comissao.data_pagamento %}
+                      {{ comissao.data_pagamento|date:"d/m/Y" }}
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="9" class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                    Nenhuma comissão de consultor encontrada no período
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <!-- Paginação Consultores -->
+        {% if comissoes_consultores.has_other_pages %}
+        <div class="card-footer bg-white">
+          <nav>
+            <ul class="pagination justify-content-center mb-0">
+              {% if comissoes_consultores.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?page_consultores=1{% for key, value in request.GET.items %}{% if key != 'page_consultores' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Primeira</a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page_consultores={{ comissoes_consultores.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page_consultores' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Anterior</a>
+                </li>
+              {% endif %}
+              
+              <li class="page-item active">
+                <span class="page-link">
+                  Página {{ comissoes_consultores.number }} de {{ comissoes_consultores.paginator.num_pages }}
                 </span>
-                {% else %}
-                <span class="badge bg-warning text-dark">
-                  <i class="bi bi-clock-fill me-1"></i>Pendente
-                </span>
-                {% endif %}
-              </td>
-              <td>{{ comissao.data_criacao|date:"d/m/Y H:i" }}</td>
-              <td>
-                {% if comissao.data_pagamento %}
-                <span class="text-success fw-semibold">
-                  <i class="bi bi-calendar-check"></i> {{ comissao.data_pagamento|date:"d/m/Y" }}
-                </span>
-                {% else %}
-                <span class="text-muted">-</span>
-                {% endif %}
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="7" class="text-center text-muted py-5">
-                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                <p class="mb-0">Nenhuma comissão encontrada com os filtros aplicados</p>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+              </li>
+              
+              {% if comissoes_consultores.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?page_consultores={{ comissoes_consultores.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page_consultores' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Próxima</a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page_consultores={{ comissoes_consultores.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page_consultores' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Última</a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
       </div>
     </div>
+
+    <!-- TAB 3: COMISSÕES DE ATENDENTES -->
+    <div class="tab-pane fade" id="atendentes" role="tabpanel">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white">
+          <h5 class="mb-0 fw-bold">
+            <i class="bi bi-people text-primary me-2"></i>Comissões de Atendentes
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Data</th>
+                  <th>Atendente</th>
+                  <th>Lead</th>
+                  <th class="text-end">Valor</th>
+                  <th>Status</th>
+                  <th>Observações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for comissao in comissoes_atendentes %}
+                <tr>
+                  <td>{{ comissao.data_criacao|date:"d/m/Y H:i" }}</td>
+                  <td>
+                    <strong>{{ comissao.atendente.get_full_name|default:comissao.atendente.username }}</strong>
+                  </td>
+                  <td>
+                    <strong>{{ comissao.lead.nome_completo }}</strong>
+                    <br><small class="text-muted">Lead #{{ comissao.lead.id }}</small>
+                  </td>
+                  <td class="text-end">
+                    <strong class="text-primary">R$ {{ comissao.valor|floatformat:2|intcomma }}</strong>
+                  </td>
+                  <td>
+                    {% if comissao.pago %}
+                      <span class="badge bg-success">Paga</span>
+                    {% else %}
+                      <span class="badge bg-warning">Pendente</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <small class="text-muted">{{ comissao.observacoes|truncatewords:10|default:"-" }}</small>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                    Nenhuma comissão de atendente encontrada no período
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <!-- Paginação Atendentes -->
+        {% if comissoes_atendentes.has_other_pages %}
+        <div class="card-footer bg-white">
+          <nav>
+            <ul class="pagination justify-content-center mb-0">
+              {% if comissoes_atendentes.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?page_atendentes=1{% for key, value in request.GET.items %}{% if key != 'page_atendentes' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Primeira</a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page_atendentes={{ comissoes_atendentes.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page_atendentes' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Anterior</a>
+                </li>
+              {% endif %}
+              
+              <li class="page-item active">
+                <span class="page-link">
+                  Página {{ comissoes_atendentes.number }} de {{ comissoes_atendentes.paginator.num_pages }}
+                </span>
+              </li>
+              
+              {% if comissoes_atendentes.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?page_atendentes={{ comissoes_atendentes.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page_atendentes' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Próxima</a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page_atendentes={{ comissoes_atendentes.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page_atendentes' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Última</a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- TAB 4: RANKINGS -->
+    <div class="tab-pane fade" id="rankings" role="tabpanel">
+      <div class="row g-4">
+        
+        <!-- Ranking Captadores -->
+        <div class="col-lg-4">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-success text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-trophy-fill me-2"></i>Top 10 Captadores
+              </h5>
+            </div>
+            <div class="card-body p-0">
+              <div class="list-group list-group-flush">
+                {% for item in ranking_captadores %}
+                <div class="list-group-item">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong class="d-block">
+                        {% if forloop.counter <= 3 %}
+                          {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}
+                        {% else %}
+                          {{ forloop.counter }}.
+                        {% endif %}
+                        {{ item.usuario__first_name }} {{ item.usuario__last_name }}
+                      </strong>
+                      <small class="text-muted">
+                        {{ item.quantidade }} comissões | 
+                        <span class="text-success">{{ item.pagas }} pagas</span> | 
+                        <span class="text-warning">{{ item.pendentes }} pendentes</span>
+                      </small>
+                    </div>
+                    <div class="text-end">
+                      <strong class="text-success">R$ {{ item.total_valor|floatformat:2|intcomma }}</strong>
+                    </div>
+                  </div>
+                </div>
+                {% empty %}
+                <div class="list-group-item text-center text-muted py-4">
+                  Nenhum dado disponível
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ranking Consultores -->
+        <div class="col-lg-4">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-info text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-trophy-fill me-2"></i>Top 10 Consultores
+              </h5>
+            </div>
+            <div class="card-body p-0">
+              <div class="list-group list-group-flush">
+                {% for item in ranking_consultores %}
+                <div class="list-group-item">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong class="d-block">
+                        {% if forloop.counter <= 3 %}
+                          {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}
+                        {% else %}
+                          {{ forloop.counter }}.
+                        {% endif %}
+                        {{ item.usuario__first_name }} {{ item.usuario__last_name }}
+                      </strong>
+                      <small class="text-muted">
+                        {{ item.quantidade }} comissões | 
+                        <span class="text-success">{{ item.pagas }} pagas</span> | 
+                        <span class="text-warning">{{ item.pendentes }} pendentes</span>
+                      </small>
+                    </div>
+                    <div class="text-end">
+                      <strong class="text-info">R$ {{ item.total_valor|floatformat:2|intcomma }}</strong>
+                    </div>
+                  </div>
+                </div>
+                {% empty %}
+                <div class="list-group-item text-center text-muted py-4">
+                  Nenhum dado disponível
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ranking Atendentes -->
+        <div class="col-lg-4">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-trophy-fill me-2"></i>Top 10 Atendentes
+              </h5>
+            </div>
+            <div class="card-body p-0">
+              <div class="list-group list-group-flush">
+                {% for item in ranking_atendentes %}
+                <div class="list-group-item">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong class="d-block">
+                        {% if forloop.counter <= 3 %}
+                          {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}
+                        {% else %}
+                          {{ forloop.counter }}.
+                        {% endif %}
+                        {{ item.atendente__first_name }} {{ item.atendente__last_name }}
+                      </strong>
+                      <small class="text-muted">
+                        {{ item.quantidade }} comissões | 
+                        <span class="text-success">{{ item.pagas }} pagas</span> | 
+                        <span class="text-warning">{{ item.pendentes }} pendentes</span>
+                      </small>
+                    </div>
+                    <div class="text-end">
+                      <strong class="text-primary">R$ {{ item.total_valor|floatformat:2|intcomma }}</strong>
+                    </div>
+                  </div>
+                </div>
+                {% empty %}
+                <div class="list-group-item text-center text-muted py-4">
+                  Nenhum dado disponível
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 
 </div>

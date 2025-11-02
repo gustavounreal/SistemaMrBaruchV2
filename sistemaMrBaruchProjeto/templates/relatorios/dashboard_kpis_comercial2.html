@@ -285,5 +285,32 @@ new Chart(ctxMotivos, {
     }
   }
 });
+
+// Script para formatar valores monetários no padrão brasileiro
+document.addEventListener('DOMContentLoaded', function() {
+    function formatarMoeda(valor) {
+        let numero = valor.replace('R$', '').trim();
+        numero = parseFloat(numero);
+        
+        if (isNaN(numero)) {
+            return valor;
+        }
+        
+        return 'R$ ' + numero.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+    
+    // Formata todos os valores monetários
+    const elementosMonetarios = document.querySelectorAll('.card-value, .metric-value, .valor-monetario, [data-format="currency"]');
+    
+    elementosMonetarios.forEach(function(elemento) {
+        const texto = elemento.textContent;
+        if (texto.includes('R$')) {
+            elemento.textContent = formatarMoeda(texto);
+        }
+    });
+});
 </script>
 {% endblock %}

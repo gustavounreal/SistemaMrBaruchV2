@@ -1,0 +1,764 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Relatório de Consultores - Mr. Baruch{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  
+  <!-- Cabeçalho -->
+  <div class="row mb-4 align-items-center">
+    <div class="col-md-6">
+      <h2 class="fw-bold text-dark mb-1">
+        <i class="bi bi-person-badge me-2 text-primary"></i>Relatório de Consultores
+      </h2>
+      <p class="text-muted mb-0">Performance de vendas, pré-vendas e comissões do Comercial 1</p>
+    </div>
+    <div class="col-md-6 text-md-end mt-3 mt-md-0">
+      <button class="btn btn-info me-2" type="button" data-bs-toggle="collapse" data-bs-target="#legendaStatus" aria-expanded="false" aria-controls="legendaStatus">
+        <i class="bi bi-book me-1"></i> Legenda de Status
+      </button>
+      <a href="{% url 'relatorios:painel_central' %}" class="btn btn-outline-secondary me-2">
+        <i class="bi bi-arrow-left"></i> Voltar
+      </a>
+      <a href="{% url 'relatorios:exportar_relatorio' 'consultores' %}?{{ request.GET.urlencode }}" class="btn btn-success">
+        <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
+      </a>
+    </div>
+  </div>
+
+  <!-- Legenda de Status (Colapsável) -->
+  <div class="collapse mb-4" id="legendaStatus">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title fw-bold mb-3">
+          <i class="bi bi-info-circle text-info me-2"></i>Legenda de Status de Vendas
+        </h5>
+        
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="status-legend-item">
+              <strong><span class="badge bg-secondary"><i class="bi bi-file-text"></i> ORCAMENTO</span></strong>
+              <small class="text-muted d-block mt-1">Proposta inicial criada, aguardando fechamento</small>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="status-legend-item">
+              <strong><span class="badge bg-primary"><i class="bi bi-pen"></i> CONTRATO_ASSINADO</span></strong>
+              <small class="text-muted d-block mt-1">Cliente assinou o contrato de serviço</small>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="status-legend-item">
+              <strong><span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> EM_ANDAMENTO</span></strong>
+              <small class="text-muted d-block mt-1">Serviço está sendo executado</small>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="status-legend-item">
+              <strong><span class="badge bg-success"><i class="bi bi-check-circle"></i> CONCLUIDO</span></strong>
+              <small class="text-muted d-block mt-1">Serviço finalizado com sucesso</small>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="status-legend-item">
+              <strong><span class="badge bg-danger"><i class="bi bi-x-circle"></i> CANCELADO</span></strong>
+              <small class="text-muted d-block mt-1">Venda cancelada por algum motivo</small>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="status-legend-item">
+              <strong><span class="badge bg-dark"><i class="bi bi-exclamation-triangle"></i> INADIMPLENTE</span></strong>
+              <small class="text-muted d-block mt-1">Cliente com pagamentos em atraso</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fluxo Visual de Status -->
+        <h6 class="fw-bold mb-3 text-center">Fluxo de Vendas</h6>
+        <div class="status-flow">
+          <span class="badge bg-secondary">ORÇAMENTO</span>
+          <i class="bi bi-arrow-right"></i>
+          <span class="badge bg-primary">CONTRATO_ASSINADO</span>
+          <i class="bi bi-arrow-right"></i>
+          <span class="badge bg-warning text-dark">EM_ANDAMENTO</span>
+          <i class="bi bi-arrow-right"></i>
+          <span class="badge bg-success">CONCLUÍDO</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title fw-bold mb-3">
+        <i class="bi bi-funnel-fill text-primary me-2"></i>Filtros
+      </h5>
+      <form method="get" class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Período</label>
+          <select name="periodo" class="form-select">
+            <option value="7" {% if periodo_selecionado == '7' %}selected{% endif %}>Últimos 7 dias</option>
+            <option value="15" {% if periodo_selecionado == '15' %}selected{% endif %}>Últimos 15 dias</option>
+            <option value="30" {% if periodo_selecionado == '30' %}selected{% endif %}>Últimos 30 dias</option>
+            <option value="60" {% if periodo_selecionado == '60' %}selected{% endif %}>Últimos 60 dias</option>
+            <option value="90" {% if periodo_selecionado == '90' %}selected{% endif %}>Últimos 90 dias</option>
+            <option value="todos" {% if periodo_selecionado == 'todos' %}selected{% endif %}>Todos</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Status</label>
+          <select name="status" class="form-select">
+            <option value="todos" {% if status_selecionado == 'todos' %}selected{% endif %}>Todos</option>
+            <option value="ORCAMENTO" {% if status_selecionado == 'ORCAMENTO' %}selected{% endif %}>Orçamento</option>
+            <option value="CONTRATO_ASSINADO" {% if status_selecionado == 'CONTRATO_ASSINADO' %}selected{% endif %}>Contrato Assinado</option>
+            <option value="EM_ANDAMENTO" {% if status_selecionado == 'EM_ANDAMENTO' %}selected{% endif %}>Em Andamento</option>
+            <option value="CONCLUIDO" {% if status_selecionado == 'CONCLUIDO' %}selected{% endif %}>Concluído</option>
+            <option value="CANCELADO" {% if status_selecionado == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
+            <option value="INADIMPLENTE" {% if status_selecionado == 'INADIMPLENTE' %}selected{% endif %}>Inadimplente</option>
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Consultor</label>
+          <select name="consultor" class="form-select">
+            <option value="">Todos os Consultores</option>
+            {% for consultor in consultores %}
+              <option value="{{ consultor.id }}" {% if consultor_selecionado == consultor.id|stringformat:"s" %}selected{% endif %}>
+                {{ consultor.get_full_name|default:consultor.email }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-search"></i> Filtrar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Estatísticas do Período - Vendas -->
+  <div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm bg-primary text-white">
+        <div class="card-body">
+          <h6 class="text-uppercase mb-2 opacity-75">Total de Vendas</h6>
+          <h2 class="fw-bold mb-0">{{ total_vendas }}</h2>
+          <small class="opacity-75">Vendas no período</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm bg-success text-white">
+        <div class="card-body">
+          <h6 class="text-uppercase mb-2 opacity-75">Valor Total</h6>
+          <h2 class="fw-bold mb-0">R$ {{ valor_total_vendas|floatformat:2|intcomma }}</h2>
+          <small class="opacity-75">Ticket Médio: R$ {{ valor_medio_venda|floatformat:2|intcomma }}</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm bg-warning text-dark">
+        <div class="card-body">
+          <h6 class="text-uppercase mb-2">Pré-Vendas</h6>
+          <h2 class="fw-bold mb-0">{{ total_pre_vendas }}</h2>
+          <small>Taxa de Conversão: {{ taxa_conversao }}%</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card border-0 shadow-sm bg-info text-white">
+        <div class="card-body">
+          <h6 class="text-uppercase mb-2 opacity-75">Comissões</h6>
+          <h2 class="fw-bold mb-0">R$ {{ total_comissoes|floatformat:2|intcomma }}</h2>
+          <small class="opacity-75">Pagas: R$ {{ comissoes_pagas|floatformat:2|intcomma }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estatísticas Detalhadas -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title fw-bold mb-3">
+            <i class="bi bi-graph-up text-primary me-2"></i>Distribuição por Status
+          </h5>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-primary">Contrato Assinado</span>
+                <strong>{{ vendas_contrato_assinado }}</strong>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-primary" style="width: {{ perc_contrato_assinado }}%"></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-warning text-dark">Em Andamento</span>
+                <strong>{{ vendas_em_andamento }}</strong>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-warning" style="width: {{ perc_em_andamento }}%"></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-success">Concluído</span>
+                <strong>{{ vendas_concluidas }}</strong>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-success" style="width: {{ perc_concluidas }}%"></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-danger">Cancelado</span>
+                <strong>{{ vendas_canceladas }}</strong>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-danger" style="width: {{ perc_canceladas }}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title fw-bold mb-3">
+            <i class="bi bi-clipboard-check text-success me-2"></i>Serviços Mais Vendidos
+          </h5>
+          {% if servicos_vendidos %}
+            <div class="list-group list-group-flush">
+              {% for servico in servicos_vendidos %}
+                <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong>{{ servico.servico__nome }}</strong>
+                    <small class="text-muted d-block">{{ servico.servico__tipo }}</small>
+                  </div>
+                  <div class="text-end">
+                    <span class="badge bg-primary rounded-pill">{{ servico.quantidade }}</span>
+                    <small class="text-muted d-block">R$ {{ servico.valor_total|floatformat:2|intcomma }}</small>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted text-center py-3">Nenhum serviço vendido no período</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ranking de Consultores -->
+  {% if ranking_consultores %}
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title fw-bold mb-3">
+        <i class="bi bi-trophy-fill text-warning me-2"></i>Ranking de Consultores
+      </h5>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Consultor</th>
+              <th class="text-center">Vendas</th>
+              <th class="text-center">Pré-Vendas</th>
+              <th class="text-center">Convertidas</th>
+              <th class="text-end">Valor Total</th>
+              <th class="text-end">Ticket Médio</th>
+              <th class="text-end">Comissões</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for consultor in ranking_consultores %}
+              <tr>
+                <td><strong>{{ forloop.counter }}°</strong></td>
+                <td>
+                  <i class="bi bi-person-circle text-primary me-2"></i>
+                  {{ consultor.nome }}
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-primary">{{ consultor.total_vendas }}</span>
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-info">{{ consultor.total_pre_vendas }}</span>
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-success">{{ consultor.pre_vendas_convertidas }}</span>
+                </td>
+                <td class="text-end fw-bold">
+                  R$ {{ consultor.valor_total_vendas|floatformat:2|intcomma }}
+                </td>
+                <td class="text-end">
+                  R$ {{ consultor.ticket_medio|floatformat:2|intcomma }}
+                </td>
+                <td class="text-end">
+                  <span class="text-success fw-bold">R$ {{ consultor.total_comissoes|floatformat:2|intcomma }}</span>
+                  <small class="d-block text-muted">Pagas: R$ {{ consultor.comissoes_pagas|floatformat:2|intcomma }}</small>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Tabela de Vendas -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="card-title fw-bold mb-0">
+          <i class="bi bi-table text-primary me-2"></i>Detalhamento de Vendas
+        </h5>
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#legendaServicos" aria-expanded="false">
+            <i class="bi bi-info-circle me-1"></i> Legenda de Serviços
+          </button>
+          <label class="small mb-0 me-2">Itens por página:</label>
+          <select class="form-select form-select-sm" id="itemsPerPage" style="width: auto;">
+            <option value="10">10</option>
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Legenda de Serviços (Colapsável) -->
+      <div class="collapse mb-3" id="legendaServicos">
+        <div class="card card-body bg-light border-info">
+          <h6 class="fw-bold mb-2"><i class="bi bi-bookmark-fill text-info me-2"></i>Legenda de Serviços:</h6>
+          <div class="row g-2">
+            <div class="col-md-4">
+              <span class="badge bg-info text-white me-2">#1</span>
+              <small>Limpa Nome</small>
+            </div>
+            <div class="col-md-4">
+              <span class="badge bg-info text-white me-2">#2</span>
+              <small>Retirada de Travas</small>
+            </div>
+            <div class="col-md-4">
+              <span class="badge bg-info text-white me-2">#3</span>
+              <small>Recuperação de Score</small>
+            </div>
+            <div class="col-md-4">
+              <span class="badge bg-info text-white me-2">#4</span>
+              <small>Serviço Combinado</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="table-responsive">
+        <table class="table table-hover align-middle" id="vendasTable">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Data</th>
+              <th>Cliente</th>
+              <th>Consultor</th>
+              <th class="text-center" title="Ver legenda de serviços">Serv.</th>
+              <th class="text-end">Entrada</th>
+              <th class="text-end">Valor Total</th>
+              <th>Status</th>
+              <th class="text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for venda in vendas %}
+              <tr class="venda-row">
+                <td><strong>#{{ venda.id }}</strong></td>
+                <td>{{ venda.data_venda|date:"d/m/Y" }}</td>
+                <td>
+                  <i class="bi bi-person-fill text-primary me-1"></i>
+                  {{ venda.cliente.nome }}
+                </td>
+                <td>
+                  <small class="text-muted">
+                    {{ venda.consultor.get_full_name|default:venda.consultor.email }}
+                  </small>
+                </td>
+                <td class="text-center">
+                  {% if venda.servico.tipo == 'LIMPA_NOME' %}
+                    <span class="badge bg-info text-white" title="Limpa Nome">#1</span>
+                  {% elif venda.servico.tipo == 'RETIRADA_TRAVAS' %}
+                    <span class="badge bg-info text-white" title="Retirada de Travas">#2</span>
+                  {% elif venda.servico.tipo == 'RECUPERACAO_SCORE' %}
+                    <span class="badge bg-info text-white" title="Recuperação de Score">#3</span>
+                  {% elif venda.servico.tipo == 'COMBINADO' %}
+                    <span class="badge bg-info text-white" title="Serviço Combinado">#4</span>
+                  {% else %}
+                    <span class="badge bg-secondary text-white" title="{{ venda.servico.nome }}">N/A</span>
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  R$ {{ venda.valor_entrada|floatformat:2|intcomma }}
+                </td>
+                <td class="text-end fw-bold">
+                  R$ {{ venda.valor_total|floatformat:2|intcomma }}
+                </td>
+                <td>
+                  {% if venda.status == 'ORCAMENTO' %}
+                    <span class="badge bg-secondary"><i class="bi bi-file-text"></i> Orçamento</span>
+                  {% elif venda.status == 'CONTRATO_ASSINADO' %}
+                    <span class="badge bg-primary"><i class="bi bi-pen"></i> Contrato Assinado</span>
+                  {% elif venda.status == 'EM_ANDAMENTO' %}
+                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Em Andamento</span>
+                  {% elif venda.status == 'CONCLUIDO' %}
+                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Concluído</span>
+                  {% elif venda.status == 'CANCELADO' %}
+                    <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Cancelado</span>
+                  {% elif venda.status == 'INADIMPLENTE' %}
+                    <span class="badge bg-dark"><i class="bi bi-exclamation-triangle"></i> Inadimplente</span>
+                  {% else %}
+                    <span class="badge bg-light text-dark">{{ venda.status }}</span>
+                  {% endif %}
+                </td>
+                <td class="text-center">
+                  <a href="{% url 'vendas:detalhes_venda' venda.id %}" class="btn btn-sm btn-outline-primary" title="Ver Detalhes">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="9" class="text-center text-muted py-4">
+                  <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                  Nenhuma venda encontrada no período selecionado
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Paginação -->
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="text-muted" id="paginationInfo">
+          Mostrando <strong id="showingStart">1</strong> a <strong id="showingEnd">25</strong> de <strong id="totalItems">{{ total_vendas }}</strong> vendas
+        </div>
+        <nav aria-label="Navegação de página">
+          <ul class="pagination mb-0" id="pagination">
+            <!-- Gerado dinamicamente por JavaScript -->
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% block extra_js %}
+
+<style>
+  /* Estilos da Legenda de Status */
+  .status-legend-item {
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    height: 100%;
+    transition: all 0.3s ease;
+  }
+  
+  .status-legend-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #0d6efd;
+  }
+  
+  .status-legend-item strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #212529;
+    font-size: 0.9rem;
+  }
+  
+  .status-legend-item .badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+    white-space: nowrap;
+  }
+  
+  /* Fluxo de Status */
+  .status-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    border: 2px dashed #dee2e6;
+  }
+  
+  .status-flow .badge {
+    font-size: 0.8rem;
+    padding: 0.5em 0.8em;
+    animation: pulse 2s infinite;
+  }
+  
+  .status-flow .bi-arrow-right {
+    color: #6c757d;
+    font-size: 1.2rem;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+  
+  /* Animação do collapse */
+  #legendaStatus, #legendaServicos {
+    animation: fadeIn 0.3s ease;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Legenda de Serviços */
+  #legendaServicos .badge {
+    font-size: 0.9rem;
+    padding: 0.4em 0.7em;
+    font-weight: 600;
+  }
+  
+  /* Badge de serviço na tabela */
+  .venda-row .badge[title] {
+    cursor: help;
+    transition: all 0.2s ease;
+  }
+  
+  .venda-row .badge[title]:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(13, 202, 240, 0.4);
+  }
+  
+  .pagination .page-link {
+    color: #0d6efd;
+    border: 1px solid #dee2e6;
+    padding: 0.5rem 0.75rem;
+    margin: 0 2px;
+    border-radius: 0.375rem;
+    transition: all 0.3s ease;
+  }
+  
+  .pagination .page-link:hover {
+    background-color: #0d6efd;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(13, 110, 253, 0.3);
+  }
+  
+  .pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+    font-weight: 600;
+  }
+  
+  .pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #dee2e6;
+  }
+  
+  .venda-row {
+    transition: all 0.2s ease;
+  }
+  
+  .venda-row:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+</style>
+
+<script>
+  // Sistema de Paginação
+  document.addEventListener('DOMContentLoaded', function() {
+      let currentPage = 1;
+      let itemsPerPage = 25;
+      let allRows = [];
+      
+      function initPagination() {
+          allRows = Array.from(document.querySelectorAll('.venda-row'));
+          
+          if (allRows.length === 0) {
+              document.getElementById('paginationInfo').style.display = 'none';
+              document.getElementById('pagination').style.display = 'none';
+              return;
+          }
+          
+          updatePagination();
+      }
+      
+      function updatePagination() {
+          const totalItems = allRows.length;
+          const totalPages = Math.ceil(totalItems / itemsPerPage);
+          
+          // Atualiza informações
+          const start = (currentPage - 1) * itemsPerPage + 1;
+          const end = Math.min(currentPage * itemsPerPage, totalItems);
+          
+          document.getElementById('showingStart').textContent = start;
+          document.getElementById('showingEnd').textContent = end;
+          document.getElementById('totalItems').textContent = totalItems;
+          
+          // Mostra/oculta linhas
+          allRows.forEach((row, index) => {
+              const shouldShow = index >= (currentPage - 1) * itemsPerPage && 
+                                index < currentPage * itemsPerPage;
+              row.style.display = shouldShow ? '' : 'none';
+          });
+          
+          // Gera botões de paginação
+          renderPagination(totalPages);
+      }
+      
+      function renderPagination(totalPages) {
+          const pagination = document.getElementById('pagination');
+          pagination.innerHTML = '';
+          
+          if (totalPages <= 1) {
+              pagination.style.display = 'none';
+              return;
+          }
+          
+          pagination.style.display = 'flex';
+          
+          // Botão Anterior
+          const prevLi = document.createElement('li');
+          prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+          prevLi.innerHTML = `<a class="page-link" href="#" aria-label="Anterior">
+              <i class="bi bi-chevron-left"></i>
+          </a>`;
+          if (currentPage !== 1) {
+              prevLi.querySelector('a').onclick = (e) => {
+                  e.preventDefault();
+                  currentPage--;
+                  updatePagination();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+              };
+          }
+          pagination.appendChild(prevLi);
+          
+          // Páginas
+          const maxVisible = 5;
+          let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+          let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+          
+          if (endPage - startPage < maxVisible - 1) {
+              startPage = Math.max(1, endPage - maxVisible + 1);
+          }
+          
+          // Primeira página
+          if (startPage > 1) {
+              const li = createPageButton(1);
+              pagination.appendChild(li);
+              
+              if (startPage > 2) {
+                  const ellipsisLi = document.createElement('li');
+                  ellipsisLi.className = 'page-item disabled';
+                  ellipsisLi.innerHTML = '<span class="page-link">...</span>';
+                  pagination.appendChild(ellipsisLi);
+              }
+          }
+          
+          // Páginas visíveis
+          for (let i = startPage; i <= endPage; i++) {
+              const li = createPageButton(i);
+              pagination.appendChild(li);
+          }
+          
+          // Última página
+          if (endPage < totalPages) {
+              if (endPage < totalPages - 1) {
+                  const ellipsisLi = document.createElement('li');
+                  ellipsisLi.className = 'page-item disabled';
+                  ellipsisLi.innerHTML = '<span class="page-link">...</span>';
+                  pagination.appendChild(ellipsisLi);
+              }
+              
+              const li = createPageButton(totalPages);
+              pagination.appendChild(li);
+          }
+          
+          // Botão Próximo
+          const nextLi = document.createElement('li');
+          nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+          nextLi.innerHTML = `<a class="page-link" href="#" aria-label="Próximo">
+              <i class="bi bi-chevron-right"></i>
+          </a>`;
+          if (currentPage !== totalPages) {
+              nextLi.querySelector('a').onclick = (e) => {
+                  e.preventDefault();
+                  currentPage++;
+                  updatePagination();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+              };
+          }
+          pagination.appendChild(nextLi);
+      }
+      
+      function createPageButton(pageNum) {
+          const li = document.createElement('li');
+          li.className = `page-item ${currentPage === pageNum ? 'active' : ''}`;
+          li.innerHTML = `<a class="page-link" href="#">${pageNum}</a>`;
+          
+          li.querySelector('a').onclick = (e) => {
+              e.preventDefault();
+              currentPage = pageNum;
+              updatePagination();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+          };
+          
+          return li;
+      }
+      
+      // Event listener para mudança de items por página
+      document.getElementById('itemsPerPage').addEventListener('change', function() {
+          itemsPerPage = parseInt(this.value);
+          currentPage = 1;
+          updatePagination();
+      });
+      
+      // Inicializa paginação
+      initPagination();
+  });
+</script>
+{% endblock %}
+{% endblock %}
