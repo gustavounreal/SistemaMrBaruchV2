@@ -17,8 +17,10 @@ urlpatterns = [
     # APIs
     path('api/analisar/<int:analise_id>/', views.analisar_lead, name='analisar_lead'),
     path('api/atribuir/<int:analise_id>/', views.atribuir_consultor, name='atribuir_consultor'),
+    path('api/desatribuir/<int:analise_id>/', views.desatribuir_consultor, name='desatribuir_consultor'),
+    path('api/desreprovar/<int:analise_id>/', views.desreprovar_lead, name='desreprovar_lead'),
     
-    # Gestão Pós-Venda (Sistema Antigo - manter por compatibilidade)
+    # Gestão Pós-Venda (Sistema Antigo - ATENÇÃO GALERA DO MR BARUCH - por compatibilidade)
     path('gestao-pos-venda/', views.gestao_pos_venda_lista, name='gestao_pos_venda_lista'),
     path('gestao-pos-venda/<int:gestao_id>/', views.gestao_pos_venda_detalhes, name='gestao_pos_venda_detalhes'),
     path('api/gestao-pos-venda/<int:gestao_id>/acao/', views.acao_pos_venda, name='acao_pos_venda'),

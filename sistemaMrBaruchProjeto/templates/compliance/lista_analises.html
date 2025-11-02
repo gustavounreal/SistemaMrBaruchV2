@@ -5,6 +5,85 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<style>
+    /* FORÇAR largura máxima do container - sobrescrever base.html */
+    body .container-fluid,
+    .container-fluid {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+    
+    /* Expandir área de conteúdo principal */
+    .compliance-header,
+    .compliance-filters,
+    .compliance-table-card {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    
+    /* Ajustar largura do card da tabela */
+    .compliance-table-card {
+        overflow-x: auto !important;
+        margin: 0 !important;
+        padding: 1rem !important;
+    }
+    
+    /* Expandir coluna de ações para comportar os botões completamente */
+    .compliance-table thead th:nth-child(7),
+    .compliance-table tbody td:nth-child(7) {
+        min-width: 160px;
+        width: 160px;
+        text-align: center;
+        vertical-align: middle;
+        padding: 0.75rem 0.5rem;
+    }
+    
+    /* Organizar botões verticalmente */
+    .compliance-table tbody td:nth-child(7) .btn {
+        display: block;
+        width: 100%;
+        margin-bottom: 0.4rem;
+        white-space: nowrap;
+    }
+    
+    .compliance-table tbody td:nth-child(7) .btn:last-child {
+        margin-bottom: 0;
+    }
+    
+    /* Ajustar tamanho dos botões */
+    .compliance-table .btn-sm {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.75rem;
+        white-space: nowrap;
+    }
+    
+    /* Tornar tabela responsiva */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0;
+    }
+    
+    /* Ajustar largura da tabela */
+    .compliance-table {
+        min-width: 1200px;
+        width: 100%;
+        table-layout: fixed;
+    }
+    
+    /* Ajustar larguras das colunas  */
+    .compliance-table thead th:nth-child(1) { width: 60px; }   /* ID */
+    .compliance-table thead th:nth-child(2) { width: 220px; }  /* Lead */
+    .compliance-table thead th:nth-child(3) { width: 150px; }  /* CPF/CNPJ */
+    .compliance-table thead th:nth-child(4) { width: 180px; }  /* Status */
+    .compliance-table thead th:nth-child(5) { width: 200px; }  /* Classificação */
+    .compliance-table thead th:nth-child(6) { width: 150px; }  /* Consultor */
+    .compliance-table thead th:nth-child(7) { width: 160px; }  /* Ações */
+    .compliance-table thead th:nth-child(8) { width: 140px; }  /* Data Criação */
+</style>
 {% endblock %}
 
 {% block content %}
@@ -57,7 +136,10 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="mb-0">
                 <i class="bi bi-table"></i> 
-                Análises encontradas: <span class="badge bg-primary">{{ analises.count }}</span>
+                Análises encontradas: <span class="badge bg-primary">{{ total_analises }}</span>
+                {% if analises.has_other_pages %}
+                <small class="text-muted ms-2">(Mostrando {{ analises.start_index }} a {{ analises.end_index }})</small>
+                {% endif %}
             </h5>
                 <a href="{% url 'compliance:painel' %}" class="btn btn-outline-secondary btn-back">
                 <i class="bi bi-arrow-left"></i> Voltar ao Painel
@@ -72,28 +154,22 @@
                         <th>ID</th>
                         <th>Lead</th>
                         <th>CPF/CNPJ</th>
-                        <th>Telefone</th>
                         <th>Status</th>
                         <th>Classificação</th>
                         <th>Consultor</th>
-                        <th>Analista</th>
-                        <th>Data Criação</th>
                         <th>Ações</th>
+                        <th>Data Criação</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for analise in analises %}
-                    <tr data-href="{% url 'compliance:detalhes_lead' analise.lead.id %}" onclick="window.location.href=this.dataset.href">
+                    <tr>
                         <td><strong>#{{ analise.id }}</strong></td>
                         <td>
                             <i class="bi bi-person-circle"></i> 
                             {{ analise.lead.nome_completo|truncatechars:30 }}
                         </td>
                         <td>{{ analise.lead.cpf_cnpj }}</td>
-                        <td>
-                            <i class="bi bi-telephone"></i> 
-                            {{ analise.lead.telefone }}
-                        </td>
                         <td>
                             <span class="badge badge-{{ analise.status }}">
                                 {{ analise.get_status_display }}
@@ -117,27 +193,80 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if analise.analista_responsavel %}
-                                {{ analise.analista_responsavel.username }}
-                            {% else %}
-                                <span class="text-muted">-</span>
+                            <a href="{% url 'compliance:detalhes_lead' analise.lead.id %}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> Ver
+                            </a>
+                            {% if is_admin %}
+                                {% if analise.consultor_atribuido %}
+                                <button class="btn btn-sm btn-outline-danger" 
+                                        onclick="desatribuirConsultor({{ analise.id }}, '{{ analise.lead.nome_completo|escapejs }}')">
+                                    <i class="bi bi-x-circle"></i> Desatribuir
+                                </button>
+                                {% endif %}
+                                {% if analise.status == 'REPROVADO' %}
+                                <button class="btn btn-sm btn-outline-warning" 
+                                        onclick="desreprovarLead({{ analise.id }}, '{{ analise.lead.nome_completo|escapejs }}')">
+                                    <i class="bi bi-arrow-counterclockwise"></i> Desreprovar
+                                </button>
+                                {% endif %}
                             {% endif %}
                         </td>
                         <td>
                             <small>{{ analise.data_criacao|date:"d/m/Y H:i" }}</small>
-                        </td>
-                        <td>
-                            <a href="{% url 'compliance:detalhes_lead' analise.lead.id %}" 
-                               class="btn btn-sm btn-outline-primary"
-                               onclick="event.stopPropagation();">
-                                <i class="bi bi-eye"></i> Ver
-                            </a>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+        
+        <!-- Paginação -->
+        {% if analises.has_other_pages %}
+        <nav aria-label="Navegação de página" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if analises.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if classificacao_filtro %}&classificacao={{ classificacao_filtro }}{% endif %}{% if busca %}&busca={{ busca }}{% endif %}" aria-label="Primeira">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ analises.previous_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if classificacao_filtro %}&classificacao={{ classificacao_filtro }}{% endif %}{% if busca %}&busca={{ busca }}{% endif %}" aria-label="Anterior">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in analises.paginator.page_range %}
+                    {% if analises.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > analises.number|add:'-3' and num < analises.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if classificacao_filtro %}&classificacao={{ classificacao_filtro }}{% endif %}{% if busca %}&busca={{ busca }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if analises.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ analises.next_page_number }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if classificacao_filtro %}&classificacao={{ classificacao_filtro }}{% endif %}{% if busca %}&busca={{ busca }}{% endif %}" aria-label="Próxima">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ analises.paginator.num_pages }}{% if status_filtro %}&status={{ status_filtro }}{% endif %}{% if classificacao_filtro %}&classificacao={{ classificacao_filtro }}{% endif %}{% if busca %}&busca={{ busca }}{% endif %}" aria-label="Última">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+            <div class="text-center text-muted">
+                <small>Página {{ analises.number }} de {{ analises.paginator.num_pages }} | Total: {{ total_analises }} análise(s)</small>
+            </div>
+        </nav>
+        {% endif %}
+        
         {% else %}
         <div class="empty-analyses">
             <i class="bi bi-info-circle"></i>
@@ -157,5 +286,77 @@
             this.form.submit();
         });
     });
+
+    // Função para desatribuir consultor
+    function desatribuirConsultor(analiseId, leadNome) {
+        if (!confirm(`Tem certeza que deseja desatribuir o consultor do lead "${leadNome}"?`)) {
+            return;
+        }
+
+        fetch(`/compliance/api/desatribuir/${analiseId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao desatribuir consultor');
+        });
+    }
+
+    // Função para desreprovar lead (reverter reprovação)
+    function desreprovarLead(analiseId, leadNome) {
+        if (!confirm(`Tem certeza que deseja reverter a reprovação do lead "${leadNome}"?\n\nO lead voltará para o status AGUARDANDO.`)) {
+            return;
+        }
+
+        fetch(`/compliance/api/desreprovar/${analiseId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao reverter reprovação');
+        });
+    }
+
+    // Função para obter o CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 </script>
 {% endblock %}

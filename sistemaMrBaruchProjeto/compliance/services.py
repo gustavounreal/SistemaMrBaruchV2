@@ -239,13 +239,24 @@ class ConsultorAtribuicaoService:
         
         Returns:
             QuerySet: Consultores com contagem de leads ativos
+            
+        Leads ativos = Leads atribuídos que ainda NÃO viraram venda
         """
+        from vendas.models import Venda
+        
+        # Buscar IDs de leads que já têm venda cadastrada
+        leads_com_venda = Venda.objects.filter(
+            consultor__isnull=False
+        ).values_list('cliente__lead_id', flat=True)
+        
         return User.objects.filter(
             groups__name='comercial1',  # Atualizado de 'consultor' para 'comercial1'
             is_active=True
         ).annotate(
             leads_ativos=Count('leads_compliance_atribuidos', filter=Q(
                 leads_compliance_atribuidos__status=StatusAnaliseCompliance.ATRIBUIDO
+            ) & ~Q(
+                leads_compliance_atribuidos__lead_id__in=leads_com_venda
             ))
         ).order_by('leads_ativos')
     

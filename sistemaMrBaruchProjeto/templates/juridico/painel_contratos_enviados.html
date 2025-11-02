@@ -5,19 +5,7 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <!-- Debug Info (remover em produção) -->
-    {% if debug %}
-    <div class="alert alert-info">
-        <strong>DEBUG:</strong> 
-        Total contratos enviados: {{ total_contratos|default:contratos_enviados.count }}
-        {% if contratos_enviados %}
-            <br>Contratos: 
-            {% for c in contratos_enviados %}
-                {{ c.numero_contrato }}{% if not forloop.last %}, {% endif %}
-            {% endfor %}
-        {% endif %}
-    </div>
-    {% endif %}
+    
     
     <div class="row mb-4">
         <div class="col-12">
@@ -197,9 +185,9 @@
                         <li>O tempo com cliente é contado automaticamente desde o envio</li>
                         <li>Ao clicar em <span class="badge bg-success">Assinado</span>, o sistema:
                             <ul>
-                                <li>✅ Marca o contrato como assinado</li>
-                                <li>✅ Envia automaticamente todas as parcelas para o ASAAS</li>
-                                <li>✅ Gera os boletos/PIX para cobrança</li>
+                                <li>Marca o contrato como assinado</li>
+                                <li>Envia automaticamente todas as parcelas para o ASAAS</li>
+                                <li>Gera os boletos/PIX para cobrança</li>
                             </ul>
                         </li>
                         <li>Cores indicam urgência: 

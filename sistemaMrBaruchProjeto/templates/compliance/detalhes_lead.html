@@ -234,11 +234,28 @@
                         <select class="form-select" id="consultor_id" required>
                             <option value="">Selecione...</option>
                             {% for consultor in consultores %}
-                            <option value="{{ consultor.id }}">
+                            <option value="{{ consultor.id }}" 
+                                    data-leads="{{ consultor.leads_ativos }}"
+                                    {% if consultor.leads_ativos >= 15 %}
+                                    style="background-color: #ffcccc; font-weight: bold;"
+                                    {% elif consultor.leads_ativos >= 10 %}
+                                    style="background-color: #fff3cd; font-weight: bold;"
+                                    {% else %}
+                                    style="background-color: #d4edda;"
+                                    {% endif %}>
                                 {{ consultor.username }} - {{ consultor.leads_ativos }} lead(s) ativo(s)
+                                {% if consultor.leads_ativos >= 15 %}{% elif consultor.leads_ativos >= 10 %}{% else %}{% endif %}
                             </option>
                             {% endfor %}
                         </select>
+                        <small class="form-text text-muted mt-2 d-block">
+                            <strong>Legenda de Leads Ativos:</strong><br>
+                            <span class="badge bg-success me-1">Menos de 10</span>
+                            <span class="badge bg-warning me-1">10 a 14</span>
+                            <span class="badge bg-danger">15 ou mais</span>
+                            <br>
+                            <em style="font-size: 0.85em;">* Leads ativos = leads atribuídos ao consultor sem venda cadastrada</em>
+                        </small>
                     </div>
                     <button type="button" class="btn btn-primary" onclick="atribuirConsultor()">
                         <i class="bi bi-arrow-right-circle"></i> Atribuir Lead

@@ -80,13 +80,23 @@ def lista_analises(request):
         busca=busca or None
     )
     
+    # Verificar se o usuário é admin
+    is_admin = request.user.is_superuser or request.user.groups.filter(name='admin').exists()
+    
+    # Paginação
+    paginator = Paginator(analises, 10)  # 10 análises por página
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
     context = {
-        'analises': analises,
+        'analises': page_obj,
         'status_choices': StatusAnaliseCompliance.choices,
         'classificacao_choices': ClassificacaoLead.choices,
         'status_filtro': status_filtro,
         'classificacao_filtro': classificacao_filtro,
         'busca': busca,
+        'is_admin': is_admin,
+        'total_analises': paginator.count,
     }
     
     return render(request, 'compliance/lista_analises.html', context)
@@ -228,6 +238,87 @@ def atribuir_consultor(request, analise_id):
         return JsonResponse({
             'success': True,
             'message': f'Lead atribuído ao consultor {consultor.get_full_name() or consultor.username}'
+        })
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='admin').exists())
+def desatribuir_consultor(request, analise_id):
+    """API para desatribuir lead de um consultor (apenas admin)"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método não permitido'}, status=405)
+    
+    try:
+        analise = get_object_or_404(AnaliseCompliance, id=analise_id)
+        
+        if not analise.consultor_atribuido:
+            return JsonResponse({'success': False, 'message': 'Lead não está atribuído a nenhum consultor'}, status=400)
+        
+        # Salvar nome do consultor antes de desatribuir
+        consultor_nome = analise.consultor_atribuido.get_full_name() or analise.consultor_atribuido.username
+        
+        # Desatribuir consultor
+        analise.consultor_atribuido = None
+        analise.data_atribuicao = None
+        
+        # Voltar status para APROVADO (pronto para nova atribuição)
+        analise.status = StatusAnaliseCompliance.APROVADO
+        analise.save()
+        
+        # Registrar no histórico
+        HistoricoAnaliseCompliance.objects.create(
+            analise=analise,
+            usuario=request.user,
+            acao='DESATRIBUICAO',
+            descricao=f'Lead desatribuído do consultor {consultor_nome}'
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Lead desatribuído do consultor {consultor_nome} com sucesso'
+        })
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='admin').exists())
+def desreprovar_lead(request, analise_id):
+    """API para reverter reprovação de lead (voltar para AGUARDANDO) - Apenas admin"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método não permitido'}, status=405)
+    
+    try:
+        analise = get_object_or_404(AnaliseCompliance, id=analise_id)
+        
+        # Verificar se o lead está reprovado
+        if analise.status != StatusAnaliseCompliance.REPROVADO:
+            return JsonResponse({'success': False, 'message': 'Lead não está reprovado'}, status=400)
+        
+        # Salvar motivo anterior da reprovação
+        motivo_anterior = analise.motivo_reprovacao or 'Não especificado'
+        
+        # Reverter para AGUARDANDO
+        analise.status = StatusAnaliseCompliance.AGUARDANDO
+        analise.motivo_reprovacao = ''  # String vazia ao invés de None
+        analise.data_reprovacao = None
+        analise.save()
+        
+        # Registrar no histórico
+        HistoricoAnaliseCompliance.objects.create(
+            analise=analise,
+            usuario=request.user,
+            acao='REVERSAO_REPROVACAO',
+            descricao=f'Reprovação revertida. Motivo anterior: {motivo_anterior}'
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Reprovação revertida com sucesso. Lead voltou para status AGUARDANDO.'
         })
     
     except Exception as e:
