@@ -1,11 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Q, Count
-from django.http import Http404
+from django.http import Http404, JsonResponse
+from django.contrib import messages
+from django.views.decorators.http import require_POST
 from datetime import date
 from vendas.models import Venda
 from financeiro.models import Parcela
-from .models import LinkCurto, ClickLinkCurto
+from .models import LinkCurto, ClickLinkCurto, MaterialDivulgacao
+from accounts.models import DadosUsuario
 from core.services import ConfiguracaoService
 
 
@@ -15,6 +18,9 @@ def area_captador(request):
     Área do captador - Dashboard com estatísticas, boletos e materiais
     """
     captador = request.user
+    
+    # Garantir que DadosUsuario existe
+    dados_usuario, created = DadosUsuario.objects.get_or_create(user=captador)
     
     # Obter configurações do sistema
     whatsapp_numero = ConfiguracaoService.obter_config('CAPTADOR_WHATSAPP_NUMERO', '5511978891213')
@@ -121,33 +127,11 @@ def area_captador(request):
     link_curto_url = link_curto.get_url_curta(request)
     whatsapp_link = link_curto.url_completa  # Link completo para caso precisem ver
     
-    # Materiais de marketing do Google Drive
-    media_files = [
-        {"name": "Imagem 1", "thumbnail_url": "https://drive.google.com/thumbnail?id=1716U_7jTPofWLpwuJmaByH2VwijVunNH", "download_url": "https://drive.google.com/uc?export=download&id=1716U_7jTPofWLpwuJmaByH2VwijVunNH"},
-        {"name": "Imagem 2", "thumbnail_url": "https://drive.google.com/thumbnail?id=1750e8o-1hBc1SU2ZOET77oxhsbTFTqyL", "download_url": "https://drive.google.com/uc?export=download&id=1750e8o-1hBc1SU2ZOET77oxhsbTFTqyL"},
-        {"name": "Imagem 3", "thumbnail_url": "https://drive.google.com/thumbnail?id=176LkvMMo_Ca6e4_I9i5hN-AOPyteT3M7", "download_url": "https://drive.google.com/uc?export=download&id=176LkvMMo_Ca6e4_I9i5hN-AOPyteT3M7"},
-        {"name": "Imagem 4", "thumbnail_url": "https://drive.google.com/thumbnail?id=16wPB7L6qQFd96blB5vuDnjbgne7x9AhL", "download_url": "https://drive.google.com/uc?export=download&id=16wPB7L6qQFd96blB5vuDnjbgne7x9AhL"},
-        {"name": "Imagem 5", "thumbnail_url": "https://drive.google.com/thumbnail?id=16gTLY7Ig6WTagG0ilbVnpAaDEmf7WUaQ", "download_url": "https://drive.google.com/uc?export=download&id=16gTLY7Ig6WTagG0ilbVnpAaDEmf7WUaQ"},
-        {"name": "Imagem 6", "thumbnail_url": "https://drive.google.com/thumbnail?id=16lDZO2FzzOfxBPVQ1ot0nNj-PiVIFT42", "download_url": "https://drive.google.com/uc?export=download&id=16lDZO2FzzOfxBPVQ1ot0nNj-PiVIFT42"},
-        {"name": "Imagem 7", "thumbnail_url": "https://drive.google.com/thumbnail?id=16RSvRT0jPl9PIwgEzJWxS57Mp3OPJwW6", "download_url": "https://drive.google.com/uc?export=download&id=16RSvRT0jPl9PIwgEzJWxS57Mp3OPJwW6"},
-        {"name": "Imagem 8", "thumbnail_url": "https://drive.google.com/thumbnail?id=16YIn8FcWHAcGS-H_FKP-b04BROwyyO4l", "download_url": "https://drive.google.com/uc?export=download&id=16YIn8FcWHAcGS-H_FKP-b04BROwyyO4l"},
-        {"name": "Imagem 9", "thumbnail_url": "https://drive.google.com/thumbnail?id=16OAbINiyA50JFpiCDQRFECNT1N7tIGqH", "download_url": "https://drive.google.com/uc?export=download&id=16OAbINiyA50JFpiCDQRFECNT1N7tIGqH"},
-        {"name": "Imagem 10", "thumbnail_url": "https://drive.google.com/thumbnail?id=169kVDn6au-iD9jg61mk0O96CitvTEPJM", "download_url": "https://drive.google.com/uc?export=download&id=169kVDn6au-iD9jg61mk0O96CitvTEPJM"},
-        {"name": "Imagem 11", "thumbnail_url": "https://drive.google.com/thumbnail?id=16CK84F3LWT92iVoZhwaqobwnFdnt-eag", "download_url": "https://drive.google.com/uc?export=download&id=16CK84F3LWT92iVoZhwaqobwnFdnt-eag"},
-        {"name": "Imagem 12", "thumbnail_url": "https://drive.google.com/thumbnail?id=163pywOk7kZk7w5-1QNtRlQWvPoj8bxyU", "download_url": "https://drive.google.com/uc?export=download&id=163pywOk7kZk7w5-1QNtRlQWvPoj8bxyU"},
-        {"name": "Imagem 13", "thumbnail_url": "https://drive.google.com/thumbnail?id=167qtWNzJeZe13wcCyxsCNWvtVg_eOw5B", "download_url": "https://drive.google.com/uc?export=download&id=167qtWNzJeZe13wcCyxsCNWvtVg_eOw5B"},
-        {"name": "Imagem 14", "thumbnail_url": "https://drive.google.com/thumbnail?id=168HGZAF5189eYaoNmNFgb0V9QwZy-CTB", "download_url": "https://drive.google.com/uc?export=download&id=168HGZAF5189eYaoNmNFgb0V9QwZy-CTB"},
-        {"name": "Imagem 15", "thumbnail_url": "https://drive.google.com/thumbnail?id=15ngfDV7QxCLavL827A_kje_EU5KbgZJ8", "download_url": "https://drive.google.com/uc?export=download&id=15ngfDV7QxCLavL827A_kje_EU5KbgZJ8"},
-        {"name": "Imagem 16", "thumbnail_url": "https://drive.google.com/thumbnail?id=15tl8U3X2C5tEVcIdwxgOnNxbZnSwdjPl", "download_url": "https://drive.google.com/uc?export=download&id=15tl8U3X2C5tEVcIdwxgOnNxbZnSwdjPl"},
-        {"name": "Imagem 17", "thumbnail_url": "https://drive.google.com/thumbnail?id=163MdONKTA5Ghha0wIHg_8FBJc8XYUih8", "download_url": "https://drive.google.com/uc?export=download&id=163MdONKTA5Ghha0wIHg_8FBJc8XYUih8"},
-        {"name": "Imagem 18", "thumbnail_url": "https://drive.google.com/thumbnail?id=15e1hdW0_a5FN2nv-vUQdowA4n1y0d1G7", "download_url": "https://drive.google.com/uc?export=download&id=15e1hdW0_a5FN2nv-vUQdowA4n1y0d1G7"},
-        {"name": "Imagem 19", "thumbnail_url": "https://drive.google.com/thumbnail?id=15kFyBaLND7OkyGWNd81_yXusPScd0roB", "download_url": "https://drive.google.com/uc?export=download&id=15kFyBaLND7OkyGWNd81_yXusPScd0roB"},
-        {"name": "Imagem 20", "thumbnail_url": "https://drive.google.com/thumbnail?id=15c7L4rHP3by4XuN6OSx6S_awsUY21ztB", "download_url": "https://drive.google.com/uc?export=download&id=15c7L4rHP3by4XuN6OSx6S_awsUY21ztB"},
-        {"name": "Imagem 21", "thumbnail_url": "https://drive.google.com/thumbnail?id=15YEN0AlfR2EWJijPPqDt0zNo9JpIpcGx", "download_url": "https://drive.google.com/uc?export=download&id=15YEN0AlfR2EWJijPPqDt0zNo9JpIpcGx"},
-        {"name": "Imagem 22", "thumbnail_url": "https://drive.google.com/thumbnail?id=15YLwx-_5BJb-DuYdA8stwO7sCeajvKgz", "download_url": "https://drive.google.com/uc?export=download&id=15YLwx-_5BJb-DuYdA8stwO7sCeajvKgz"},
-        {"name": "Vídeo 01", "thumbnail_url": "https://drive.google.com/thumbnail?id=17CfFQtmntGfVDgaWuHKsuCtb-IPb5klT", "download_url": "https://drive.google.com/uc?export=download&id=17CfFQtmntGfVDgaWuHKsuCtb-IPb5klT"},
-        {"name": "Vídeo 02", "thumbnail_url": "https://drive.google.com/thumbnail?id=16b72Zowj9O6ErWt2hzDIZITJPbrunMZ1", "download_url": "https://drive.google.com/uc?export=download&id=16b72Zowj9O6ErWt2hzDIZITJPbrunMZ1"}
-    ]
+    # Buscar materiais de divulgação ativos do banco de dados
+    materiais = MaterialDivulgacao.objects.filter(ativo=True).order_by('ordem', '-criado_em')
+    
+    # Verificar se usuário é administrador
+    is_admin = request.user.groups.filter(name__in=['Administrador', 'Admin']).exists() or request.user.is_superuser
     
     context = {
         'captador': captador,
@@ -170,7 +154,8 @@ def area_captador(request):
         'whatsapp_link': whatsapp_link,
         'link_curto_url': link_curto_url,  # URL curta para compartilhar
         'link_curto': link_curto,  # Objeto completo para analytics
-        'media_files': media_files,
+        'materiais': materiais,
+        'is_admin': is_admin,
         'hoje': hoje,
         'comissoes_captador': comissoes_captador,  # ✅ Adiciona lista de comissões para detalhamento
     }
@@ -204,4 +189,138 @@ def redirecionar_link_curto(request, codigo):
     
     # Redirecionar para o WhatsApp
     return redirect(link_curto.url_completa)
+
+
+@login_required
+@require_POST
+def upload_material(request):
+    """
+    View para upload de material de divulgação (apenas administradores)
+    """
+    # Verificar se é administrador
+    if not (request.user.groups.filter(name__in=['Administrador', 'Admin']).exists() or request.user.is_superuser):
+        messages.error(request, 'Você não tem permissão para fazer upload de materiais.')
+        return redirect('captadores:area_captador')
+    
+    try:
+        arquivo = request.FILES.get('arquivo')
+        nome = request.POST.get('nome', '')
+        descricao = request.POST.get('descricao', '')
+        
+        if not arquivo:
+            messages.error(request, 'Nenhum arquivo foi selecionado.')
+            return redirect('captadores:area_captador')
+        
+        if not nome:
+            nome = arquivo.name
+        
+        # Criar material
+        material = MaterialDivulgacao.objects.create(
+            nome=nome,
+            descricao=descricao,
+            arquivo=arquivo,
+            criado_por=request.user
+        )
+        
+        messages.success(request, f'Material "{material.nome}" enviado com sucesso!')
+        
+    except Exception as e:
+        messages.error(request, f'Erro ao fazer upload: {str(e)}')
+    
+    return redirect('captadores:area_captador')
+
+
+@login_required
+@require_POST
+def deletar_material(request, material_id):
+    """
+    View para deletar material de divulgação (apenas administradores)
+    """
+    # Verificar se é administrador
+    if not (request.user.groups.filter(name__in=['Administrador', 'Admin']).exists() or request.user.is_superuser):
+        return JsonResponse({'success': False, 'error': 'Permissão negada'}, status=403)
+    
+    try:
+        material = get_object_or_404(MaterialDivulgacao, id=material_id)
+        nome = material.nome
+        material.delete()
+        
+        return JsonResponse({'success': True, 'message': f'Material "{nome}" excluído com sucesso!'})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def atualizar_dados_captador(request):
+    """
+    View para o captador atualizar suas próprias informações
+    """
+    try:
+        captador = request.user
+        
+        # Garantir que DadosUsuario existe
+        dados_usuario, created = DadosUsuario.objects.get_or_create(user=captador)
+        
+        # Atualizar campos do User
+        captador.nome_completo = request.POST.get('nome_completo', '').strip()
+        captador.rg = request.POST.get('rg', '').strip()
+        captador.cpf = request.POST.get('cpf', '').strip()
+        
+        # Atualizar endereço detalhado
+        captador.cep = request.POST.get('cep', '').strip()
+        captador.logradouro = request.POST.get('logradouro', '').strip()
+        captador.numero = request.POST.get('numero', '').strip()
+        captador.complemento = request.POST.get('complemento', '').strip()
+        captador.bairro = request.POST.get('bairro', '').strip()
+        captador.cidade = request.POST.get('cidade', '').strip()
+        captador.estado = request.POST.get('estado', '').strip()
+        
+        # Montar endereço completo (para compatibilidade)
+        partes_endereco = []
+        if captador.logradouro:
+            partes_endereco.append(captador.logradouro)
+        if captador.numero:
+            partes_endereco.append(f"nº {captador.numero}")
+        if captador.complemento:
+            partes_endereco.append(captador.complemento)
+        if captador.bairro:
+            partes_endereco.append(f"Bairro: {captador.bairro}")
+        if captador.cidade and captador.estado:
+            partes_endereco.append(f"{captador.cidade} - {captador.estado}")
+        if captador.cep:
+            partes_endereco.append(f"CEP: {captador.cep}")
+        
+        captador.endereco_completo = ', '.join(partes_endereco) if partes_endereco else ''
+        
+        captador.chave_pix = request.POST.get('chave_pix', '').strip()
+        
+        # Atualizar campos do DadosUsuario
+        dados_usuario.whatsapp_pessoal = request.POST.get('whatsapp_pessoal', '').strip()
+        dados_usuario.contato_recado = request.POST.get('contato_recado', '').strip()
+        
+        # Atualizar conta bancária (JSON)
+        banco = request.POST.get('banco', '').strip()
+        agencia = request.POST.get('agencia', '').strip()
+        conta = request.POST.get('conta', '').strip()
+        
+        if banco or agencia or conta:
+            captador.conta_bancaria = {
+                'banco': banco,
+                'agencia': agencia,
+                'conta': conta
+            }
+        
+        # Salvar
+        captador.save()
+        dados_usuario.save()
+        
+        messages.success(request, 'Seus dados foram atualizados com sucesso!')
+        
+    except Exception as e:
+        messages.error(request, f'Erro ao atualizar dados: {str(e)}')
+    
+    return redirect('captadores:area_captador')
+
 

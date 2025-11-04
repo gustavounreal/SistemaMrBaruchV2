@@ -41,3 +41,11 @@ def lookup(dictionary, key):
         if str(choice_key) == str(key):
             return choice_label
     return key
+
+
+@register.filter
+def basename(value):
+    """Retorna apenas o nome do arquivo sem o caminho."""
+    if not value:
+        return ""
+    return value.name.split('/')[-1] if hasattr(value, 'name') else str(value).split('/')[-1]

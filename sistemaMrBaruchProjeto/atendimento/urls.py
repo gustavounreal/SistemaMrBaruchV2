@@ -20,6 +20,7 @@ urlpatterns = [
     path('lista/', views.lista_atendimentos, name='lista_atendimentos'),
     path('webhook/pix/', views.webhook_pagamento_pix, name='webhook_pix'),
     path('leads-pix/', views.lista_leads_pix, name='lista_leads_pix'),
+    path('forcar-pagamento/<int:lead_id>/', views.forcar_pagamento_levantamento, name='forcar_pagamento_levantamento'),
     path('painel/', views.painel_atendente, name='painel_atendente'),
     path('area-de-trabalho/', views.area_de_trabalho_atendente, name='area_de_trabalho_atendente'),
     # Alias para perfil do atendente (view está em accounts)

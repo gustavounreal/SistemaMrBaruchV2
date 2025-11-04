@@ -50,6 +50,21 @@ class Cliente(models.Model):
     cliente_app = models.BooleanField(default=False)
     nada_consta_entregue = models.BooleanField(default=False)
     segundo_levantamento = models.BooleanField(default=False)
+    
+    # ========== DADOS PARA NOTA FISCAL ==========
+    razao_social = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Razão Social (obrigatório para CNPJ)"
+    )
+    
+    inscricao_municipal = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        help_text="Inscrição Municipal (necessário para PJ prestador de serviço)"
+    )
 
     data_criacao = models.DateTimeField(auto_now_add=True)
     data_atualizacao = models.DateTimeField(auto_now=True)

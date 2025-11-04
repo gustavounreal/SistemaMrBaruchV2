@@ -152,6 +152,27 @@ class Venda(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ORCAMENTO')
     observacoes = models.TextField(blank=True)
     
+    # ========== NOTA FISCAL ==========
+    cliente_quer_nf = models.BooleanField(
+        default=False,
+        verbose_name="Cliente deseja Nota Fiscal?",
+        help_text="Marcar se cliente solicitou emissão de NF-e"
+    )
+    
+    nf_tipo_pessoa = models.CharField(
+        max_length=2,
+        choices=[('PF', 'Pessoa Física'), ('PJ', 'Pessoa Jurídica')],
+        blank=True,
+        null=True,
+        help_text="Tipo de pessoa para emissão da NF"
+    )
+    
+    nf_email = models.EmailField(
+        blank=True,
+        null=True,
+        help_text="E-mail para envio da Nota Fiscal (pode ser diferente do e-mail principal)"
+    )
+    
     # Timestamps
     data_criacao = models.DateTimeField(auto_now_add=True)
     data_atualizacao = models.DateTimeField(auto_now=True)
@@ -252,8 +273,8 @@ class PreVenda(models.Model):
     # Relacionamento com Lead
     lead = models.ForeignKey('marketing.Lead', on_delete=models.CASCADE, related_name='pre_vendas')
     
-    # Dados de qualificação (Etapa 1)
-    prazo_risco = models.CharField(max_length=50, choices=PRAZO_RISCO_CHOICES)
+    # Dados de qualificação (Etapa 1) - Campos opcionais
+    prazo_risco = models.CharField(max_length=50, choices=PRAZO_RISCO_CHOICES, blank=True, null=True)
     motivo_principal = models.ForeignKey(
         'marketing.MotivoContato',
         on_delete=models.SET_NULL,

@@ -95,6 +95,22 @@
                 </span>
               </div>
 
+              <!-- Botão para forçar pagamento (apenas para admins) -->
+              {% if perms.marketing.change_lead and lead.pix_status != 'pago' %}
+              <div class="mb-2">
+                <form method="post" action="{% url 'atendimento:forcar_pagamento_levantamento' lead.id %}" 
+                      onsubmit="return confirm('⚠️ Tem certeza que deseja forçar o pagamento deste levantamento?\n\nEsta ação irá:\n✓ Marcar o levantamento como PAGO\n✓ Atualizar o status do PIX\n✓ Gerar comissão automática\n✓ Criar notificação de follow-up\n\nLead: {{ lead.nome_completo }}');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                    <i class="bi bi-shield-lock"></i> Forçar Pagamento Manual
+                  </button>
+                </form>
+                <small class="text-muted d-block mt-1">
+                  <i class="bi bi-info-circle"></i> Apenas para administradores
+                </small>
+              </div>
+              {% endif %}
+
               {% if lead.captador %}
               <div class="mb-2">
                 <strong>Captador:</strong>

@@ -1,4 +1,5 @@
 {% load static %}
+{% load l10n %}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -7,7 +8,7 @@
     <title>Cadastro de Venda - {{ pre_venda.lead.nome_completo }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="{% static 'css/novo_atendimento.css' %}">
+    <link rel="stylesheet" href="{% static 'css/novo_atendimento.css' %}">`
     <style>
         /* === CPF/CNPJ Consulta Buttons === */
         .cpf-cnpj-links {
@@ -103,16 +104,7 @@
                             <input type="text" class="form-control" name="cpf" id="cpf" 
                                    value="{{ dados_iniciais.cpf_cnpj|default:'' }}"
                                    placeholder="000.000.000-00" required>
-                                <!-- Links para consulta de CPF/CNPJ -->
-                                <div class="mt-2 cpf-cnpj-links">
-                                    <a href="https://servicos.receita.fazenda.gov.br/servicos/cpf/consultasituacao/consultapublica.asp" target="_blank" class="btn btn-outline-primary btn-sm mb-1">
-                                        Consultar Situação do CPF na Receita Federal
-                                    </a>
-                                    <a href="https://solucoes.receita.fazenda.gov.br/servicos/cnpjreva/cnpjreva_solicitacao.asp" target="_blank" class="btn btn-outline-secondary btn-sm mb-1 ms-2">
-                                        Consultar Situação do CNPJ na Receita Federal
-                                    </a>
-                                </div>
-                                <small class="form-text d-block mt-1">Use os links acima para validar a titularidade e situação do CPF ou CNPJ informado.</small>
+                               
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label required" for="telefone">Telefone</label>
@@ -129,7 +121,11 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label required" for="data_nascimento">Data de Nascimento</label>
-                            <input type="date" class="form-control" name="data_nascimento" id="data_nascimento" required>
+                            <input type="date" class="form-control" name="data_nascimento" id="data_nascimento" 
+                                   value="{% if pre_venda.lead.data_nascimento %}{{ pre_venda.lead.data_nascimento|date:'Y-m-d' }}{% endif %}" required>
+                            {% if pre_venda.lead.data_nascimento %}
+                            <small class="text-success"><i class="bi bi-check-circle"></i> Carregado do cadastro do lead</small>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -608,10 +604,11 @@
         // ===== FORMATAÇÃO DE VALORES =====
         function formatarMoeda(valor) {
             // Converte número para formato BR: 1234.56 -> 1.234,56
+            // Se for string localizada (ex: "4.500,00"), desformatamos corretamente
             if (typeof valor === 'string') {
-                valor = parseFloat(valor) || 0;
+                valor = desformatarMoeda(valor) || 0;
             }
-            return valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return (Number(valor) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
         function desformatarMoeda(valor) {
@@ -623,42 +620,50 @@
         }
 
         function aplicarMascaraMoeda(inputDisplay, inputHidden) {
-            let digitando = false;
-            
-            // Permite digitação livre (apenas números, vírgula e ponto)
+            // Formata enquanto digita (tempo real)
             inputDisplay.addEventListener('input', function(e) {
-                digitando = true;
-                // Permite apenas números, vírgula e ponto
-                let valor = e.target.value.replace(/[^\d,\.]/g, '');
-                // Limita a apenas uma vírgula ou ponto
-                let partes = valor.split(/[,\.]/);
-                if (partes.length > 2) {
-                    valor = partes[0] + ',' + partes.slice(1).join('');
+                let valor = e.target.value;
+                
+                // Remove tudo exceto números
+                valor = valor.replace(/\D/g, '');
+                
+                // Se vazio, limpa tudo
+                if (!valor) {
+                    e.target.value = '';
+                    inputHidden.value = '0.00';
+                    return;
                 }
-                e.target.value = valor;
+                
+                // Converte para número (centavos)
+                let numero = parseInt(valor);
+                
+                // Converte centavos para reais (divide por 100)
+                let real = (numero / 100).toFixed(2);
+                
+                // Formata com pontos e vírgula
+                let partes = real.split('.');
+                let inteiro = partes[0];
+                let decimal = partes[1];
+                
+                // Adiciona pontos nos milhares
+                inteiro = inteiro.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                
+                // Monta o valor formatado
+                e.target.value = inteiro + ',' + decimal;
+                
+                // Atualiza campo hidden (valor sem formatação)
+                inputHidden.value = real;
             });
 
-            // Formata ao sair do campo
+            // Ao sair do campo, dispara evento change para recalcular
             inputDisplay.addEventListener('blur', function(e) {
-                digitando = false;
-                let valor = desformatarMoeda(e.target.value);
-                e.target.value = formatarMoeda(valor);
-                inputHidden.value = valor.toFixed(2);
                 // Dispara evento para recalcular parcela
                 inputHidden.dispatchEvent(new Event('change'));
             });
 
-            // Ao focar, remove formatação para facilitar edição
+            // Ao focar, seleciona todo o texto para facilitar edição
             inputDisplay.addEventListener('focus', function(e) {
-                digitando = true;
-                let valor = desformatarMoeda(e.target.value);
-                if (valor === 0) {
-                    e.target.value = '';
-                } else {
-                    // Mostra apenas o número com vírgula
-                    e.target.value = valor.toFixed(2).replace('.', ',');
-                }
-                e.target.select(); // Seleciona todo o texto
+                e.target.select();
             });
         }
 
@@ -679,24 +684,34 @@
         });
 
         // Inicializa valor total com valor da pré-venda
-        const valorInicialTotal = parseFloat('{{ pre_venda.valor_total|default:pre_venda.valor_proposto }}');
-        const valorInicialEntrada = parseFloat('{{ pre_venda.valor_entrada|default:"0" }}');
+        const valorInicialTotal = parseFloat('{{ pre_venda.valor_total|default:pre_venda.valor_proposto|unlocalize }}');
+        const valorInicialEntrada = parseFloat('{{ pre_venda.valor_entrada|default:"0"|unlocalize }}');
         const qtdInicialParcelas = parseInt('{{ pre_venda.quantidade_parcelas|default:"1" }}');
         
         valorTotalDisplay.value = formatarMoeda(valorInicialTotal);
-        valorTotalHidden.value = valorInicialTotal.toFixed(2);
+        valorTotalHidden.value = (Number(valorInicialTotal) || 0).toFixed(2);
 
         // Inicializa valor entrada com valor da pré-venda (ou 0)
         valorEntradaDisplay.value = formatarMoeda(valorInicialEntrada);
-        valorEntradaHidden.value = valorInicialEntrada.toFixed(2);
+        valorEntradaHidden.value = (Number(valorInicialEntrada) || 0).toFixed(2);
         
         // Inicializa quantidade de parcelas
         document.getElementById('quantidade_parcelas').value = qtdInicialParcelas;
+        
+        // Inicializa frequência com a pré-venda (se disponível)
+        try {
+            const freq = '{{ pre_venda.frequencia_pagamento|default:"MENSAL" }}';
+            document.getElementById('frequencia_pagamento').value = freq;
+            document.getElementById('resumoFrequencia').textContent = freq;
+        } catch (e) {}
 
-        // Calcular valor da parcela automaticamente
+    // Calcular valor da parcela automaticamente
         valorTotalHidden.addEventListener('change', calcularParcela);
         valorEntradaHidden.addEventListener('change', calcularParcela);
         document.getElementById('quantidade_parcelas').addEventListener('input', calcularParcela);
+
+    // Calcular inicialmente para preencher o campo de parcela
+    calcularParcela();
         
         document.getElementById('sem_entrada').addEventListener('change', function() {
             const entradaDisplay = document.getElementById('valor_entrada_display');

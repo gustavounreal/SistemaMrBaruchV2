@@ -2,7 +2,8 @@ from datetime import timedelta
 from django.views.decorators.http import require_POST
 import logging
 from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
@@ -29,6 +30,55 @@ from django.views.decorators.cache import never_cache
 
 # Obter o logger correto
 logger = logging.getLogger(__name__)
+
+
+# ===== FUNÇÃO UTILITÁRIA DE FORMATAÇÃO =====
+
+def formatar_nome_completo(nome):
+    """
+    Formata o nome completo seguindo as regras:
+    - Primeira letra de cada palavra em maiúscula
+    - Demais letras em minúscula
+    - Respeita acentuação
+    - Mantém preposições em minúscula (de, da, do, dos, das, e, a, o)
+    
+    Args:
+        nome (str): Nome a ser formatado
+        
+    Returns:
+        str: Nome formatado
+    """
+    if not nome:
+        return ''
+    
+    # Remove espaços extras
+    nome = nome.strip()
+    import re
+    nome = re.sub(r'\s+', ' ', nome)
+    
+    # Palavras que devem permanecer em minúscula (preposições, artigos, conjunções)
+    preposicoes = ['de', 'da', 'do', 'dos', 'das', 'e', 'a', 'o', 'as', 'os']
+    
+    # Divide o nome em palavras
+    palavras = nome.split(' ')
+    
+    # Formata cada palavra
+    palavras_formatadas = []
+    for index, palavra in enumerate(palavras):
+        if not palavra:  # Ignora strings vazias
+            continue
+            
+        # Converte para minúscula
+        palavra_lower = palavra.lower()
+        
+        # Se for uma preposição E não for a primeira palavra, mantém em minúscula
+        if index > 0 and palavra_lower in preposicoes:
+            palavras_formatadas.append(palavra_lower)
+        else:
+            # Capitaliza: primeira letra maiúscula, resto minúscula
+            palavras_formatadas.append(palavra_lower.capitalize())
+    
+    return ' '.join(palavras_formatadas)
 
 def autenticar_via_token(request, token):
     """
@@ -289,11 +339,15 @@ def salvar_lead_sem_levantamento(request):
         telefone = request.POST.get('telefone', '').strip()
         email = request.POST.get('email', '').strip()
         cpf_cnpj = request.POST.get('cpf_cnpj', '').strip()
+        data_nascimento = request.POST.get('data_nascimento', '').strip()
         origem_id = request.POST.get('origem')
         captador_id = request.POST.get('captador')
 
         if not nome_completo or not telefone:
             return JsonResponse({'success': False, 'message': 'Nome e telefone são obrigatórios.'})
+        
+        # Formata o nome completo antes de salvar
+        nome_completo = formatar_nome_completo(nome_completo)
         
         # Validar CPF/CNPJ se fornecido - remove caracteres não numéricos antes de validar
         if cpf_cnpj:
@@ -341,6 +395,7 @@ def salvar_lead_sem_levantamento(request):
                 'nome_completo': nome_completo,
                 'email': email,
                 'cpf_cnpj': cpf_cnpj,
+                'data_nascimento': data_nascimento if data_nascimento else None,
                 'origem': origem,
                 'status': status_inicial,
                 'captador': captador,
@@ -352,6 +407,8 @@ def salvar_lead_sem_levantamento(request):
             lead.nome_completo = nome_completo
             lead.email = email
             lead.cpf_cnpj = cpf_cnpj
+            if data_nascimento:
+                lead.data_nascimento = data_nascimento
             lead.origem = origem
             lead.captador = captador
             lead.atendente = request.user
@@ -374,8 +431,12 @@ def salvar_lead_api(request):
         telefone = request.POST.get('telefone', '').strip()
         email = request.POST.get('email', '').strip()
         cpf_cnpj = request.POST.get('cpf_cnpj', '').strip()
+        data_nascimento = request.POST.get('data_nascimento', '').strip()
         origem_id = request.POST.get('origem')  # Recebe o ID da origem
         captador_id = request.POST.get('captador')
+
+        # Formata o nome completo antes de salvar
+        nome_completo = formatar_nome_completo(nome_completo)
 
         # Validar CPF/CNPJ - remove caracteres não numéricos antes de validar
         if cpf_cnpj:
@@ -433,6 +494,7 @@ def salvar_lead_api(request):
                 'nome_completo': nome_completo,
                 'email': email,
                 'cpf_cnpj': cpf_cnpj,
+                'data_nascimento': data_nascimento if data_nascimento else None,
                 'origem': origem,
                 'status': status_inicial,
                 'captador': captador,
@@ -445,6 +507,8 @@ def salvar_lead_api(request):
             lead.nome_completo = nome_completo
             lead.email = email
             lead.cpf_cnpj = cpf_cnpj
+            if data_nascimento:
+                lead.data_nascimento = data_nascimento
             lead.origem = origem
             lead.status = status_inicial
             lead.captador = captador
@@ -1047,3 +1111,93 @@ def area_de_trabalho_atendente(request):
         'exemplo_2': 200,
     }
     return render(request, 'atendimento/area_de_trabalho_atendente.html', context)
+
+@login_required
+@permission_required('marketing.change_lead', raise_exception=True)
+@require_POST
+def forcar_pagamento_levantamento(request, lead_id):
+    """
+    Permite que administradores forcem manualmente o pagamento de um levantamento,
+    mesmo sem confirmação do Asaas.
+    """
+    try:
+        lead = Lead.objects.get(id=lead_id)
+        
+        # Verifica se há um PIX pendente para processar
+        pix_levantamento = lead.pix_levantamentos.order_by('-data_criacao').first()
+        
+        # Se já está tudo pago, não faz nada
+        if lead.fez_levantamento and (not pix_levantamento or pix_levantamento.status_pagamento == 'pago'):
+            messages.warning(request, f'O lead "{lead.nome_completo}" já possui levantamento completamente processado.')
+            return redirect(request.META.get('HTTP_REFERER', 'atendimento:lista_leads_pix'))
+        
+        # Marca o levantamento como pago
+        lead.fez_levantamento = True
+        
+        # Atualiza o status
+        status_pos = str(ConfiguracaoService.obter_config('LEAD_STATUS_APOS_PAGAMENTO', 'LEVANTAMENTO_PAGO') or 'LEVANTAMENTO_PAGO')
+        lead.status = status_pos
+        
+        logger.info(f'[FORCAR_PAGAMENTO] Lead ID: {lead.id}, Nome: {lead.nome_completo}')
+        logger.info(f'[FORCAR_PAGAMENTO] Status definido para: {status_pos}')
+        logger.info(f'[FORCAR_PAGAMENTO] fez_levantamento: {lead.fez_levantamento}')
+        
+        lead.save()
+        
+        logger.info(f'[FORCAR_PAGAMENTO] Lead salvo. Status atual: {lead.status}, Display: {lead.get_status_display()}')
+        
+        # Atualiza o status do PIX Levantamento associado (já foi buscado acima)
+        if pix_levantamento and pix_levantamento.status_pagamento != 'pago':
+            pix_levantamento.status_pagamento = 'pago'
+            pix_levantamento.save()
+            logger.info(f'[FORCAR_PAGAMENTO] PixLevantamento ID {pix_levantamento.id} atualizado para "pago"')
+        
+        # Registra comissão automaticamente (se ativo)
+        try:
+            if ConfiguracaoService.obter_config('COMISSAO_ATIVA', True) and lead.atendente:
+                valor_comissao = float(ConfiguracaoService.obter_config('COMISSAO_ATENDENTE_VALOR_FIXO', 0.50) or 0.50)
+                ComissaoLead.objects.get_or_create(
+                    lead=lead,
+                    atendente=lead.atendente,
+                    defaults={'valor': valor_comissao}
+                )
+        except Exception as e:
+            logger.error(f'Erro ao registrar comissão manual: {str(e)}')
+        
+        # Cria notificação de follow-up
+        try:
+            usuario_destino = lead.atendente or lead.captador
+            if usuario_destino:
+                NotificacaoService.criar_notificacao(
+                    usuario=usuario_destino,
+                    tipo='INFO',
+                    titulo=f'Follow-up: {lead.nome_completo}',
+                    mensagem=f'Realizar contato de acompanhamento com o lead {lead.nome_completo}. Pagamento de levantamento confirmado manualmente.',
+                    link=f'/atendimento/detalhes/{lead.id}/'
+                )
+        except Exception as e:
+            logger.error(f'Erro ao criar notificação de follow-up: {str(e)}')
+        
+        # Registra log de auditoria
+        LogService.registrar(
+            usuario=request.user,
+            nivel='INFO',
+            mensagem=f'Pagamento de levantamento forçado manualmente para o lead "{lead.nome_completo}" (ID: {lead.id})',
+            modulo='atendimento',
+            acao='forcar_pagamento_levantamento',
+            ip=request.META.get('REMOTE_ADDR')
+        )
+        
+        messages.success(
+            request, 
+            f'✅ Pagamento do levantamento forçado com sucesso para "{lead.nome_completo}"! '
+            f'Status atualizado para: {lead.get_status_display()}'
+        )
+        
+    except Lead.DoesNotExist:
+        messages.error(request, 'Lead não encontrado.')
+    except Exception as e:
+        logger.error(f'Erro ao forçar pagamento de levantamento: {str(e)}')
+        messages.error(request, f'Erro ao forçar pagamento: {str(e)}')
+    
+    return redirect(request.META.get('HTTP_REFERER', 'atendimento:lista_leads_pix'))

@@ -492,13 +492,12 @@
         <div class="header-captador">
             <div class="header-content">
                 <h1>Área do Captador</h1>
-                            {% if captador.get_full_name %}
-                                <p><i class="fas fa-user"></i> {{ captador.get_full_name }}</p>
-                            <p><i class="fas fa-user"></i> Seu código de indicações é ID: {{ captador.id }}</p>
-                        {% else %}
-                            <p><i class="fas fa-user"></i> Seu código de indicações é ID: {{ captador.id }}</p>
-                        {% endif %}
-                     
+                {% if captador.nome_completo %}
+                    <p><i class="fas fa-user"></i> {{ captador.nome_completo }}</p>
+                {% elif captador.get_full_name %}
+                    <p><i class="fas fa-user"></i> {{ captador.get_full_name }}</p>
+                {% endif %}
+                <p><i class="fas fa-id-badge"></i> ID Captador: {{ captador.id }}</p>
                 <p><i class="fas fa-envelope"></i> {{ captador.email }}</p>
             </div>
         </div>
@@ -513,6 +512,9 @@
             </div>
             <div class="nav-tab" data-tab="materiais">
                 <i class="fas fa-images"></i> Materiais
+            </div>
+            <div class="nav-tab" data-tab="dados">
+                <i class="fas fa-user-circle"></i> Meus Dados
             </div>
         </div>
         
@@ -858,21 +860,68 @@
         <!-- Conteúdo - Materiais -->
         <div id="materiais" class="tab-content">
             <div class="section">
-                <h3><i class="fas fa-download"></i> Materiais de Divulgação</h3>
-                <p style="color: #666; margin-bottom: 20px;">Baixe imagens e vídeos para divulgar nossos serviços:</p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <h3><i class="fas fa-download"></i> Materiais de Divulgação</h3>
+                        <p style="color: #666; margin: 5px 0 0 0;">Baixe imagens e vídeos para divulgar nossos serviços</p>
+                    </div>
+                    {% if is_admin %}
+                    <button onclick="abrirModalUpload()" class="btn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 10px 20px;">
+                        <i class="fas fa-upload"></i> Adicionar Material
+                    </button>
+                    {% endif %}
+                </div>
+                
+                {% if materiais %}
                 <div class="materials-grid">
-                    {% for material in media_files %}
-                    <div class="material-card">
-                        <img src="{{ material.thumbnail_url }}" alt="{{ material.name }}" class="material-thumbnail" loading="lazy">
+                    {% for material in materiais %}
+                    <div class="material-card" id="material-{{ material.id }}">
+                        {% if material.tipo == 'IMAGEM' %}
+                            <img src="{{ material.arquivo.url }}" alt="{{ material.nome }}" class="material-thumbnail" loading="lazy">
+                        {% elif material.tipo == 'VIDEO' %}
+                            <video class="material-thumbnail" controls>
+                                <source src="{{ material.arquivo.url }}" type="video/mp4">
+                            </video>
+                        {% elif material.tipo == 'PDF' %}
+                            <div class="material-thumbnail" style="display: flex; align-items: center; justify-content: center; background: #f3f4f6;">
+                                <i class="fas fa-file-pdf" style="font-size: 3rem; color: #ef4444;"></i>
+                            </div>
+                        {% else %}
+                            <div class="material-thumbnail" style="display: flex; align-items: center; justify-content: center; background: #f3f4f6;">
+                                <i class="fas fa-file" style="font-size: 3rem; color: #6b7280;"></i>
+                            </div>
+                        {% endif %}
                         <div class="material-info">
-                            <h4>{{ material.name }}</h4>
-                            <a href="{{ material.download_url }}" target="_blank" class="btn">
-                                <i class="fas fa-download"></i> Baixar
-                            </a>
+                            <h4>{{ material.nome }}</h4>
+                            {% if material.descricao %}
+                            <p style="font-size: 0.85rem; color: #666; margin: 5px 0;">{{ material.descricao|truncatewords:10 }}</p>
+                            {% endif %}
+                            <div style="display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap;">
+                                <a href="{{ material.arquivo.url }}" download class="btn" style="flex: 1; min-width: 100px;">
+                                    <i class="fas fa-download"></i> Baixar
+                                </a>
+                                {% if is_admin %}
+                                <button onclick="deletarMaterial({{ material.id }}, '{{ material.nome|escapejs }}')" class="btn" style="background: #ef4444; flex: 1; min-width: 100px;">
+                                    <i class="fas fa-trash"></i> Excluir
+                                </button>
+                                {% endif %}
+                            </div>
+                            <small style="color: #999; font-size: 0.75rem; margin-top: 5px; display: block;">
+                                {{ material.get_tipo_display }} • {{ material.get_tamanho_formatado }}
+                            </small>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
+                {% else %}
+                <div style="text-align: center; padding: 40px; background: #f9fafb; border-radius: 12px;">
+                    <i class="fas fa-folder-open" style="font-size: 3rem; color: #d1d5db; margin-bottom: 10px;"></i>
+                    <p style="color: #6b7280; margin: 0;">Nenhum material disponível no momento.</p>
+                    {% if is_admin %}
+                    <p style="color: #9ca3af; font-size: 0.9rem; margin-top: 5px;">Clique em "Adicionar Material" para fazer upload.</p>
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
             
             <!-- Link de Indicação -->
@@ -898,6 +947,314 @@
             </div>
         </div>
         
+        <!-- Modal de Upload (apenas para admins) -->
+        {% if is_admin %}
+        <div id="modalUpload" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+            <div style="background: white; border-radius: 16px; padding: 30px; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                <h3 style="margin-top: 0; color: #2c3e50;"><i class="fas fa-upload"></i> Adicionar Material</h3>
+                <form method="post" action="{% url 'captadores:upload_material' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Nome do Material *</label>
+                        <input type="text" name="nome" required style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;">
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Descrição</label>
+                        <textarea name="descricao" rows="3" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; resize: vertical;"></textarea>
+                    </div>
+                    <div style="margin-bottom: 25px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Arquivo *</label>
+                        <input type="file" name="arquivo" required accept="image/*,video/*,.pdf" style="width: 100%; padding: 12px; border: 2px dashed #e5e7eb; border-radius: 8px; font-size: 0.95rem; background: #f9fafb;">
+                        <small style="color: #6b7280; font-size: 0.85rem;">Aceita imagens, vídeos e PDFs</small>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="submit" class="btn" style="flex: 1; background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 12px;">
+                            <i class="fas fa-check"></i> Enviar
+                        </button>
+                        <button type="button" onclick="fecharModalUpload()" class="btn" style="flex: 1; background: #6b7280; padding: 12px;">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Conteúdo - Meus Dados -->
+        <div id="dados" class="tab-content">
+            <div class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h3 style="margin: 0;"><i class="fas fa-user-circle"></i> Meus Dados</h3>
+                    <button type="button" onclick="toggleEdicao()" id="btnEditar" class="btn" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 10px 20px;">
+                        <i class="fas fa-edit"></i> Editar Dados
+                    </button>
+                </div>
+                
+                <form method="post" action="{% url 'captadores:atualizar_dados_captador' %}" id="formDados">
+                    {% csrf_token %}
+                    
+                    <!-- Informações Pessoais -->
+                    <h4 style="color: #1e40af; margin-bottom: 15px;"><i class="fas fa-user" style="margin-right: 8px;"></i>Informações Pessoais</h4>
+                    <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border-radius: 12px; padding: 25px; margin-bottom: 25px;">
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+                            <!-- Nome Completo -->
+                            <div style="background: white; border-radius: 10px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                <label for="nome_completo" style="display: block; color: #64748b; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; text-transform: uppercase;">
+                                    <i class="fas fa-user" style="margin-right: 5px;"></i> Nome Completo
+                                </label>
+                                <input type="text" id="nome_completo" name="nome_completo" 
+                                       value="{{ captador.nome_completo|default:'' }}" 
+                                       readonly class="form-input"
+                                       style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; background: #f9fafb;"
+                                       placeholder="Informe seu nome completo">
+                            </div>
+                            
+                            <!-- RG e CPF -->
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                                <div style="background: white; border-radius: 10px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                    <label for="rg" style="display: block; color: #64748b; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; text-transform: uppercase;">
+                                        <i class="fas fa-id-card" style="margin-right: 5px;"></i> RG
+                                    </label>
+                                    <input type="text" id="rg" name="rg" 
+                                           value="{{ captador.rg|default:'' }}" 
+                                           readonly class="form-input"
+                                           style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; background: #f9fafb;"
+                                           placeholder="00.000.000-0">
+                                </div>
+                                
+                                <div style="background: white; border-radius: 10px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                    <label for="cpf" style="display: block; color: #64748b; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; text-transform: uppercase;">
+                                        <i class="fas fa-address-card" style="margin-right: 5px;"></i> CPF
+                                    </label>
+                                    <input type="text" id="cpf" name="cpf" 
+                                           value="{{ captador.cpf|default:'' }}" 
+                                           readonly class="form-input"
+                                           style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; background: #f9fafb;"
+                                           placeholder="000.000.000-00">
+                                </div>
+                            </div>
+                            
+                            <!-- Endereço -->
+                            <div style="background: white; border-radius: 10px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                <label style="display: block; color: #64748b; font-size: 0.85rem; font-weight: 600; margin-bottom: 12px; text-transform: uppercase;">
+                                    <i class="fas fa-map-marker-alt" style="margin-right: 5px;"></i> Endereço
+                                </label>
+                                
+                                <div style="display: grid; gap: 12px;">
+                                    <!-- CEP -->
+                                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
+                                        <div>
+                                            <label for="cep" style="display: block; color: #6b7280; font-size: 0.8rem; margin-bottom: 5px;">CEP</label>
+                                            <input type="text" id="cep" name="cep" 
+                                                   value="{{ captador.cep|default:'' }}" 
+                                                   readonly class="form-input"
+                                                   style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; background: #f9fafb;"
+                                                   placeholder="00000-000"
+                                                   maxlength="9">
+                                        </div>
+                                        <div style="display: flex; align-items: end;">
+                                            <button type="button" id="btnBuscarCep" onclick="buscarCep()" disabled
+                                                    style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: not-allowed; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; opacity: 0.5;">
+                                                <i class="fas fa-search"></i> Buscar CEP
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Logradouro -->
+                                    <div>
+                                        <label for="logradouro" style="display: block; color: #6b7280; font-size: 0.8rem; margin-bottom: 5px;">Logradouro (Rua/Av)</label>
+                                        <input type="text" id="logradouro" name="logradouro" 
+                                               value="{{ captador.logradouro|default:'' }}" 
+                                               readonly class="form-input"
+                                               style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; background: #f9fafb;"
+                                               placeholder="Ex: Rua das Flores">
+                                    </div>
+                                    
+                                    <!-- Número e Complemento -->
+                                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
+                                        <div>
+                                            <label for="numero" style="display: block; color: #6b7280; font-size: 0.8rem; margin-bottom: 5px;">Número</label>
+                                            <input type="text" id="numero" name="numero" 
+                                                   value="{{ captador.numero|default:'' }}" 
+                                                   readonly class="form-input"
+                                                   style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; background: #f9fafb;"
+                                                   placeholder="123">
+                                        </div>
+                                        <div>
+                                            <label for="complemento" style="display: block; color: #6b7280; font-size: 0.8rem; margin-bottom: 5px;">Complemento</label>
+                                            <input type="text" id="complemento" name="complemento" 
+                                                   value="{{ captador.complemento|default:'' }}" 
+                                                   readonly class="form-input"
+                                                   style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; background: #f9fafb;"
+                                                   placeholder="Apto 101, Bloco A">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Bairro -->
+                                    <div>
+                                        <label for="bairro" style="display: block; color: #6b7280; font-size: 0.8rem; margin-bottom: 5px;">Bairro</label>
+                                        <input type="text" id="bairro" name="bairro" 
+                                               value="{{ captador.bairro|default:'' }}" 
+                                               readonly class="form-input"
+                                               style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; background: #f9fafb;"
+                                               placeholder="Ex: Centro">
+                                    </div>
+                                    
+                                    <!-- Cidade e Estado -->
+                                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+                                        <div>
+                                            <label for="cidade" style="display: block; color: #6b7280; font-size: 0.8rem; margin-bottom: 5px;">Cidade</label>
+                                            <input type="text" id="cidade" name="cidade" 
+                                                   value="{{ captador.cidade|default:'' }}" 
+                                                   readonly class="form-input"
+                                                   style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; background: #f9fafb;"
+                                                   placeholder="Ex: São Paulo">
+                                        </div>
+                                        <div>
+                                            <label for="estado" style="display: block; color: #6b7280; font-size: 0.8rem; margin-bottom: 5px;">Estado</label>
+                                            <input type="text" id="estado" name="estado" 
+                                                   value="{{ captador.estado|default:'' }}" 
+                                                   readonly class="form-input"
+                                                   style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; background: #f9fafb;"
+                                                   placeholder="SP"
+                                                   maxlength="2">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Informações de Contato -->
+                    <h4 style="color: #ca8a04; margin-bottom: 15px;"><i class="fas fa-phone-alt" style="margin-right: 8px;"></i>Informações de Contato</h4>
+                    <div style="background: linear-gradient(135deg, #fefce8, #fef3c7); border-radius: 12px; padding: 25px; margin-bottom: 25px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                            <!-- WhatsApp Pessoal -->
+                            <div style="background: white; border-radius: 10px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                <label for="whatsapp_pessoal" style="display: block; color: #64748b; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; text-transform: uppercase;">
+                                    <i class="fab fa-whatsapp" style="margin-right: 5px; color: #25D366;"></i> WhatsApp Pessoal
+                                </label>
+                                <input type="text" id="whatsapp_pessoal" name="whatsapp_pessoal" 
+                                       value="{{ captador.dados.whatsapp_pessoal|default:'' }}" 
+                                       readonly class="form-input"
+                                       style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; background: #f9fafb;"
+                                       placeholder="(00) 00000-0000">
+                            </div>
+                            
+                            <!-- Contato para Recado -->
+                            <div style="background: white; border-radius: 10px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                <label for="contato_recado" style="display: block; color: #64748b; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; text-transform: uppercase;">
+                                    <i class="fas fa-phone" style="margin-right: 5px;"></i> Contato (Recado)
+                                </label>
+                                <input type="text" id="contato_recado" name="contato_recado" 
+                                       value="{{ captador.dados.contato_recado|default:'' }}" 
+                                       readonly class="form-input"
+                                       style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; background: #f9fafb;"
+                                       placeholder="(00) 0000-0000">
+                            </div>
+                            
+                            <!-- E-mail -->
+                            <div style="background: white; border-radius: 10px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                <label style="display: block; color: #64748b; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; text-transform: uppercase;">
+                                    <i class="fas fa-envelope" style="margin-right: 5px;"></i> E-mail (não editável)
+                                </label>
+                                <div style="padding: 12px; background: #f3f4f6; border-radius: 8px; color: #6b7280; font-size: 1rem;">
+                                    {{ captador.email }}
+                                </div>
+                            </div>
+                            
+                            <!-- ID Captador -->
+                            <div style="background: white; border-radius: 10px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                <label style="display: block; color: #64748b; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; text-transform: uppercase;">
+                                    <i class="fas fa-id-badge" style="margin-right: 5px;"></i> ID Captador (automático)
+                                </label>
+                                <div style="padding: 12px; background: #f3f4f6; border-radius: 8px; color: #1e293b; font-size: 1.1rem; font-weight: 700;">
+                                    {{ captador.id }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Informações Financeiras -->
+                    <h4 style="color: #059669; margin-bottom: 15px;"><i class="fas fa-university" style="margin-right: 8px;"></i>Informações Financeiras</h4>
+                    <div style="background: linear-gradient(135deg, #f0fdf4, #dcfce7); border-radius: 12px; padding: 25px; margin-bottom: 25px;">
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                            <!-- Chave PIX -->
+                            <div style="background: white; border-radius: 10px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                <label for="chave_pix" style="display: block; color: #64748b; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; text-transform: uppercase;">
+                                    <i class="fas fa-qrcode" style="margin-right: 5px;"></i> Chave PIX
+                                </label>
+                                <input type="text" id="chave_pix" name="chave_pix" 
+                                       value="{{ captador.chave_pix|default:'' }}" 
+                                       readonly class="form-input"
+                                       style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; background: #f9fafb;"
+                                       placeholder="CPF, e-mail, telefone ou chave aleatória">
+                            </div>
+                            
+                            <!-- Conta Bancária -->
+                            <div style="background: white; border-radius: 10px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                <label style="display: block; color: #64748b; font-size: 0.85rem; font-weight: 600; margin-bottom: 12px; text-transform: uppercase;">
+                                    <i class="fas fa-university" style="margin-right: 5px;"></i> Conta Bancária
+                                </label>
+                                <div style="display: grid; gap: 12px;">
+                                    <div>
+                                        <label for="banco" style="display: block; color: #6b7280; font-size: 0.8rem; margin-bottom: 5px;">Banco</label>
+                                        <input type="text" id="banco" name="banco" 
+                                               value="{% if captador.conta_bancaria %}{{ captador.conta_bancaria.banco }}{% endif %}" 
+                                               readonly class="form-input"
+                                               style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; background: #f9fafb;"
+                                               placeholder="Ex: Banco do Brasil, Caixa, Itaú">
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
+                                        <div>
+                                            <label for="agencia" style="display: block; color: #6b7280; font-size: 0.8rem; margin-bottom: 5px;">Agência</label>
+                                            <input type="text" id="agencia" name="agencia" 
+                                                   value="{% if captador.conta_bancaria %}{{ captador.conta_bancaria.agencia }}{% endif %}" 
+                                                   readonly class="form-input"
+                                                   style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; background: #f9fafb;"
+                                                   placeholder="0000">
+                                        </div>
+                                        <div>
+                                            <label for="conta" style="display: block; color: #6b7280; font-size: 0.8rem; margin-bottom: 5px;">Conta (com dígito)</label>
+                                            <input type="text" id="conta" name="conta" 
+                                                   value="{% if captador.conta_bancaria %}{{ captador.conta_bancaria.conta }}{% endif %}" 
+                                                   readonly class="form-input"
+                                                   style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 0.95rem; background: #f9fafb;"
+                                                   placeholder="00000-0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botões de Ação -->
+                    <div id="acoesEdicao" style="display: none; gap: 15px; margin-top: 25px;">
+                        <button type="submit" class="btn" style="flex: 1; background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 14px; font-size: 1rem;">
+                            <i class="fas fa-save"></i> Salvar Alterações
+                        </button>
+                        <button type="button" onclick="cancelarEdicao()" class="btn" style="flex: 1; background: #6b7280; padding: 14px; font-size: 1rem;">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Aviso -->
+                <div style="margin-top: 25px; padding: 20px; background: linear-gradient(135deg, #eff6ff, #dbeafe); border-radius: 12px; border-left: 4px solid #3b82f6;">
+                    <div style="display: flex; align-items: start; gap: 15px;">
+                        <i class="fas fa-info-circle" style="color: #3b82f6; font-size: 1.5rem; margin-top: 2px;"></i>
+                        <div>
+                            <h4 style="margin: 0 0 8px 0; color: #1e40af; font-size: 1rem;">Mantenha seus dados atualizados</h4>
+                            <p style="margin: 0; color: #1e3a8a; line-height: 1.6; font-size: 0.95rem;">
+                                É importante manter suas informações atualizadas, especialmente os dados financeiros, para receber suas comissões corretamente.
+                                Clique em "Editar Dados" para atualizar qualquer informação.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Rodapé -->
         <div class="footer">
             <p>© 2025 Mr. Baruch - Todos os direitos reservados</p>
@@ -908,6 +1265,7 @@
     <script>
         // Navegação por abas
         document.addEventListener('DOMContentLoaded', function() {
+
             const tabs = document.querySelectorAll('.nav-tab');
             const tabContents = document.querySelectorAll('.tab-content');
             
@@ -956,6 +1314,188 @@
                 }, 2000);
             });
         }
+        
+        // Funções de edição de dados
+        function toggleEdicao() {
+            const inputs = document.querySelectorAll('.form-input');
+            const btnEditar = document.getElementById('btnEditar');
+            const acoesEdicao = document.getElementById('acoesEdicao');
+            const btnBuscarCep = document.getElementById('btnBuscarCep');
+            
+            inputs.forEach(input => {
+                input.removeAttribute('readonly');
+                input.style.background = 'white';
+                input.style.borderColor = '#3b82f6';
+            });
+            
+            // Habilitar botão de buscar CEP
+            if (btnBuscarCep) {
+                btnBuscarCep.disabled = false;
+                btnBuscarCep.style.opacity = '1';
+                btnBuscarCep.style.cursor = 'pointer';
+            }
+            
+            btnEditar.style.display = 'none';
+            acoesEdicao.style.display = 'flex';
+        }
+        
+        function cancelarEdicao() {
+            const inputs = document.querySelectorAll('.form-input');
+            const btnEditar = document.getElementById('btnEditar');
+            const acoesEdicao = document.getElementById('acoesEdicao');
+            
+            // Recarregar a página para restaurar valores originais
+            if (confirm('Deseja cancelar as alterações? Os dados não salvos serão perdidos.')) {
+                location.reload();
+            }
+        }
+        
+        {% if is_admin %}
+        // Funções para modal de upload
+        function abrirModalUpload() {
+            document.getElementById('modalUpload').style.display = 'flex';
+        }
+        
+        function fecharModalUpload() {
+            document.getElementById('modalUpload').style.display = 'none';
+        }
+        
+        // Fechar modal ao clicar fora
+        document.getElementById('modalUpload')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                fecharModalUpload();
+            }
+        });
+        
+        // Função para deletar material
+        function deletarMaterial(materialId, materialNome) {
+            if (!confirm(`Tem certeza que deseja excluir o material "${materialNome}"?\n\nEsta ação não pode ser desfeita.`)) {
+                return;
+            }
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            fetch(`/captadores/materiais/deletar/${materialId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remover o card do DOM com animação
+                    const card = document.getElementById(`material-${materialId}`);
+                    if (card) {
+                        card.style.transition = 'all 0.3s ease';
+                        card.style.opacity = '0';
+                        card.style.transform = 'scale(0.8)';
+                        setTimeout(() => {
+                            card.remove();
+                            // Verificar se ainda há materiais
+                            const grid = document.querySelector('.materials-grid');
+                            if (grid && grid.children.length === 0) {
+                                location.reload(); // Recarregar para mostrar estado vazio
+                            }
+                        }, 300);
+                    }
+                    alert(data.message);
+                } else {
+                    alert(`Erro ao excluir: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao excluir material. Tente novamente.');
+            });
+        }
+        {% endif %}
+        
+        // Máscaras para campos
+        document.getElementById('cpf')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                e.target.value = value;
+            }
+        });
+        
+        // Máscara para CEP
+        document.getElementById('cep')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 8) {
+                value = value.replace(/^(\d{5})(\d)/, '$1-$2');
+                e.target.value = value;
+            }
+        });
+        
+        // Buscar CEP via ViaCEP
+        function buscarCep() {
+            const cepInput = document.getElementById('cep');
+            const cep = cepInput.value.replace(/\D/g, '');
+            
+            if (cep.length !== 8) {
+                alert('CEP inválido. Digite um CEP com 8 dígitos.');
+                return;
+            }
+            
+            const btnBuscar = document.getElementById('btnBuscarCep');
+            btnBuscar.disabled = true;
+            btnBuscar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando...';
+            
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.erro) {
+                        alert('CEP não encontrado.');
+                        btnBuscar.disabled = false;
+                        btnBuscar.innerHTML = '<i class="fas fa-search"></i> Buscar CEP';
+                        return;
+                    }
+                    
+                    // Preencher campos
+                    document.getElementById('logradouro').value = data.logradouro || '';
+                    document.getElementById('bairro').value = data.bairro || '';
+                    document.getElementById('cidade').value = data.localidade || '';
+                    document.getElementById('estado').value = data.uf || '';
+                    
+                    // Focar no campo número
+                    document.getElementById('numero')?.focus();
+                    
+                    btnBuscar.disabled = false;
+                    btnBuscar.innerHTML = '<i class="fas fa-check"></i> CEP Encontrado';
+                    setTimeout(() => {
+                        btnBuscar.innerHTML = '<i class="fas fa-search"></i> Buscar CEP';
+                    }, 2000);
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar CEP:', error);
+                    alert('Erro ao buscar CEP. Verifique sua conexão e tente novamente.');
+                    btnBuscar.disabled = false;
+                    btnBuscar.innerHTML = '<i class="fas fa-search"></i> Buscar CEP';
+                });
+        }
+        
+        document.getElementById('whatsapp_pessoal')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+                value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+                e.target.value = value;
+            }
+        });
+        
+        document.getElementById('contato_recado')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+                value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+                e.target.value = value;
+            }
+        });
     </script>
 </body>
 </html>

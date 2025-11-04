@@ -111,6 +111,11 @@
                         <input type="text" class="form-control" id="id_nome_completo" placeholder="Digite o nome completo" required>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label" for="id_data_nascimento">Data de Nascimento</span></label>
+                        <input type="date" class="form-control" id="id_data_nascimento" placeholder="dd/mm/aaaa">
+                        
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label required" for="id_telefone">Telefone / WhatsApp</label>
                         <input type="text" class="form-control" id="id_telefone" placeholder="+55 (00) 00000-0000" required>
                         <small class="form-text text-muted ms-1">Formato: +DDI (DDD) Número</small>
@@ -382,6 +387,7 @@ function salvarLeadSemLevantamento() {
     const origem = document.getElementById('id_origem').value;
     const cpfCnpj = document.getElementById('id_cpf_cnpj').value.trim();
     const captadorId = document.getElementById('id_captador').value.trim();
+    const dataNascimento = document.getElementById('id_data_nascimento') ? document.getElementById('id_data_nascimento').value : '';
 
     if (!nome || !telefone) {
         showAlert('Preencha nome e telefone corretamente.', 'danger');
@@ -414,6 +420,9 @@ function salvarLeadSemLevantamento() {
     formData.append('origem', origem);
     formData.append('cpf_cnpj', cpfCnpj);
     formData.append('captador', captadorId);
+    if (dataNascimento) {
+        formData.append('data_nascimento', dataNascimento);
+    }
 
     showLoading('Salvando lead...', 'Aguarde enquanto registramos o lead');
 
@@ -442,6 +451,7 @@ function salvarLead() {
     const origem = document.getElementById('id_origem') ? document.getElementById('id_origem').value : '';
     const cpfCnpj = document.getElementById('id_cpf_cnpj') ? document.getElementById('id_cpf_cnpj').value.trim() : '';
     const captadorId = document.getElementById('id_captador') ? document.getElementById('id_captador').value.trim() : '';
+    const dataNascimento = document.getElementById('id_data_nascimento') ? document.getElementById('id_data_nascimento').value : '';
 
     // CPF/CNPJ obrigatório apenas para "Fazer Levantamento"
     if (!nome || !telefone) {
@@ -536,6 +546,9 @@ function validarCNPJ(cnpj) {
     formData.append('origem', origem);
     formData.append('cpf_cnpj', cpfCnpj);
     formData.append('captador', captadorId);
+    if (dataNascimento) {
+        formData.append('data_nascimento', dataNascimento);
+    }
 
     showLoading('Salvando lead...', 'Aguarde enquanto registramos o cliente');
 
@@ -728,6 +741,50 @@ function copiarComExecCommand(input) {
         
         e.target.value = formatted;
     });
+
+    // Formatação automática do nome completo
+    document.getElementById('id_nome_completo')?.addEventListener('blur', function(e) {
+        e.target.value = formatarNomeCompleto(e.target.value);
+    });
+
+    /**
+     * Formata o nome completo seguindo as regras:
+     * - Primeira letra de cada palavra em maiúscula
+     * - Demais letras em minúscula
+     * - Respeita acentuação (letra acentuada seguida de minúscula)
+     * - Mantém preposições em minúscula (de, da, do, dos, das, e)
+     */
+    function formatarNomeCompleto(nome) {
+        if (!nome) return '';
+        
+        // Remove espaços extras no início, fim e múltiplos espaços entre palavras
+        nome = nome.trim().replace(/\s+/g, ' ');
+        
+        // Palavras que devem permanecer em minúscula (preposições, artigos, conjunções)
+        const preposicoes = ['de', 'da', 'do', 'dos', 'das', 'e', 'a', 'o'];
+        
+        // Divide o nome em palavras
+        const palavras = nome.split(' ');
+        
+        // Formata cada palavra
+        const palavrasFormatadas = palavras.map((palavra, index) => {
+            // Não formata strings vazias
+            if (!palavra) return '';
+            
+            // Converte tudo para minúscula primeiro
+            palavra = palavra.toLowerCase();
+            
+            // Se for uma preposição E não for a primeira palavra, mantém em minúscula
+            if (index > 0 && preposicoes.includes(palavra)) {
+                return palavra;
+            }
+            
+            // Capitaliza a primeira letra (maiúscula) e mantém o resto em minúscula
+            return palavra.charAt(0).toUpperCase() + palavra.slice(1);
+        });
+        
+        return palavrasFormatadas.join(' ');
+    }
     </script>
 
     {% include 'atendimento/sidebar_atendente.html' %}

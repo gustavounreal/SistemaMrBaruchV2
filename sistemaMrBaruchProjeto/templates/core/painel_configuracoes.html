@@ -139,6 +139,112 @@
                           </div>
                         {% endfor %}
                       </div>
+                      
+                      {% if categoria == 'lead_captura' %}
+                      <!-- Seção de Gerenciamento de Origens de Lead -->
+                      <div class="row mt-4">
+                        <div class="col-12">
+                          <div class="card shadow-sm border-0 rounded-4 bg-white">
+                            <div class="card-header bg-gradient-primary text-white rounded-top-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                              <h5 class="mb-0"><i class="bi bi-tag me-2"></i>Gerenciar Origens de Lead</h5>
+                              <small>Adicione, edite ou remova as opções de origem que aparecem no cadastro de leads</small>
+                            </div>
+                            <div class="card-body p-4">
+                              <!-- Formulário para Adicionar Nova Origem -->
+                              <div class="mb-4">
+                                <h6 class="fw-semibold mb-3"><i class="bi bi-plus-circle text-success me-2"></i>Adicionar Nova Origem</h6>
+                                <form method="post" action="{% url 'core:adicionar_origem_lead' %}" class="row g-2 align-items-end">
+                                  {% csrf_token %}
+                                  <div class="col-md-8">
+                                    <label for="nova_origem" class="form-label">Nome da Origem</label>
+                                    <input type="text" class="form-control" id="nova_origem" name="nome" placeholder="Ex: Instagram, Facebook, Indicação..." required>
+                                  </div>
+                                  <div class="col-md-4">
+                                    <button type="submit" class="btn btn-success w-100">
+                                      <i class="bi bi-plus-lg me-1"></i> Adicionar
+                                    </button>
+                                  </div>
+                                </form>
+                              </div>
+
+                              <hr class="my-4">
+
+                              <!-- Lista de Origens Existentes -->
+                              <h6 class="fw-semibold mb-3"><i class="bi bi-list-ul text-primary me-2"></i>Origens Cadastradas</h6>
+                              <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                  <thead class="table-light">
+                                    <tr>
+                                      <th width="50">#</th>
+                                      <th>Nome da Origem</th>
+                                      <th width="120" class="text-center">Status</th>
+                                      <th width="100" class="text-center">Ordem</th>
+                                      <th width="200" class="text-center">Ações</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {% for origem in origens %}
+                                    <tr id="origem-row-{{ origem.id }}">
+                                      <td class="text-muted">{{ origem.id }}</td>
+                                      <td>
+                                        <input type="text" class="form-control form-control-sm" 
+                                               id="origem-nome-{{ origem.id }}" 
+                                               value="{{ origem.nome }}" 
+                                               data-original="{{ origem.nome }}">
+                                      </td>
+                                      <td class="text-center">
+                                        <div class="form-check form-switch d-inline-block">
+                                          <input class="form-check-input" type="checkbox" 
+                                                 id="origem-ativo-{{ origem.id }}" 
+                                                 {% if origem.ativo %}checked{% endif %}>
+                                          <label class="form-check-label small" for="origem-ativo-{{ origem.id }}">
+                                            {% if origem.ativo %}
+                                              <span class="badge bg-success">Ativo</span>
+                                            {% else %}
+                                              <span class="badge bg-secondary">Inativo</span>
+                                            {% endif %}
+                                          </label>
+                                        </div>
+                                      </td>
+                                      <td class="text-center">
+                                        <span class="badge bg-light text-dark">{{ origem.ordem }}</span>
+                                      </td>
+                                      <td class="text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                          <button type="button" class="btn btn-outline-primary" 
+                                                  onclick="salvarOrigemLead({{ origem.id }})"
+                                                  title="Salvar alterações">
+                                            <i class="bi bi-save"></i> Salvar
+                                          </button>
+                                          <button type="button" class="btn btn-outline-danger" 
+                                                  onclick="excluirOrigemLead({{ origem.id }}, '{{ origem.nome }}')"
+                                                  title="Excluir origem">
+                                            <i class="bi bi-trash"></i> Excluir
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                      <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                        Nenhuma origem cadastrada ainda.
+                                      </td>
+                                    </tr>
+                                    {% endfor %}
+                                  </tbody>
+                                </table>
+                              </div>
+
+                              <div class="alert alert-info border-0 mt-3" role="alert">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Importante:</strong> Origens com leads associados não podem ser excluídas, apenas desativadas.
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      {% endif %}
                     </div>
                   </div>
                 </div>
@@ -947,6 +1053,84 @@
     } catch (e) {
       console.error('Erro ao exibir diagnóstico ASAAS:', e);
     }
+  });
+
+  // Funções para gerenciar origens de lead
+  function salvarOrigemLead(origemId) {
+    const nome = document.getElementById(`origem-nome-${origemId}`).value.trim();
+    const ativo = document.getElementById(`origem-ativo-${origemId}`).checked;
+    
+    if (!nome) {
+      alert('O nome da origem não pode estar vazio.');
+      return;
+    }
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    formData.append('origem_id', origemId);
+    formData.append('nome', nome);
+    if (ativo) {
+      formData.append('ativo', 'on');
+    }
+    
+    fetch('{% url "core:editar_origem_lead" %}', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => {
+      if (response.ok) {
+        alert('Origem atualizada com sucesso!');
+        location.reload();
+      } else {
+        alert('Erro ao atualizar origem. Tente novamente.');
+      }
+    })
+    .catch(err => {
+      console.error('Erro:', err);
+      alert('Erro ao atualizar origem. Verifique sua conexão.');
+    });
+  }
+
+  function excluirOrigemLead(origemId, origemNome) {
+    if (!confirm(`Tem certeza que deseja excluir a origem "${origemNome}"?\n\nEsta ação não pode ser desfeita e só funcionará se não houver leads associados.`)) {
+      return;
+    }
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    formData.append('origem_id', origemId);
+    
+    fetch('{% url "core:excluir_origem_lead" %}', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => {
+      if (response.ok) {
+        alert('Origem excluída com sucesso!');
+        location.reload();
+      } else {
+        alert('Erro ao excluir origem. Pode haver leads associados a ela.');
+      }
+    })
+    .catch(err => {
+      console.error('Erro:', err);
+      alert('Erro ao excluir origem. Verifique sua conexão.');
+    });
+  }
+
+  // Atualiza label do checkbox de ativo/inativo
+  document.querySelectorAll('[id^="origem-ativo-"]').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+      const label = this.nextElementSibling;
+      const badge = label.querySelector('.badge');
+      if (this.checked) {
+        badge.className = 'badge bg-success';
+        badge.textContent = 'Ativo';
+      } else {
+        badge.className = 'badge bg-secondary';
+        badge.textContent = 'Inativo';
+      }
+    });
   });
 </script>
 {% endblock %}

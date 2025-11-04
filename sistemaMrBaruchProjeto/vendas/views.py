@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.views.decorators.http import require_http_methods
 from django.template.loader import render_to_string
 from django.contrib.auth import get_user_model
 from django.contrib import messages
@@ -697,18 +698,42 @@ def iniciar_pre_venda(request, lead_id):
                 if pre_venda is None:
                     pre_venda = PreVenda(lead=lead, atendente=request.user)
                 
+                # Função auxiliar para desformatar valores monetários BR -> US
+                def desformatar_valor(valor_str):
+                    """Converte string de valor brasileiro (1.234,56) para Decimal"""
+                    if not valor_str:
+                        return Decimal('0')
+                    valor_str = str(valor_str).strip()
+                    try:
+                        return Decimal(valor_str)
+                    except:
+                        pass
+                    # Remove pontos (separador de milhares) e substitui vírgula por ponto
+                    valor_str = valor_str.replace('.', '').replace(',', '.')
+                    try:
+                        return Decimal(valor_str)
+                    except:
+                        return Decimal('0')
+                
                 # Coleta dados do formulário
-                pre_venda.prazo_risco = request.POST.get('prazo_risco')
+                # prazo_risco e perfil_emocional agora são opcionais
+                prazo_risco = request.POST.get('prazo_risco')
+                if prazo_risco:
+                    pre_venda.prazo_risco = prazo_risco
+                    
+                perfil_emocional_id = request.POST.get('perfil_emocional')
+                if perfil_emocional_id:
+                    pre_venda.perfil_emocional_id = perfil_emocional_id
+                
                 pre_venda.servico_interesse = request.POST.get('servico_interesse')
-                pre_venda.perfil_emocional_id = request.POST.get('perfil_emocional')
                 pre_venda.motivo_principal_id = request.POST.get('motivo_principal')
-                pre_venda.valor_proposto = Decimal(request.POST.get('valor_proposto', '0'))
+                pre_venda.valor_proposto = desformatar_valor(request.POST.get('valor_proposto', '0'))
                 pre_venda.observacoes_levantamento = request.POST.get('observacoes_levantamento', '')
                 # Novos campos financeiros
-                pre_venda.valor_total = Decimal(request.POST.get('valor_total', '0'))
-                pre_venda.valor_entrada = Decimal(request.POST.get('valor_entrada', '0'))
+                pre_venda.valor_total = desformatar_valor(request.POST.get('valor_total', '0'))
+                pre_venda.valor_entrada = desformatar_valor(request.POST.get('valor_entrada', '0'))
                 pre_venda.quantidade_parcelas = int(request.POST.get('quantidade_parcelas', 1))
-                pre_venda.valor_parcela = Decimal(request.POST.get('valor_parcela', '0'))
+                pre_venda.valor_parcela = desformatar_valor(request.POST.get('valor_parcela', '0'))
                 
                 # Capturar frequência de pagamento
                 frequencia = request.POST.get('frequencia_pagamento')
@@ -1285,11 +1310,46 @@ def cadastro_venda(request, pre_venda_id):
                 consultor = request.user  # Sempre o usuário logado
                 print(f"Consultor (logado): {consultor}")
                 
+                # Função auxiliar para desformatar valores monetários BR -> US
+                def desformatar_valor(valor_str):
+                    """
+                    Converte string de valor brasileiro (1.234,56) para Decimal
+                    Aceita também valores já no formato americano (1234.56)
+                    """
+                    if not valor_str:
+                        return Decimal('0')
+                    
+                    # Remove espaços
+                    valor_str = str(valor_str).strip()
+                    
+                    # Se já é um número válido (formato americano), retorna
+                    try:
+                        return Decimal(valor_str)
+                    except:
+                        pass
+                    
+                    # Formato brasileiro: remove pontos (separador de milhares) e substitui vírgula por ponto
+                    valor_str = valor_str.replace('.', '').replace(',', '.')
+                    
+                    try:
+                        return Decimal(valor_str)
+                    except:
+                        return Decimal('0')
+                
                 # ==== Extrai valores do POST ANTES de usar em qualquer lugar ====
                 quantidade_parcelas = int(request.POST.get('quantidade_parcelas', 1))
-                valor_entrada = Decimal(request.POST.get('valor_entrada', '0'))
-                valor_total = Decimal(request.POST.get('valor_total'))
-                valor_parcela = Decimal(request.POST.get('valor_parcela', '0'))
+                valor_entrada = desformatar_valor(request.POST.get('valor_entrada', '0'))
+                valor_total = desformatar_valor(request.POST.get('valor_total'))
+                valor_parcela = desformatar_valor(request.POST.get('valor_parcela', '0'))
+                
+                # Log dos valores para debug
+                print(f"POST valor_total RAW: {request.POST.get('valor_total')}")
+                print(f"POST valor_entrada RAW: {request.POST.get('valor_entrada')}")
+                print(f"POST valor_parcela RAW: {request.POST.get('valor_parcela')}")
+                print(f"Valor Total após desformatar: {valor_total}")
+                print(f"Valor Entrada após desformatar: {valor_entrada}")
+                print(f"Valor Parcela após desformatar: {valor_parcela}")
+                print(f"Quantidade Parcelas: {quantidade_parcelas}")
                 
                 # Determina os serviços contratados baseado nos checkboxes
                 servicos_contratados = []
@@ -2731,3 +2791,36 @@ def dashboard_comercial2_kpis(request):
     
     return render(request, 'vendas/comercial2/dashboard_kpis.html', context)
 
+
+@login_required
+@require_http_methods(["POST"])
+def ativar_nota_fiscal(request, venda_id):
+    """
+    Ativa a emissão de nota fiscal para uma venda
+    """
+    from django.contrib import messages
+    from django.shortcuts import redirect
+    
+    venda = get_object_or_404(Venda, id=venda_id)
+    
+    # Obter dados do formulário
+    nf_tipo_pessoa = request.POST.get('nf_tipo_pessoa')
+    nf_email = request.POST.get('nf_email', '').strip()
+    
+    # Validações básicas
+    if not nf_tipo_pessoa:
+        messages.error(request, 'Tipo de pessoa é obrigatório!')
+        return redirect('vendas:detalhes_venda', venda_id=venda_id)
+    
+    # Atualizar venda
+    venda.cliente_quer_nf = True
+    venda.nf_tipo_pessoa = nf_tipo_pessoa
+    venda.nf_email = nf_email if nf_email else None
+    venda.save(update_fields=['cliente_quer_nf', 'nf_tipo_pessoa', 'nf_email'])
+    
+    messages.success(
+        request, 
+        '✅ Emissão de Nota Fiscal ativada com sucesso! As notas serão geradas automaticamente conforme os pagamentos forem confirmados.'
+    )
+    
+    return redirect('vendas:detalhes_venda', venda_id=venda_id)

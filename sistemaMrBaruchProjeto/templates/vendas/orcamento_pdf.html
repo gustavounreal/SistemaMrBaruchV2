@@ -68,6 +68,12 @@
                 page-break-inside: avoid !important;
             }
             
+            /* Garantir que termos e condições apareçam com fundo amarelo */
+            .observacoes {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
             /* Garantir cores de texto */
             * {
                 -webkit-print-color-adjust: exact !important;
@@ -624,6 +630,15 @@
             {% endif %}
             {% endif %}
             
+            <!-- Termos e Condições -->
+            <div class="observacoes" style="margin-top: 20px; background: #fff3cd; border-left: 4px solid #ffc107;">
+                <h4 style="color: #856404; margin-bottom: 8px;">TERMOS E CONDIÇÕES IMPORTANTES</h4>
+                <ul style="margin: 0; padding-left: 20px; color: #856404; font-size: 9pt; line-height: 1.5;">
+                    <li><strong>A contratada não excluirá restrições internas do banco central e de nenhum outro banco.</strong></li>
+                    <li><strong>A contratada não é responsável por nenhum tipo de liberação de crédito.</strong></li>
+                </ul>
+            </div>
+
             <!-- Botões de Ação -->
             <div class="no-print" style="text-align: center; margin-top: 20px;">
                 <button onclick="window.print()" class="btn-imprimir">

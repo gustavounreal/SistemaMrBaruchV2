@@ -281,6 +281,69 @@ class HistoricoAnaliseCompliance(models.Model):
         return f"{self.acao} - {self.analise.lead.nome_completo} - {self.data}"
 
 
+class TipoDocumentoLevantamento(models.TextChoices):
+    """Tipos de documentos de levantamento"""
+    RELATORIO_COMPLETO = 'RELATORIO_COMPLETO', 'Levantamento'
+    EXTRATO_BANCARIO = 'EXTRATO_BANCARIO', 'Extrato Bancário'
+    CARTAO_CREDITO = 'CARTAO_CREDITO', 'Cartão de Crédito'
+    EMPRESTIMO = 'EMPRESTIMO', 'Empréstimo'
+    FINANCIAMENTO = 'FINANCIAMENTO', 'Financiamento'
+    OUTROS = 'OUTROS', 'Outros'
+
+
+class DocumentoLevantamentoCompliance(models.Model):
+    """
+    Documentos de levantamento enviados pelo Compliance.
+    Armazena os documentos coletados durante a análise do lead.
+    """
+    analise = models.ForeignKey(
+        AnaliseCompliance,
+        on_delete=models.CASCADE,
+        related_name='documentos_levantamento',
+        verbose_name='Análise de Compliance'
+    )
+    tipo = models.CharField(
+        max_length=30,
+        choices=TipoDocumentoLevantamento.choices,
+        default=TipoDocumentoLevantamento.RELATORIO_COMPLETO,
+        verbose_name='Tipo de Documento'
+    )
+    arquivo = models.FileField(
+        upload_to='compliance/levantamentos/%Y/%m/',
+        verbose_name='Arquivo'
+    )
+    descricao = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Descrição'
+    )
+    
+    # Metadados
+    enviado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='documentos_levantamento_enviados',
+        verbose_name='Enviado Por'
+    )
+    data_upload = models.DateTimeField(auto_now_add=True, verbose_name='Data de Upload')
+    tamanho_arquivo = models.IntegerField(null=True, blank=True, verbose_name='Tamanho (bytes)')
+    
+    class Meta:
+        verbose_name = 'Documento de Levantamento'
+        verbose_name_plural = 'Documentos de Levantamento'
+        ordering = ['-data_upload']
+    
+    def __str__(self):
+        return f"{self.get_tipo_display()} - {self.analise.lead.nome_completo}"
+    
+    def save(self, *args, **kwargs):
+        """Salva o tamanho do arquivo automaticamente"""
+        if self.arquivo:
+            self.tamanho_arquivo = self.arquivo.size
+        super().save(*args, **kwargs)
+
+
 # ============================================================================
 # MODELOS PARA GESTÃO PÓS-VENDA
 # ============================================================================

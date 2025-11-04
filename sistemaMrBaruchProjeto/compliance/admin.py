@@ -5,7 +5,8 @@ from .models import (
     HistoricoAnaliseCompliance,
     ConferenciaVendaCompliance,
     DocumentoVendaCompliance,
-    ContratoCompliance
+    ContratoCompliance,
+    DocumentoLevantamentoCompliance
 )
 
 
@@ -148,3 +149,31 @@ class ContratoComplianceAdmin(admin.ModelAdmin):
             'fields': ('data_criacao', 'data_atualizacao')
         }),
     )
+
+
+@admin.register(DocumentoLevantamentoCompliance)
+class DocumentoLevantamentoComplianceAdmin(admin.ModelAdmin):
+    list_display = ['id', 'analise', 'tipo', 'descricao', 'enviado_por', 'data_upload', 'tamanho_formatado']
+    list_filter = ['tipo', 'data_upload']
+    search_fields = ['analise__lead__nome_completo', 'descricao']
+    readonly_fields = ['data_upload', 'tamanho_arquivo']
+    raw_id_fields = ['analise', 'enviado_por']
+    
+    fieldsets = (
+        ('Documento', {
+            'fields': ('analise', 'tipo', 'arquivo', 'descricao')
+        }),
+        ('Metadados', {
+            'fields': ('enviado_por', 'data_upload', 'tamanho_arquivo')
+        }),
+    )
+    
+    def tamanho_formatado(self, obj):
+        """Exibe o tamanho do arquivo formatado"""
+        if obj.tamanho_arquivo:
+            if obj.tamanho_arquivo < 1024 * 1024:
+                return f"{obj.tamanho_arquivo / 1024:.2f} KB"
+            else:
+                return f"{obj.tamanho_arquivo / (1024 * 1024):.2f} MB"
+        return "—"
+    tamanho_formatado.short_description = 'Tamanho'

@@ -220,12 +220,17 @@ def painel_configuracoes(request):
     usuarios = User.objects.all().order_by('first_name', 'last_name', 'username')
     grupos_info = GrupoService.listar_grupos_sistema()  # Usar service para listar grupos
     selected_user_id = request.GET.get('selected_user')
+    
+    # Adiciona origens de lead para gerenciamento
+    from marketing.models import OrigemLead
+    origens = OrigemLead.objects.all().order_by('ordem', 'nome')
 
     return render(request, 'core/painel_configuracoes.html', {
         'configs_forms_por_categoria': configs_forms_por_categoria,
         'usuarios': usuarios,
         'grupos': grupos_info,  # Passar grupos com metadados
         'selected_user_id': selected_user_id,
+        'origens': origens,  # Adiciona origens ao contexto
         'titulo': 'Painel de Configurações',
     })
 
@@ -875,6 +880,49 @@ def _processar_pagamento_confirmado(payment_data):
                     acao='erro_atualizar_comissoes_entrada'
                 )
             
+            # ✅ CRIAR NOTA FISCAL SE CLIENTE SOLICITOU
+            try:
+                if venda.cliente_quer_nf:
+                    from notas_fiscais.models import NotaFiscal
+                    from decimal import Decimal
+                    
+                    # Criar nota fiscal da entrada
+                    nota_entrada, nota_created = NotaFiscal.objects.get_or_create(
+                        venda=venda,
+                        tipo='ENTRADA',
+                        defaults={
+                            'valor_servico': venda.valor_entrada,
+                            'aliquota_iss': Decimal('2.00'),
+                            'valor_iss': venda.valor_entrada * Decimal('0.02'),
+                            'status': 'PENDENTE',
+                            'descricao_servico': 'Consultoria Financeira - Entrada',
+                            'email_destinatario': venda.nf_email or venda.cliente.email,
+                        }
+                    )
+                    
+                    if nota_created:
+                        logger.info(f"[webhook] Nota Fiscal ENTRADA criada: NF #{nota_entrada.id} - Venda {venda.id}")
+                        
+                        LogService.registrar(
+                            nivel='INFO',
+                            mensagem=f"Nota Fiscal ENTRADA criada automaticamente: NF #{nota_entrada.id} - Venda {venda.id} - R$ {venda.valor_entrada}",
+                            modulo='notas_fiscais',
+                            acao='nota_fiscal_entrada_criada'
+                        )
+                    else:
+                        logger.info(f"[webhook] Nota Fiscal ENTRADA já existe: NF #{nota_entrada.id} - Venda {venda.id}")
+                else:
+                    logger.info(f"[webhook] Cliente não solicitou NF - Venda {venda.id}")
+                    
+            except Exception as e_nf:
+                logger.error(f"[webhook] Erro ao criar nota fiscal da entrada: {str(e_nf)}")
+                LogService.registrar(
+                    nivel='ERROR',
+                    mensagem=f"Erro ao criar nota fiscal da entrada: {str(e_nf)}",
+                    modulo='notas_fiscais',
+                    acao='erro_criar_nota_fiscal_entrada'
+                )
+            
             return True
             
         except PixEntrada.DoesNotExist:
@@ -953,6 +1001,49 @@ def _processar_pagamento_confirmado(payment_data):
                     mensagem=f"Erro ao atualizar comissões da parcela: {str(e_comissao)}",
                     modulo='comissoes',
                     acao='erro_atualizar_comissoes_parcela'
+                )
+            
+            # ✅ CRIAR NOTA FISCAL SE CLIENTE SOLICITOU
+            try:
+                venda = parcela.venda
+                if venda.cliente_quer_nf and parcela.numero_parcela > 0:  # Só parcelas, não entrada
+                    from notas_fiscais.models import NotaFiscal
+                    from decimal import Decimal
+                    
+                    # Criar nota fiscal da parcela
+                    nota_parcela, nota_created = NotaFiscal.objects.get_or_create(
+                        venda=venda,
+                        parcela=parcela,
+                        tipo='PARCELA',
+                        defaults={
+                            'valor_servico': parcela.valor,
+                            'aliquota_iss': Decimal('2.00'),
+                            'valor_iss': parcela.valor * Decimal('0.02'),
+                            'status': 'PENDENTE',
+                            'descricao_servico': f'Consultoria Financeira - Parcela {parcela.numero_parcela}/{parcela.venda.quantidade_parcelas}',
+                            'email_destinatario': venda.nf_email or venda.cliente.email,
+                        }
+                    )
+                    
+                    if nota_created:
+                        logger.info(f"[webhook] Nota Fiscal PARCELA criada: NF #{nota_parcela.id} - Venda {venda.id} - Parcela {parcela.numero_parcela}")
+                        
+                        LogService.registrar(
+                            nivel='INFO',
+                            mensagem=f"Nota Fiscal PARCELA {parcela.numero_parcela} criada automaticamente: NF #{nota_parcela.id} - Venda {venda.id} - R$ {parcela.valor}",
+                            modulo='notas_fiscais',
+                            acao='nota_fiscal_parcela_criada'
+                        )
+                    else:
+                        logger.info(f"[webhook] Nota Fiscal PARCELA já existe: NF #{nota_parcela.id} - Venda {venda.id} - Parcela {parcela.numero_parcela}")
+                        
+            except Exception as e_nf:
+                logger.error(f"[webhook] Erro ao criar nota fiscal da parcela: {str(e_nf)}")
+                LogService.registrar(
+                    nivel='ERROR',
+                    mensagem=f"Erro ao criar nota fiscal da parcela: {str(e_nf)}",
+                    modulo='notas_fiscais',
+                    acao='erro_criar_nota_fiscal_parcela'
                 )
             
             # Verificar se todas as parcelas foram pagas
@@ -1361,3 +1452,108 @@ def list_pending_webhooks(request):
             'success': False,
             'error': str(e)
         }, status=500)
+
+
+@login_required
+@permission_required('marketing.add_origemlead', raise_exception=True)
+@require_POST
+def adicionar_origem_lead(request):
+    """Adiciona uma nova origem de lead"""
+    from marketing.models import OrigemLead
+    
+    nome = request.POST.get('nome', '').strip()
+    
+    if not nome:
+        messages.error(request, 'O nome da origem é obrigatório.')
+        return redirect('core:painel_configuracoes')
+    
+    try:
+        if OrigemLead.objects.filter(nome__iexact=nome).exists():
+            messages.warning(request, f'A origem "{nome}" já existe.')
+            return redirect('core:painel_configuracoes')
+        
+        ultima_ordem = OrigemLead.objects.all().order_by('-ordem').first()
+        nova_ordem = (ultima_ordem.ordem + 1) if ultima_ordem else 1
+        
+        origem = OrigemLead.objects.create(
+            nome=nome,
+            ativo=True,
+            ordem=nova_ordem
+        )
+        
+        messages.success(request, f'Origem "{origem.nome}" adicionada com sucesso!')
+    except Exception as e:
+        messages.error(request, f'Erro ao adicionar origem: {str(e)}')
+    
+    return redirect('core:painel_configuracoes')
+
+
+@login_required
+@permission_required('marketing.change_origemlead', raise_exception=True)
+@require_POST
+def editar_origem_lead(request):
+    """Edita uma origem de lead existente"""
+    from marketing.models import OrigemLead
+    
+    origem_id = request.POST.get('origem_id')
+    nome = request.POST.get('nome', '').strip()
+    ativo = request.POST.get('ativo') == 'on'
+    
+    if not origem_id or not nome:
+        messages.error(request, 'ID e nome da origem são obrigatórios.')
+        return redirect('core:painel_configuracoes')
+    
+    try:
+        origem = OrigemLead.objects.get(id=origem_id)
+        
+        if OrigemLead.objects.filter(nome__iexact=nome).exclude(id=origem_id).exists():
+            messages.warning(request, f'Já existe outra origem com o nome "{nome}".')
+            return redirect('core:painel_configuracoes')
+        
+        origem.nome = nome
+        origem.ativo = ativo
+        origem.save()
+        
+        messages.success(request, f'Origem "{origem.nome}" atualizada com sucesso!')
+    except OrigemLead.DoesNotExist:
+        messages.error(request, 'Origem não encontrada.')
+    except Exception as e:
+        messages.error(request, f'Erro ao editar origem: {str(e)}')
+    
+    return redirect('core:painel_configuracoes')
+
+
+@login_required
+@permission_required('marketing.delete_origemlead', raise_exception=True)
+@require_POST
+def excluir_origem_lead(request):
+    """Exclui uma origem de lead (se não tiver leads associados)"""
+    from marketing.models import OrigemLead, Lead
+    
+    origem_id = request.POST.get('origem_id')
+    
+    if not origem_id:
+        messages.error(request, 'ID da origem é obrigatório.')
+        return redirect('core:painel_configuracoes')
+    
+    try:
+        origem = OrigemLead.objects.get(id=origem_id)
+        
+        leads_count = Lead.objects.filter(origem=origem).count()
+        if leads_count > 0:
+            messages.error(
+                request, 
+                f'Não é possível excluir a origem "{origem.nome}" pois existem {leads_count} lead(s) associado(s).'
+            )
+            return redirect('core:painel_configuracoes')
+        
+        nome_origem = origem.nome
+        origem.delete()
+        
+        messages.success(request, f'Origem "{nome_origem}" excluída com sucesso!')
+    except OrigemLead.DoesNotExist:
+        messages.error(request, 'Origem não encontrada.')
+    except Exception as e:
+        messages.error(request, f'Erro ao excluir origem: {str(e)}')
+    
+    return redirect('core:painel_configuracoes')

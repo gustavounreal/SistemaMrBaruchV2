@@ -107,7 +107,8 @@ class RegisterForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
-        user.username = self.cleaned_data['email'].split('@')[0]
+        # Converte username para maiúsculas
+        user.username = self.cleaned_data['email'].split('@')[0].upper()
         if commit:
             user.save()
             # Adiciona o usuário ao grupo 'captador' por padrão

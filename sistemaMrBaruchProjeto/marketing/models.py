@@ -93,6 +93,7 @@ class Lead(models.Model):
     # --- A) Identificação e contato ---
     nome_completo = models.CharField(max_length=200)
     cpf_cnpj = models.CharField(max_length=20, blank=True, null=True)
+    data_nascimento = models.DateField(blank=True, null=True, help_text="Data de nascimento do lead (opcional)")
     email = models.EmailField(blank=True, null=True)
     telefone = models.CharField(max_length=20)
 

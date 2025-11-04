@@ -29,6 +29,7 @@ urlpatterns = [
     path('marketing/', include('marketing.urls', namespace='marketing')),
     path('juridico/', include('juridico.urls', namespace='juridico')),
     path('financeiro/', include('financeiro.urls', namespace='financeiro')),
+    path('notas-fiscais/', include('notas_fiscais.urls', namespace='notas_fiscais')),
     
     # Webhook ASAAS (rota direta sem prefixo)
     path('webhook/asaas/', core_views.webhook_asaas, name='webhook_asaas'),

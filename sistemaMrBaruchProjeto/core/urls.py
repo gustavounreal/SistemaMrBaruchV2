@@ -17,6 +17,11 @@ urlpatterns = [
    path('painel_configuracoes/grupos/remover/', views.remover_usuario_grupo, name='remover_usuario_grupo'),
    path('painel_configuracoes/grupos/usuario/<int:usuario_id>/', views.obter_grupos_usuario_ajax, name='obter_grupos_usuario_ajax'),
    
+   # Gerenciamento de Origens de Lead
+   path('painel_configuracoes/origens/adicionar/', views.adicionar_origem_lead, name='adicionar_origem_lead'),
+   path('painel_configuracoes/origens/editar/', views.editar_origem_lead, name='editar_origem_lead'),
+   path('painel_configuracoes/origens/excluir/', views.excluir_origem_lead, name='excluir_origem_lead'),
+   
    # Webhook ASAAS
    path('webhook/asaas/', views.webhook_asaas, name='webhook_asaas'),
    

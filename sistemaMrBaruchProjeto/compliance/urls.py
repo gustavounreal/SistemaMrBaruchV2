@@ -20,6 +20,11 @@ urlpatterns = [
     path('api/desatribuir/<int:analise_id>/', views.desatribuir_consultor, name='desatribuir_consultor'),
     path('api/desreprovar/<int:analise_id>/', views.desreprovar_lead, name='desreprovar_lead'),
     
+    # Documentos de Levantamento
+    path('api/documento-levantamento/<int:analise_id>/upload/', views.upload_documento_levantamento, name='upload_documento_levantamento'),
+    path('api/documento-levantamento/<int:documento_id>/excluir/', views.excluir_documento_levantamento, name='excluir_documento_levantamento'),
+    path('api/documento-levantamento/<int:documento_id>/download/', views.download_documento_levantamento, name='download_documento_levantamento'),
+    
     # Gestão Pós-Venda (Sistema Antigo - ATENÇÃO GALERA DO MR BARUCH - por compatibilidade)
     path('gestao-pos-venda/', views.gestao_pos_venda_lista, name='gestao_pos_venda_lista'),
     path('gestao-pos-venda/<int:gestao_id>/', views.gestao_pos_venda_detalhes, name='gestao_pos_venda_detalhes'),

@@ -13,14 +13,31 @@ class User(AbstractUser):
     ativo = models.BooleanField(default=True)     
     cpf = models.CharField(max_length=14, blank=True, null=True)
     rg = models.CharField(max_length=20, blank=True, null=True)
+    
+    # Endereço completo (legacy - mantido para compatibilidade)
     endereco_completo = models.TextField(blank=True, null=True)
-    cep = models.CharField(max_length=9, blank=True, null=True)
+    
+    # Endereço detalhado
+    cep = models.CharField(max_length=9, blank=True, null=True, verbose_name='CEP')
+    logradouro = models.CharField(max_length=255, blank=True, null=True, verbose_name='Logradouro')
+    numero = models.CharField(max_length=20, blank=True, null=True, verbose_name='Número')
+    complemento = models.CharField(max_length=100, blank=True, null=True, verbose_name='Complemento')
+    bairro = models.CharField(max_length=100, blank=True, null=True, verbose_name='Bairro')
+    cidade = models.CharField(max_length=100, blank=True, null=True, verbose_name='Cidade')
+    estado = models.CharField(max_length=2, blank=True, null=True, verbose_name='Estado')
+    
     chave_pix = models.CharField(max_length=255, blank=True, null=True)
     conta_bancaria = models.JSONField(blank=True, null=True)  # {banco, agencia, conta}
     nome_completo = models.CharField(max_length=150, blank=True, null=True)
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
+    
+    def save(self, *args, **kwargs):
+        """Sobrescreve o método save para garantir username em maiúsculas"""
+        if self.username:
+            self.username = self.username.upper()
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return f"{self.first_name} {self.last_name}" if self.first_name else self.email

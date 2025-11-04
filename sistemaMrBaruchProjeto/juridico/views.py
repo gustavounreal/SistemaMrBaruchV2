@@ -357,9 +357,9 @@ def gerar_contrato(request, venda_id):
             servicos_texto.append("• <b>Retirada de travas</b> (Atualização nos órgãos de proteção ao crédito);")
         
         if venda.recuperacao_score:
-            servicos_texto.append("• <b>Restauração do Score</b> (observada a possível variação conforme critérios técnicos dos órgãos de proteção ao crédito);")
+            servicos_texto.append("• <b>Restauração do Score</b> (observada a possível variação conforme critérios técnicos dos órgãos de proteção ao crédito). <b>A pontuação voltará a ser o que era antes do nome ser negativado. A pontuação pode variar, mas não abaixará.</b>")
         
-        servicos_texto.append(f"• <b>Entrega do resultado</b> em até <b>{dias_uteis} dias úteis</b>, a partir da assinatura do contrato e do pagamento da entrada.")
+        servicos_texto.append(f"• <b>Entrega do resultado <u>(nada consta)</u></b> em até <b>{dias_uteis} dias úteis</b>, a partir da assinatura do contrato e do pagamento da entrada.")
         
         story.append(Paragraph(
             f"1.1. O presente contrato tem por objeto a prestação de serviços especializados pelo <b>CONTRATADO</b> ao <b>CONTRATANTE</b>, visando:<br/><br/>" +
@@ -376,18 +376,27 @@ def gerar_contrato(request, venda_id):
         
         # CLÁUSULA 2ª – DAS OBRIGAÇÕES DO CONTRATADO
         story.append(Paragraph("CLÁUSULA 2ª – DAS OBRIGAÇÕES DO CONTRATADO", heading_style))
+        
+        obrigacoes_texto = []
+        
+        # LGPD vem PRIMEIRO (sempre presente)
+        obrigacoes_texto.append("• Zelar pela <b>confidencialidade dos dados</b>, em conformidade com a <b>LGPD (Lei 13.709/2018)</b>.")
+        
+        # Exclusão e reexclusão são CONDICIONAIS (apenas para limpa_nome)
+        if venda.limpa_nome:
+            obrigacoes_texto.append(f"• Realizar a <b>exclusão das restrições</b> em até <b>{dias_uteis} dias úteis</b> após assinatura e pagamento da entrada;")
+            obrigacoes_texto.append("• Reexcluir, sem custos, quaisquer registros que retornem durante o período de garantia;")
+        
         story.append(Paragraph(
-            f"2.1. O CONTRATADO obriga-se a:<br/><br/>"
-            f"• Realizar a <b>exclusão das restrições</b> em até <b>{dias_uteis} dias úteis</b> após assinatura e pagamento da entrada;<br/><br/>"
-            f"• Reexcluir, sem custos, quaisquer registros que retornem durante o período de garantia;<br/><br/>"
-            f"• Zelar pela <b>confidencialidade dos dados</b>, em conformidade com a <b>LGPD (Lei 13.709/2018)</b>.<br/><br/>",
+            f"2.1. O CONTRATADO obriga-se a:<br/><br/>" +
+            "<br/><br/>".join(obrigacoes_texto) + "<br/><br/>",
             paragrafos_com_indentacao
         ))
         
-        # CLÁUSULA 3ª – DAS OBRIGAÇÕES DO CONTRATANTE
-        story.append(Paragraph("CLÁUSULA 3ª – DAS OBRIGAÇÕES DO CONTRATANTE", heading_style))
+        # CLÁUSULA 3ª – DAS OBRIGAÇÕES DA CONTRATANTE
+        story.append(Paragraph("CLÁUSULA 3ª – DAS OBRIGAÇÕES DA CONTRATANTE", heading_style))
         story.append(Paragraph(
-            f"3.1. O CONTRATANTE deverá:<br/><br/>"
+            f"3.1. A CONTRATANTE deverá:<br/><br/>"
             f"• Pagar o valor total de {format_currency(venda.valor_total)} conforme:<br/>",
             paragrafos_com_indentacao
         ))
@@ -445,7 +454,8 @@ def gerar_contrato(request, venda_id):
         story.append(Paragraph(
             "• Fornecer <b>documentação completa</b> (RG, CPF, comprovantes);<br/><br/>"
             "• Assinar <b>requerimento específico</b> para a execução dos trabalhos;<br/><br/>"
-            "• <b>Abster-se de solicitar crédito</b> durante a execução do serviço.<br/><br/>",
+            "• <b>Abster-se de solicitar crédito</b> durante a execução do serviço;<br/><br/>"
+            "• <b>Não pode solicitar crédito e não pode pagar os boletos em atraso</b> para não interferir na pontuação do score.<br/><br/>",
             paragrafos_com_indentacao
         ))
         
@@ -467,10 +477,13 @@ def gerar_contrato(request, venda_id):
         story.append(Paragraph("CLÁUSULA 5ª – DA RESCISÃO E MULTAS", heading_style))
         story.append(Paragraph(
             "<b>5.1. Em caso de desistência:</b><br/><br/>"
-            "• Não haverá devolução dos valores já pagos pelo CONTRATANTE por motivos o qual deu causa, "
+            "• Não haverá devolução dos valores já pagos pelo CONTRATANTE por motivos pelos quais deu causa, "
             "em razão dos custos operacionais e administrativos já incorridos.<br/><br/>"
-            "5.2. Em caso de rescisão contratual por inadimplemento ou por qualquer outra motivação por parte do CONTRATANTE, "
-            "será devida multa rescisória correspondente a 25% (vinte e cinco por cento) sobre o valor total do contrato.<br/><br/>",
+            "<b>5.2. Em caso de rescisão contratual por inadimplemento ou por qualquer outra motivação por parte do CONTRATANTE, "
+            "será devida multa rescisória correspondente a 25% (vinte e cinco por cento) sobre o valor total do contrato.</b><br/><br/>"
+            "• <b>Serviço já entregue ou em andamento irreversível:</b> O CONTRATANTE deverá arcar com a multa rescisória de 25% (vinte e cinco por cento) sobre o valor total do contrato, além de não haver devolução dos valores já pagos.<br/><br/>"
+            "• <b>Serviço não iniciado ou passível de interrupção:</b> O CONTRATANTE deverá arcar com a multa rescisória de 25% (vinte e cinco por cento) sobre o valor total do contrato, sendo que os valores já pagos serão deduzidos da multa.<br/><br/>"
+            "<b>5.3. As partes reconhecem que os valores já pagos, bem como a multa rescisória, referem-se à compensação pelos custos administrativos, operacionais e lucros cessantes decorrentes da interrupção do contrato, ficando a critério exclusivo do CONTRATADO a aplicação ou não da multa rescisória, conforme análise do caso concreto.</b><br/><br/>",
             paragrafos_com_indentacao
         ))
         

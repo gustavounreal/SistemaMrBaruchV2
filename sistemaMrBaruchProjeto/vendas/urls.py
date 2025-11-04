@@ -39,6 +39,9 @@ urlpatterns = [
     # Listagem e detalhes de vendas concluídas
     path('lista/', views.listar_vendas, name='listar_vendas'),
     path('<int:venda_id>/', views.detalhes_venda, name='detalhes_venda'),
+    
+    # Ativar Nota Fiscal
+    path('<int:venda_id>/ativar-nota-fiscal/', views.ativar_nota_fiscal, name='ativar_nota_fiscal'),
 
     # Perfil do consultor (comercial1)
     path('perfil/', views.perfil_consultor, name='perfil_consultor'),

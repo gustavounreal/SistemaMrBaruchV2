@@ -11,7 +11,8 @@ from .models import (
     AnaliseCompliance, GestaoDocumentosPosVenda, HistoricoAnaliseCompliance,
     StatusAnaliseCompliance, ClassificacaoLead, StatusPosVendaCompliance,
     ConferenciaVendaCompliance, DocumentoVendaCompliance, ContratoCompliance,
-    StatusPagamentoEntrada, TipoDocumento, StatusDocumento
+    StatusPagamentoEntrada, TipoDocumento, StatusDocumento, 
+    DocumentoLevantamentoCompliance, TipoDocumentoLevantamento
 )
 from .services import (
     ComplianceStatsService, ComplianceAnaliseService, ConsultorAtribuicaoService
@@ -126,6 +127,11 @@ def detalhes_lead_compliance(request, lead_id):
         analise=analise
     ).select_related('usuario').order_by('-data')
     
+    # Buscar documentos de levantamento
+    documentos_levantamento = DocumentoLevantamentoCompliance.objects.filter(
+        analise=analise
+    ).select_related('enviado_por').order_by('-data_upload')
+    
     # Lista de consultores disponíveis (usar service)
     consultores = ConsultorAtribuicaoService.listar_consultores_disponiveis()
     
@@ -135,6 +141,8 @@ def detalhes_lead_compliance(request, lead_id):
         'levantamentos': levantamentos,
         'pre_vendas': pre_vendas,
         'historico': historico,
+        'documentos_levantamento': documentos_levantamento,
+        'tipos_documento': TipoDocumentoLevantamento.choices,
         'consultores': consultores,
         'classificacoes': ClassificacaoLead.choices,
     }
@@ -1338,6 +1346,182 @@ def adicionar_documento_extra(request, venda_id):
         return redirect('compliance:gestao_pos_venda', venda_id=venda_id)
     
     return redirect('compliance:painel_pos_venda')
+
+
+@login_required
+@user_passes_test(is_compliance)
+def adicionar_documento_extra(request, venda_id):
+    """
+    Adiciona um documento extra não obrigatório.
+    """
+    if request.method == 'POST':
+        venda = get_object_or_404(Venda, id=venda_id)
+        conferencia = get_object_or_404(ConferenciaVendaCompliance, venda=venda)
+        
+        tipo = request.POST.get('tipo_documento')
+        descricao = request.POST.get('descricao', '')
+        arquivo = request.FILES.get('arquivo')
+        
+        if not arquivo:
+            messages.error(request, 'Nenhum arquivo selecionado!')
+            return redirect('compliance:gestao_pos_venda', venda_id=venda_id)
+        
+        # Criar documento
+        documento = DocumentoVendaCompliance.objects.create(
+            conferencia=conferencia,
+            tipo=tipo,
+            arquivo=arquivo,
+            observacao=descricao,
+            obrigatorio=False
+        )
+        
+        # Adicionar ao histórico
+        conferencia.adicionar_historico(
+            acao='DOCUMENTO_EXTRA_ADICIONADO',
+            usuario=request.user,
+            descricao=f'Documento extra adicionado: {documento.get_tipo_display()}'
+        )
+        
+        messages.success(request, 'Documento extra adicionado com sucesso!')
+        return redirect('compliance:gestao_pos_venda', venda_id=venda_id)
+    
+    return redirect('compliance:painel_pos_venda')
+
+
+# ===== DOCUMENTOS DE LEVANTAMENTO =====
+
+@login_required
+@user_passes_test(is_compliance)
+def upload_documento_levantamento(request, analise_id):
+    """
+    Upload de documentos de levantamento.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método inválido'}, status=405)
+    
+    try:
+        analise = get_object_or_404(AnaliseCompliance, id=analise_id)
+        
+        tipo = request.POST.get('tipo')
+        descricao = request.POST.get('descricao', '')
+        arquivo = request.FILES.get('arquivo')
+        
+        if not arquivo:
+            return JsonResponse({'success': False, 'message': 'Nenhum arquivo foi enviado'})
+        
+        if not tipo:
+            return JsonResponse({'success': False, 'message': 'Tipo de documento não informado'})
+        
+        # Verificar tamanho do arquivo (max 10MB)
+        max_size = 10 * 1024 * 1024  # 10MB
+        if arquivo.size > max_size:
+            return JsonResponse({
+                'success': False, 
+                'message': 'Arquivo muito grande. Tamanho máximo: 10MB'
+            })
+        
+        # Criar documento
+        documento = DocumentoLevantamentoCompliance.objects.create(
+            analise=analise,
+            tipo=tipo,
+            arquivo=arquivo,
+            descricao=descricao,
+            enviado_por=request.user
+        )
+        
+        # Adicionar ao histórico
+        HistoricoAnaliseCompliance.objects.create(
+            analise=analise,
+            acao='DOCUMENTO_ADICIONADO',
+            usuario=request.user,
+            descricao=f'Documento adicionado: {documento.get_tipo_display()} - {descricao}'
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Documento enviado com sucesso!',
+            'documento': {
+                'id': documento.id,
+                'tipo': documento.get_tipo_display(),
+                'descricao': documento.descricao,
+                'data_upload': documento.data_upload.strftime('%d/%m/%Y %H:%M'),
+                'enviado_por': documento.enviado_por.username,
+                'tamanho': f'{documento.tamanho_arquivo / 1024:.2f} KB' if documento.tamanho_arquivo else 'N/A'
+            }
+        })
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Erro ao fazer upload: {str(e)}'})
+
+
+@login_required
+@user_passes_test(is_compliance)
+def excluir_documento_levantamento(request, documento_id):
+    """
+    Exclui um documento de levantamento.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método inválido'}, status=405)
+    
+    try:
+        documento = get_object_or_404(DocumentoLevantamentoCompliance, id=documento_id)
+        analise = documento.analise
+        
+        # Verificar permissão (só pode excluir quem enviou ou admin)
+        if documento.enviado_por != request.user and not request.user.is_superuser:
+            return JsonResponse({
+                'success': False, 
+                'message': 'Você não tem permissão para excluir este documento'
+            })
+        
+        # Salvar info antes de deletar
+        tipo_doc = documento.get_tipo_display()
+        descricao_doc = documento.descricao
+        
+        # Adicionar ao histórico antes de deletar
+        HistoricoAnaliseCompliance.objects.create(
+            analise=analise,
+            acao='DOCUMENTO_EXCLUIDO',
+            usuario=request.user,
+            descricao=f'Documento excluído: {tipo_doc} - {descricao_doc}'
+        )
+        
+        # Deletar arquivo físico
+        if documento.arquivo:
+            documento.arquivo.delete()
+        
+        # Deletar registro
+        documento.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Documento excluído com sucesso!'
+        })
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Erro ao excluir documento: {str(e)}'})
+
+
+@login_required
+@user_passes_test(is_compliance)
+def download_documento_levantamento(request, documento_id):
+    """
+    Download de documento de levantamento.
+    """
+    documento = get_object_or_404(DocumentoLevantamentoCompliance, id=documento_id)
+    
+    if not documento.arquivo:
+        messages.error(request, 'Arquivo não encontrado!')
+        return redirect('compliance:detalhes_lead', lead_id=documento.analise.lead.id)
+    
+    try:
+        response = FileResponse(documento.arquivo.open('rb'))
+        response['Content-Type'] = 'application/octet-stream'
+        response['Content-Disposition'] = f'attachment; filename="{documento.arquivo.name.split("/")[-1]}"'
+        return response
+    except Exception as e:
+        messages.error(request, f'Erro ao fazer download: {str(e)}')
+        return redirect('compliance:detalhes_lead', lead_id=documento.analise.lead.id)
 
 
 # ===== RELATÓRIOS DE AUDITORIA =====

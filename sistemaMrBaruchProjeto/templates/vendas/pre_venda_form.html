@@ -399,29 +399,10 @@
             <form method="post">
                 {% csrf_token %}
 
-                <!-- Seção 1: Perfil Prazo/Risco -->
-                <div class="section-header">
-                    <i class="bi bi-speedometer2"></i>
-                    <h5>1. Perfil de Prazo e Risco</h5>
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label required" for="prazo_risco">Qual o perfil de prazo/risco do cliente?</label>
-                    <select name="prazo_risco" id="prazo_risco" class="form-select" required>
-                        <option value="">Selecione uma opção...</option>
-                        {% for value, label in prazo_risco_choices %}
-                            <option value="{{ value }}" {% if pre_venda.prazo_risco == value %}selected{% endif %}>
-                                {{ label }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                    <small class="form-text">Ajuda a determinar o tipo de serviço mais adequado</small>
-                </div>
-
-                <!-- Seção 2: Motivo Principal -->
+                <!-- Seção 1: Motivo Principal -->
                 <div class="section-header">
                     <i class="bi bi-bullseye"></i>
-                    <h5>2. Motivo Principal</h5>
+                    <h5>1. Motivo Principal</h5>
                 </div>
 
                 <div class="mb-4">
@@ -437,29 +418,10 @@
                     <small class="form-text">Identifica a necessidade principal do cliente</small>
                 </div>
 
-                <!-- Seção 3: Perfil Emocional -->
-                <div class="section-header">
-                    <i class="bi bi-emoji-smile"></i>
-                    <h5>3. Perfil Emocional</h5>
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label required" for="perfil_emocional">Como está o estado emocional do cliente?</label>
-                    <select name="perfil_emocional" id="perfil_emocional" class="form-select" required>
-                        <option value="">Selecione uma opção...</option>
-                        {% for perfil in perfis_emocionais %}
-                            <option value="{{ perfil.id }}" {% if pre_venda.perfil_emocional_id == perfil.id %}selected{% endif %}>
-                                {{ perfil.texto }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                    <small class="form-text">Importante para adaptar a abordagem de venda</small>
-                </div>
-
-                <!-- Seção 4: Serviço de Interesse -->
+                <!-- Seção 2: Serviço de Interesse -->
                 <div class="section-header">
                     <i class="bi bi-box-seam"></i>
-                    <h5>4. Serviço de Interesse</h5>
+                    <h5>2. Serviço de Interesse</h5>
                 </div>
 
                 <div class="mb-4">
@@ -475,10 +437,10 @@
                     <small class="form-text">Serviço que melhor atende às necessidades do cliente</small>
                 </div>
 
-                <!-- Seção 5: Valor e Observações -->
+                <!-- Seção 3: Detalhes Financeiros -->
                 <div class="section-header">
                     <i class="bi bi-currency-dollar"></i>
-                    <h5>5. Detalhes Financeiros</h5>
+                    <h5>3. Detalhes Financeiros</h5>
                 </div>
 
                 <div class="row">

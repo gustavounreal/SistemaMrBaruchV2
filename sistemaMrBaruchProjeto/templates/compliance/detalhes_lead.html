@@ -186,6 +186,102 @@
                 {% endif %}
             </div>
 
+            <!-- Documentos de Levantamento -->
+            <div class="info-card">
+                <h5 class="mb-3"><i class="bi bi-file-earmark-arrow-up"></i> Documentos de Levantamento</h5>
+                
+                <!-- Formulário de Upload Simplificado -->
+                <div class="card bg-light mb-3" id="formUploadContainer">
+                    <div class="card-body">
+                        <form id="formUploadLevantamento" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="row g-2 align-items-center">
+                                <!-- Campos comentados temporariamente -->
+                                <!--
+                                <div class="col-md-3">
+                                    <select class="form-select form-select-sm" name="tipo" required>
+                                        <option value="">Selecione o tipo...</option>
+                                        {% for value, label in tipos_documento %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control form-control-sm" name="descricao" 
+                                           placeholder="Descrição (opcional)">
+                                </div>
+                                -->
+                                
+                                <!-- Campos ocultos com valores padrão -->
+                                <input type="hidden" name="tipo" value="RELATORIO_COMPLETO">
+                                <input type="hidden" name="descricao" value="">
+                                
+                                <div class="col-md-8">
+                                    <input type="file" class="form-control form-control-sm" name="arquivo" required
+                                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls">
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="submit" class="btn btn-sm btn-primary w-100">
+                                        <i class="bi bi-upload"></i> Enviar Documento
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-1">Máx: 10MB | Formatos: PDF, DOC, DOCX, JPG, PNG, XLS, XLSX</small>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Lista de Documentos -->
+                {% if documentos_levantamento %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Arquivo</th>
+                                <th>Data Upload</th>
+                                <th>Enviado Por</th>
+                                <th>Tamanho</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in documentos_levantamento %}
+                            <tr>
+                                <td>
+                                    <i class="bi bi-file-earmark-pdf text-danger me-1"></i>
+                                    <strong>{{ doc.arquivo|basename }}</strong>
+                                </td>
+                                <td>{{ doc.data_upload|date:"d/m/Y H:i" }}</td>
+                                <td>{{ doc.enviado_por.username }}</td>
+                                <td>
+                                    {% if doc.tamanho_arquivo %}
+                                        {{ doc.tamanho_arquivo|filesizeformat }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'compliance:download_documento_levantamento' doc.id %}" 
+                                       class="btn btn-sm btn-outline-primary" title="Download">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    {% if doc.enviado_por == user or user.is_superuser %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            onclick="excluirDocumentoLevantamento({{ doc.id }})" title="Excluir">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">Nenhum documento de levantamento enviado</p>
+                {% endif %}
+            </div>
+
             <!-- Formulário de Análise -->
             {% if analise.status == 'AGUARDANDO' or analise.status == 'EM_ANALISE' %}
             <div class="info-card">
@@ -371,41 +467,64 @@
         </div>
     </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Format helpers for BRL currency
-    function formatCurrencyBRL(value) {
-        if (value === null || value === undefined || value === '') return '';
-        const num = Number(value);
-        if (isNaN(num)) return '';
-        return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    // ===== FORMATAÇÃO DE MOEDA EM TEMPO REAL =====
+    function formatarMoedaTempoReal(input) {
+        input.addEventListener('input', function(e) {
+            let valor = e.target.value;
+            
+            // Remove tudo exceto números
+            valor = valor.replace(/\D/g, '');
+            
+            // Se vazio, limpa tudo
+            if (!valor) {
+                e.target.value = '';
+                return;
+            }
+            
+            // Converte para número (centavos)
+            let numero = parseInt(valor);
+            
+            // Converte centavos para reais (divide por 100)
+            let real = (numero / 100).toFixed(2);
+            
+            // Formata com pontos e vírgula
+            let partes = real.split('.');
+            let inteiro = partes[0];
+            let decimal = partes[1];
+            
+            // Adiciona pontos nos milhares
+            inteiro = inteiro.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            
+            // Monta o valor formatado com R$
+            e.target.value = 'R$ ' + inteiro + ',' + decimal;
+        });
+
+        // Ao focar, seleciona todo o texto
+        input.addEventListener('focus', function(e) {
+            e.target.select();
+        });
     }
 
+    // Função para extrair valor numérico do campo formatado
     function parseCurrencyBRL(formatted) {
         if (!formatted) return null;
-        // Remove currency symbol and thousand separators, replace comma with dot
-        const cleaned = formatted.replace(/[^0-9,-]+/g, '').replace(/\./g, '').replace(/,/, '.');
+        // Remove R$, pontos e espaços, substitui vírgula por ponto
+        const cleaned = formatted.replace(/[R$\s.]/g, '').replace(',', '.');
         const parsed = parseFloat(cleaned);
         return isNaN(parsed) ? null : parsed.toFixed(2);
     }
 
-    // Attach formatting behavior
+    // Aplica formatação no campo de valor
     const valorInput = document.getElementById('valor_divida');
     if (valorInput) {
-        valorInput.addEventListener('focus', function() {
-            // show raw numeric when focusing
-            const raw = parseCurrencyBRL(this.value);
-            this.value = raw === null ? '' : raw;
-        });
-
-        valorInput.addEventListener('blur', function() {
-            // format as BRL on blur
-            const raw = parseCurrencyBRL(this.value);
-            this.value = raw === null ? '' : formatCurrencyBRL(raw);
-        });
+        formatarMoedaTempoReal(valorInput);
     }
+    
     function iniciarAnalise() {
         const rawVal = document.getElementById('valor_divida').value;
         const valor_divida = parseCurrencyBRL(rawVal);
@@ -560,5 +679,70 @@
             console.debug('Fallback currency formatter skipped', e);
         }
     });
+
+    // === FUNÇÕES DE UPLOAD DE DOCUMENTOS DE LEVANTAMENTO ===
+    
+    document.getElementById('formUploadLevantamento').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando...';
+        
+        fetch('{% url "compliance:upload_documento_levantamento" analise.id %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Documento enviado com sucesso!');
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao enviar documento');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        });
+    });
+    
+    function excluirDocumentoLevantamento(documentoId) {
+        if (!confirm('Deseja realmente excluir este documento?')) {
+            return;
+        }
+        
+        fetch(`/compliance/api/documento-levantamento/${documentoId}/excluir/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Documento excluído com sucesso!');
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao excluir documento');
+        });
+    }
 </script>
 {% endblock %}
