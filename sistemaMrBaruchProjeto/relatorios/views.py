@@ -35,8 +35,8 @@ def painel_relatorios(request):
     
     # Comissões
     total_comissoes = ComissaoLead.objects.aggregate(total=Sum('valor'))['total'] or 0
-    comissoes_pagas = ComissaoLead.objects.filter(pago=True).aggregate(total=Sum('valor'))['total'] or 0
-    comissoes_pendentes = ComissaoLead.objects.filter(pago=False).aggregate(total=Sum('valor'))['total'] or 0
+    comissoes_pagas = ComissaoLead.objects.filter(status='PAGO').aggregate(total=Sum('valor'))['total'] or 0
+    comissoes_pendentes = ComissaoLead.objects.filter(status__in=['DISPONIVEL', 'AUTORIZADO']).aggregate(total=Sum('valor'))['total'] or 0
     
     # Top atendentes
     top_atendentes = ComissaoLead.objects.values(
@@ -212,9 +212,9 @@ def relatorio_comissoes(request):
         comissoes_atendentes = comissoes_atendentes.filter(data_criacao__gte=data_inicio)
     
     if status_filter == 'paga':
-        comissoes_atendentes = comissoes_atendentes.filter(pago=True)
+        comissoes_atendentes = comissoes_atendentes.filter(status='PAGO')
     elif status_filter == 'pendente':
-        comissoes_atendentes = comissoes_atendentes.filter(pago=False)
+        comissoes_atendentes = comissoes_atendentes.filter(status__in=['DISPONIVEL', 'AUTORIZADO'])
     
     if usuario_id:
         comissoes_atendentes = comissoes_atendentes.filter(atendente_id=usuario_id)
@@ -238,16 +238,16 @@ def relatorio_comissoes(request):
     total_consultores_pagas = comissoes_consultores.filter(status='paga').aggregate(total=Sum('valor_comissao'))['total'] or 0
     total_consultores_pendentes = comissoes_consultores.filter(status='pendente').aggregate(total=Sum('valor_comissao'))['total'] or 0
     qtd_consultores = comissoes_consultores.count()
-    qtd_consultores_pagas = comissoes_consultores.filter(status='paga').count()
-    qtd_consultores_pendentes = comissoes_consultores.filter(status='pendente').count()
+    qtd_consultores_pagas = comissoes_consultores.filter(status='PAGO').count()
+    qtd_consultores_pendentes = comissoes_consultores.filter(status__in=['DISPONIVEL', 'AUTORIZADO']).count()
     
     # ========== ESTATÍSTICAS ATENDENTES ==========
     total_atendentes = comissoes_atendentes.aggregate(total=Sum('valor'))['total'] or 0
-    total_atendentes_pagas = comissoes_atendentes.filter(pago=True).aggregate(total=Sum('valor'))['total'] or 0
-    total_atendentes_pendentes = comissoes_atendentes.filter(pago=False).aggregate(total=Sum('valor'))['total'] or 0
+    total_atendentes_pagas = comissoes_atendentes.filter(status='PAGO').aggregate(total=Sum('valor'))['total'] or 0
+    total_atendentes_pendentes = comissoes_atendentes.filter(status__in=['DISPONIVEL', 'AUTORIZADO']).aggregate(total=Sum('valor'))['total'] or 0
     qtd_atendentes = comissoes_atendentes.count()
-    qtd_atendentes_pagas = comissoes_atendentes.filter(pago=True).count()
-    qtd_atendentes_pendentes = comissoes_atendentes.filter(pago=False).count()
+    qtd_atendentes_pagas = comissoes_atendentes.filter(status='PAGO').count()
+    qtd_atendentes_pendentes = comissoes_atendentes.filter(status__in=['DISPONIVEL', 'AUTORIZADO']).count()
     
     # ========== TOTAL GERAL ==========
     total_geral = float(total_captadores) + float(total_consultores) + float(total_atendentes)
@@ -278,8 +278,8 @@ def relatorio_comissoes(request):
     ).annotate(
         total_valor=Sum('valor'),
         quantidade=Count('id'),
-        pagas=Count('id', filter=Q(pago=True)),
-        pendentes=Count('id', filter=Q(pago=False))
+        pagas=Count('id', filter=Q(status='PAGO')),
+        pendentes=Count('id', filter=Q(status__in=['DISPONIVEL', 'AUTORIZADO']))
     ).order_by('-total_valor')[:10]
     
     # ========== USUÁRIOS PARA FILTRO (USANDO GRUPOS) ==========
@@ -887,8 +887,8 @@ def ranking_geral(request):
             data_criacao__gte=data_inicio
         ).aggregate(
             total_comissao=Sum('valor'),
-            comissoes_pagas=Sum('valor', filter=Q(pago=True)),
-            comissoes_pendentes=Sum('valor', filter=Q(pago=False))
+            comissoes_pagas=Sum('valor', filter=Q(status='PAGO')),
+            comissoes_pendentes=Sum('valor', filter=Q(status__in=['DISPONIVEL', 'AUTORIZADO']))
         )
         
         atendente['total_comissao'] = comissoes['total_comissao'] or Decimal('0')

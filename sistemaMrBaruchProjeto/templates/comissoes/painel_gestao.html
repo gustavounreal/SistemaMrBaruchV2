@@ -1,0 +1,545 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Comissões - Sistema Mr. Baruch</title>
+    
+    <!-- Bootstrap 5.3.0 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(120deg, #eef2ff, #fdf2e9);
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-size: 0.97rem;
+  }
+
+  .main-content {
+    padding: 2rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #f6f7fb;
+  }
+
+  .central-container {
+    width: 100%;
+    max-width: 1400px;
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(102, 126, 234, 0.08);
+    border: 1.5px solid #e3e6f0;
+    padding: 2.5rem 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .hero-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+  }
+
+  .hero-header h2 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .section-title {
+    font-size: 1.08rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 1.2rem 0 0.7rem 0;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid #667eea;
+    display: flex;
+    align-items: center;
+  }
+
+  .section-title i {
+    margin-right: 0.5rem;
+    color: #667eea;
+  }
+
+  .metric-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.1rem 1.3rem;
+    margin-bottom: 1.1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border-left: 4px solid;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+
+  .metric-card.primary { border-left-color: #667eea; }
+  .metric-card.success { border-left-color: #28a745; }
+  .metric-card.warning { border-left-color: #ffc107; }
+  .metric-card.danger { border-left-color: #dc3545; }
+  .metric-card.info { border-left-color: #17a2b8; }
+
+  .metric-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.2;
+    color: #2d3748;
+  }
+
+  .metric-label {
+    font-size: 0.78rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.4rem;
+    font-weight: 600;
+  }
+
+  .metric-icon {
+    font-size: 1.7rem;
+    opacity: 0.13;
+    position: absolute;
+    right: 1.1rem;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .filters-container {
+    background: #f8f9ff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #e3e6f0;
+  }
+
+  .table-comissoes {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .table-comissoes thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .table-comissoes th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    padding: 0.7rem;
+    border: none;
+  }
+
+  .table-comissoes td {
+    padding: 0.7rem;
+    vertical-align: middle;
+    border-color: #f0f0f0;
+    font-size: 0.9em;
+  }
+
+  .table-comissoes tbody tr {
+    transition: background 0.2s;
+  }
+
+  .table-comissoes tbody tr:hover {
+    background: #f8f9ff;
+  }
+
+  .badge-status {
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: inline-block;
+  }
+
+  .badge-disponivel { background: #cce5ff; color: #004085; }
+  .badge-autorizado { background: #fff3cd; color: #856404; }
+  .badge-pago { background: #d4edda; color: #155724; }
+  .badge-cancelado { background: #f8d7da; color: #721c24; }
+
+  .btn-action {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 600;
+  }
+
+  .btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .btn-autorizar {
+    background: #ffc107;
+    color: #000;
+  }
+
+  .btn-pagar {
+    background: #28a745;
+    color: white;
+  }
+
+  .btn-cancelar {
+    background: #dc3545;
+    color: white;
+  }
+
+  @media (max-width: 768px) {
+    .main-content {
+      padding: 1rem;
+    }
+
+    .table-comissoes {
+      font-size: 0.85rem;
+    }
+
+    .btn-action {
+      font-size: 0.7rem;
+      padding: 0.3rem 0.6rem;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="main-content">
+  <div class="central-container">
+    <!-- Hero Header -->
+    <div class="hero-header">
+      <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+          <h2><i class="bi bi-wallet2 me-2"></i>Gestão de Comissões</h2>
+          <p class="mb-0">
+            <i class="bi bi-person-circle me-2"></i>{{ user.get_full_name|default:user.email }}
+          </p>
+        </div>
+        <div class="mt-3 mt-md-0">
+          <a href="{% url 'comissoes:dashboard' %}" class="btn btn-light me-2">
+            <i class="bi bi-graph-up me-2"></i>Dashboard
+          </a>
+          <a href="{% url 'accounts:dashboard' %}" class="btn btn-light">
+            <i class="bi bi-house-door me-2"></i>Início
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Métricas -->
+    <div class="section-title">
+      <i class="bi bi-bar-chart-line"></i>Resumo Geral
+    </div>
+    <div class="row">
+      <div class="col-md-3 col-sm-6">
+        <div class="metric-card info position-relative">
+          <i class="bi bi-clock-history metric-icon"></i>
+          <div class="metric-value">{{ stats.disponiveis.count }}</div>
+          <div class="metric-label">Disponíveis</div>
+          <small class="text-muted d-block mt-2">R$ {{ stats.disponiveis.valor|floatformat:2 }}</small>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="metric-card warning position-relative">
+          <i class="bi bi-check-circle metric-icon"></i>
+          <div class="metric-value">{{ stats.autorizados.count }}</div>
+          <div class="metric-label">Autorizados</div>
+          <small class="text-muted d-block mt-2">R$ {{ stats.autorizados.valor|floatformat:2 }}</small>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="metric-card success position-relative">
+          <i class="bi bi-cash-stack metric-icon"></i>
+          <div class="metric-value">{{ stats.pagos.count }}</div>
+          <div class="metric-label">Pagos</div>
+          <small class="text-muted d-block mt-2">R$ {{ stats.pagos.valor|floatformat:2 }}</small>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="metric-card danger position-relative">
+          <i class="bi bi-x-circle metric-icon"></i>
+          <div class="metric-value">{{ stats.cancelados.count }}</div>
+          <div class="metric-label">Cancelados</div>
+          <small class="text-muted d-block mt-2">R$ {{ stats.cancelados.valor|floatformat:2 }}</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="section-title">
+      <i class="bi bi-funnel"></i>Filtros
+    </div>
+    <div class="filters-container">
+      <form method="GET" action="{% url 'comissoes:painel_gestao' %}">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label"><strong>Tipo</strong></label>
+            <select name="tipo" class="form-select" onchange="this.form.submit()">
+              <option value="todos" {% if tipo_filtro == 'todos' %}selected{% endif %}>Todos</option>
+              <option value="lead" {% if tipo_filtro == 'lead' %}selected{% endif %}>Atendentes</option>
+              <option value="consultor" {% if tipo_filtro == 'consultor' %}selected{% endif %}>Consultores</option>
+              <option value="captador" {% if tipo_filtro == 'captador' %}selected{% endif %}>Captadores</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label"><strong>Status</strong></label>
+            <select name="status" class="form-select" onchange="this.form.submit()">
+              <option value="todos" {% if status_filtro == 'todos' %}selected{% endif %}>Todos</option>
+              <option value="DISPONIVEL" {% if status_filtro == 'DISPONIVEL' %}selected{% endif %}>Disponível</option>
+              <option value="AUTORIZADO" {% if status_filtro == 'AUTORIZADO' %}selected{% endif %}>Autorizado</option>
+              <option value="PAGO" {% if status_filtro == 'PAGO' %}selected{% endif %}>Pago</option>
+              <option value="CANCELADO" {% if status_filtro == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label"><strong>Competência</strong></label>
+            <select name="competencia" class="form-select" onchange="this.form.submit()">
+              <option value="">Todas</option>
+              {% for comp in competencias %}
+              <option value="{{ comp.valor }}" {% if competencia_filtro == comp.valor %}selected{% endif %}>
+                {{ comp.texto }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label"><strong>Buscar Usuário</strong></label>
+            <div class="input-group">
+              <input type="text" name="busca" class="form-control" placeholder="Nome ou email" value="{{ busca }}">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Tabela de Comissões -->
+    <div class="section-title">
+      <i class="bi bi-list-ul"></i>Lista de Comissões ({{ comissoes|length }})
+    </div>
+
+    {% if comissoes %}
+    <div class="table-responsive table-comissoes">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Tipo</th>
+            <th>Usuário</th>
+            <th>Referência</th>
+            <th>Valor</th>
+            <th>Status</th>
+            <th>Competência</th>
+            <th>Criado em</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for comissao in comissoes %}
+          <tr>
+            <td><strong>#{{ comissao.id }}</strong></td>
+            <td>
+              <span class="badge bg-secondary">{{ comissao.tipo_display }}</span>
+            </td>
+            <td>
+              <strong>{{ comissao.usuario.get_full_name|default:comissao.usuario.username }}</strong><br>
+              <small class="text-muted">{{ comissao.usuario.email }}</small>
+            </td>
+            <td>{{ comissao.referencia }}</td>
+            <td>
+              <strong class="text-success">R$ {{ comissao.valor|floatformat:2 }}</strong>
+              {% if comissao.percentual %}
+              <br><small class="text-muted">{{ comissao.percentual }}%</small>
+              {% endif %}
+            </td>
+            <td>
+              {% if comissao.status == 'DISPONIVEL' %}
+              <span class="badge-status badge-disponivel">{{ comissao.status_display }}</span>
+              {% elif comissao.status == 'AUTORIZADO' %}
+              <span class="badge-status badge-autorizado">{{ comissao.status_display }}</span>
+              {% elif comissao.status == 'PAGO' %}
+              <span class="badge-status badge-pago">{{ comissao.status_display }}</span>
+              {% elif comissao.status == 'CANCELADO' %}
+              <span class="badge-status badge-cancelado">{{ comissao.status_display }}</span>
+              {% endif %}
+            </td>
+            <td>{{ comissao.competencia|date:"m/Y" }}</td>
+            <td>{{ comissao.data_criacao|date:"d/m/Y H:i" }}</td>
+            <td>
+              {% if comissao.status == 'DISPONIVEL' %}
+              <button class="btn-action btn-autorizar" onclick="autorizarComissao('{{ comissao.tipo }}', {{ comissao.id }})">
+                <i class="bi bi-check-circle me-1"></i>Autorizar
+              </button>
+              <button class="btn-action btn-cancelar mt-1" onclick="cancelarComissao('{{ comissao.tipo }}', {{ comissao.id }})">
+                <i class="bi bi-x-circle me-1"></i>Cancelar
+              </button>
+              {% elif comissao.status == 'AUTORIZADO' %}
+              <button class="btn-action btn-pagar" onclick="pagarComissao('{{ comissao.tipo }}', {{ comissao.id }})">
+                <i class="bi bi-cash-stack me-1"></i>Pagar
+              </button>
+              <button class="btn-action btn-cancelar mt-1" onclick="cancelarComissao('{{ comissao.tipo }}', {{ comissao.id }})">
+                <i class="bi bi-x-circle me-1"></i>Cancelar
+              </button>
+              {% elif comissao.status == 'PAGO' %}
+              <span class="badge bg-success">
+                <i class="bi bi-check2 me-1"></i>Pago em {{ comissao.data_pagamento|date:"d/m/Y" }}
+              </span>
+              {% elif comissao.status == 'CANCELADO' %}
+              <span class="badge bg-danger">Cancelado</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center" role="alert">
+      <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+      <p class="mt-3 mb-0">Nenhuma comissão encontrada com os filtros aplicados.</p>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+function autorizarComissao(tipo, id) {
+  if (!confirm('Deseja autorizar esta comissão para pagamento?')) return;
+  
+  fetch(`/comissoes/gestao/${tipo}/${id}/autorizar/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrftoken,
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert(data.message);
+      location.reload();
+    } else {
+      alert('Erro: ' + data.message);
+    }
+  })
+  .catch(error => {
+    console.error('Erro:', error);
+    alert('Erro ao processar requisição');
+  });
+}
+
+function pagarComissao(tipo, id) {
+  if (!confirm('Confirma o pagamento desta comissão?')) return;
+  
+  fetch(`/comissoes/gestao/${tipo}/${id}/pagar/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrftoken,
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert(data.message);
+      location.reload();
+    } else {
+      alert('Erro: ' + data.message);
+    }
+  })
+  .catch(error => {
+    console.error('Erro:', error);
+    alert('Erro ao processar requisição');
+  });
+}
+
+function cancelarComissao(tipo, id) {
+  const motivo = prompt('Informe o motivo do cancelamento:');
+  if (!motivo) return;
+  
+  const formData = new FormData();
+  formData.append('motivo', motivo);
+  
+  fetch(`/comissoes/gestao/${tipo}/${id}/cancelar/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrftoken
+    },
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert(data.message);
+      location.reload();
+    } else {
+      alert('Erro: ' + data.message);
+    }
+  })
+  .catch(error => {
+    console.error('Erro:', error);
+    alert('Erro ao processar requisição');
+  });
+}
+</script>
+
+</body>
+</html>

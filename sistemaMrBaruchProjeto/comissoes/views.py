@@ -14,8 +14,8 @@ def painel_comissoes(request):
     total_comissoes = ComissaoLead.objects.aggregate(
         total=Sum('valor'),
         quantidade=Count('id'),
-        pagas=Count('id', filter=Q(pago=True)),
-        pendentes=Count('id', filter=Q(pago=False))
+        pagas=Count('id', filter=Q(status='PAGO')),
+        pendentes=Count('id', filter=Q(status__in=['DISPONIVEL', 'AUTORIZADO']))
     )
     
     # Comissões do mês atual
@@ -51,7 +51,7 @@ def painel_comissoes_leads(request):
     # Filtros
     periodo = request.GET.get('periodo', '30')  # últimos 30 dias por padrão
     atendente_id = request.GET.get('atendente')
-    status_pagamento = request.GET.get('status')  # 'pago', 'pendente', 'todos'
+    status_pagamento = request.GET.get('status')  # 'PAGO', 'DISPONIVEL', 'AUTORIZADO', 'todos'
     
     # Query base
     hoje = timezone.now()
@@ -62,19 +62,23 @@ def painel_comissoes_leads(request):
     if atendente_id:
         comissoes = comissoes.filter(atendente_id=atendente_id)
     
-    if status_pagamento == 'pago':
-        comissoes = comissoes.filter(pago=True)
+    if status_pagamento == 'PAGO':
+        comissoes = comissoes.filter(status='PAGO')
+    elif status_pagamento == 'DISPONIVEL':
+        comissoes = comissoes.filter(status='DISPONIVEL')
+    elif status_pagamento == 'AUTORIZADO':
+        comissoes = comissoes.filter(status='AUTORIZADO')
     elif status_pagamento == 'pendente':
-        comissoes = comissoes.filter(pago=False)
+        comissoes = comissoes.filter(status__in=['DISPONIVEL', 'AUTORIZADO'])
     
     # Estatísticas do período filtrado
     stats = comissoes.aggregate(
         total_valor=Sum('valor'),
         total_quantidade=Count('id'),
-        total_pagas=Sum('valor', filter=Q(pago=True)),
-        total_pendentes=Sum('valor', filter=Q(pago=False)),
-        qtd_pagas=Count('id', filter=Q(pago=True)),
-        qtd_pendentes=Count('id', filter=Q(pago=False))
+        total_pagas=Sum('valor', filter=Q(status='PAGO')),
+        total_pendentes=Sum('valor', filter=Q(status__in=['DISPONIVEL', 'AUTORIZADO'])),
+        qtd_pagas=Count('id', filter=Q(status='PAGO')),
+        qtd_pendentes=Count('id', filter=Q(status__in=['DISPONIVEL', 'AUTORIZADO']))
     )
     
     # Ranking de atendentes

@@ -196,13 +196,21 @@
                     <strong class="text-success">R$ {{ comissao.valor|floatformat:2 }}</strong>
                   </td>
                   <td>
-                    {% if comissao.pago %}
+                    {% if comissao.status == 'PAGO' %}
                       <span class="badge bg-success">
                         <i class="bi bi-check-circle-fill me-1"></i>Pago
                       </span>
-                    {% else %}
+                    {% elif comissao.status == 'AUTORIZADO' %}
+                      <span class="badge bg-info">
+                        <i class="bi bi-check-circle me-1"></i>Autorizado
+                      </span>
+                    {% elif comissao.status == 'DISPONIVEL' %}
                       <span class="badge bg-warning">
-                        <i class="bi bi-clock-fill me-1"></i>Pendente
+                        <i class="bi bi-clock-fill me-1"></i>Disponível
+                      </span>
+                    {% else %}
+                      <span class="badge bg-danger">
+                        <i class="bi bi-x-circle me-1"></i>Cancelado
                       </span>
                     {% endif %}
                   </td>

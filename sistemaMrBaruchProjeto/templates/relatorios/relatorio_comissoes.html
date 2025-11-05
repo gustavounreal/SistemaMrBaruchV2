@@ -453,10 +453,14 @@
                     <strong class="text-primary">R$ {{ comissao.valor|floatformat:2|intcomma }}</strong>
                   </td>
                   <td>
-                    {% if comissao.pago %}
+                    {% if comissao.status == 'PAGO' %}
                       <span class="badge bg-success">Paga</span>
+                    {% elif comissao.status == 'AUTORIZADO' %}
+                      <span class="badge bg-info">Autorizada</span>
+                    {% elif comissao.status == 'DISPONIVEL' %}
+                      <span class="badge bg-warning">Disponível</span>
                     {% else %}
-                      <span class="badge bg-warning">Pendente</span>
+                      <span class="badge bg-danger">Cancelada</span>
                     {% endif %}
                   </td>
                   <td>
