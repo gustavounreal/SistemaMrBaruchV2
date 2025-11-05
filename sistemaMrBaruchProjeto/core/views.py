@@ -507,6 +507,71 @@ def obter_grupos_usuario_ajax(request, usuario_id):
         }, status=500)
 
 
+@login_required
+@permission_required('auth.change_user', raise_exception=True)
+def redefinir_senha_usuario(request):
+    """
+    View para redefinir a senha de um usuário.
+    Requer permissão de alteração de usuário.
+    """
+    if request.method == 'POST':
+        usuario_id = request.POST.get('usuario_id')
+        nova_senha = request.POST.get('nova_senha')
+        confirmar_senha = request.POST.get('confirmar_senha')
+        
+        # Validações
+        if not usuario_id:
+            messages.error(request, 'Selecione um usuário para redefinir a senha.')
+            return redirect('core:painel_configuracoes')
+        
+        if not nova_senha or not confirmar_senha:
+            messages.error(request, 'Preencha os campos de senha.')
+            return redirect('core:painel_configuracoes')
+        
+        if nova_senha != confirmar_senha:
+            messages.error(request, 'As senhas não conferem!')
+            return redirect('core:painel_configuracoes')
+        
+        if len(nova_senha) < 6:
+            messages.error(request, 'A senha deve ter no mínimo 6 caracteres.')
+            return redirect('core:painel_configuracoes')
+        
+        try:
+            User = get_user_model()
+            usuario = User.objects.get(id=usuario_id)
+            
+            # Alterar a senha
+            usuario.set_password(nova_senha)
+            usuario.save()
+            
+            # Registrar log de auditoria (se o módulo existir)
+            #try:
+            #    from auditoria.models import LogAuditoria
+            #    LogAuditoria.objects.create(
+            #        usuario=request.user,
+            #        acao='ALTERACAO_SENHA_USUARIO',
+            #        tabela='User',
+            #        registro_id=usuario.id,
+            #        descricao=f'Senha redefinida para o usuário: {usuario.get_full_name() or usuario.username} ({usuario.email})',
+            #        ip_address=request.META.get('REMOTE_ADDR')
+            #    )
+            #except ImportError:
+            #    # Módulo de auditoria não instalado
+            #    pass
+
+            messages.success(
+                request, 
+                f'Senha redefinida com sucesso para o usuário: {usuario.get_full_name() or usuario.username}!'
+            )
+
+        except User.DoesNotExist:
+            messages.error(request, 'Usuário não encontrado.')
+        except Exception as e:
+            messages.error(request, f'Erro ao redefinir senha: {str(e)}')
+
+    return redirect('core:painel_configuracoes')
+
+
 # ==================== WEBHOOK ASAAS ====================
 import json
 import logging

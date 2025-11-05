@@ -56,6 +56,11 @@
           <i class="bi bi-people me-2"></i>Configuração de Grupos
         </button>
       </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link rounded-top-3 fw-semibold" id="config-senha-tab" data-bs-toggle="tab" data-bs-target="#config-senha" type="button" role="tab" aria-controls="config-senha" aria-selected="false">
+          <i class="bi bi-shield-lock me-2"></i>Redefinir Senha
+        </button>
+      </li>
     </ul>
 
     <div class="tab-content" id="configTabsContent">
@@ -346,6 +351,111 @@
           </div>
         </div>
       </div>
+
+      <!-- TAB 3: Redefinir Senha de Usuários -->
+      <div class="tab-pane fade" id="config-senha" role="tabpanel" aria-labelledby="config-senha-tab">
+        <div class="card border-0 shadow-lg rounded-4 bg-light-glass">
+          <div class="card-body p-4">
+            <h4 class="fw-bold mb-3"><i class="bi bi-shield-lock me-2 text-primary"></i>Redefinir Senha de Usuários</h4>
+            <p class="text-muted small mb-4">Redefina a senha de qualquer usuário do sistema. Use o campo de busca para filtrar por nome, email, username ou CPF.</p>
+
+            <div class="row">
+              <div class="col-lg-8 mx-auto">
+                <div class="card shadow-sm border-0 rounded-4">
+                  <div class="card-header bg-white border-0 rounded-top-4 pt-4">
+                    <div class="mb-0"></div>
+                  </div>
+                  <div class="card-body">
+                    <form method="post" action="{% url 'core:redefinir_senha_usuario' %}" id="formRedefinirSenha">
+                      {% csrf_token %}
+                      
+                      <div class="mb-3">
+                        <label for="usuario_senha" class="form-label fw-semibold">
+                          <i class="bi bi-person-search me-1"></i>Buscar e Selecionar Usuário
+                        </label>
+                        <select name="usuario_id" id="usuario_senha" class="form-select select2-usuario-senha" style="width: 100%;" required>
+                          <option value="">Digite para buscar: nome, email, username ou CPF...</option>
+                          {% for usuario in usuarios %}
+                            <option value="{{ usuario.id }}" 
+                                    data-email="{{ usuario.email }}"
+                                    data-cpf="{{ usuario.cpf|default:'' }}"
+                                    data-grupos="{% for grupo in usuario.groups.all %}{{ grupo.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                              {{ usuario.get_full_name|default:usuario.username }} - {{ usuario.email }}{% if usuario.cpf %} - CPF: {{ usuario.cpf }}{% endif %}
+                            </option>
+                          {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">
+                          <i class="bi bi-info-circle me-1"></i>Comece a digitar qualquer informação do usuário para filtrar
+                        </small>
+                      </div>
+
+                      <div class="mb-3">
+                        <label for="nova_senha" class="form-label fw-semibold">
+                          <i class="bi bi-lock me-1"></i>Nova Senha
+                        </label>
+                        <div class="input-group">
+                          <input type="password" name="nova_senha" id="nova_senha" class="form-control" 
+                                 placeholder="Digite a nova senha" required minlength="6">
+                          <button class="btn btn-outline-secondary" type="button" onclick="toggleSenha('nova_senha')">
+                            <i class="bi bi-eye" id="icon-nova_senha"></i>
+                          </button>
+                        </div>
+                        <small class="form-text text-muted">Mínimo de 6 caracteres</small>
+                      </div>
+
+                      <div class="mb-3">
+                        <label for="confirmar_senha" class="form-label fw-semibold">
+                          <i class="bi bi-lock-fill me-1"></i>Confirmar Nova Senha
+                        </label>
+                        <div class="input-group">
+                          <input type="password" name="confirmar_senha" id="confirmar_senha" class="form-control" 
+                                 placeholder="Digite novamente a nova senha" required minlength="6">
+                          <button class="btn btn-outline-secondary" type="button" onclick="toggleSenha('confirmar_senha')">
+                            <i class="bi bi-eye" id="icon-confirmar_senha"></i>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div class="alert alert-warning border-0 d-flex align-items-center" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                        <div>
+                          <strong>Atenção:</strong> Esta ação irá alterar imediatamente a senha do usuário selecionado. 
+                          Certifique-se de informar a nova senha ao usuário.
+                        </div>
+                      </div>
+
+                      <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-warning btn-lg fw-semibold">
+                          <i class="bi bi-shield-check me-2"></i>Redefinir Senha
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
+                <!-- Informações do Usuário Selecionado -->
+                <div id="infoUsuarioSelecionado" class="card shadow-sm border-0 rounded-4 mt-3" style="display: none;">
+                  <div class="card-header bg-info text-white rounded-top-4">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Informações do Usuário</h6>
+                  </div>
+                  <div class="card-body">
+                    <dl class="row mb-0">
+                      <dt class="col-sm-3">Nome:</dt>
+                      <dd class="col-sm-9" id="info-nome">-</dd>
+                      
+                      <dt class="col-sm-3">Email:</dt>
+                      <dd class="col-sm-9" id="info-email">-</dd>
+                      
+                      <dt class="col-sm-3">Grupos:</dt>
+                      <dd class="col-sm-9" id="info-grupos">-</dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Botão Voltar para Painel de Controle -->
@@ -439,6 +549,28 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
+  // === FUNÇÕES GLOBAIS ===
+  // Toggle de visualização de senha (deve ser global para funcionar com onclick)
+  function toggleSenha(inputId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById('icon-' + inputId);
+    
+    if (!input || !icon) {
+      console.error('Elemento não encontrado:', inputId);
+      return;
+    }
+    
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.classList.remove('bi-eye');
+      icon.classList.add('bi-eye-slash');
+    } else {
+      input.type = 'password';
+      icon.classList.remove('bi-eye-slash');
+      icon.classList.add('bi-eye');
+    }
+  }
+
   // Mapa de grupos com metadados
   const gruposInfo = {
     {% for g in grupos %}
@@ -573,12 +705,44 @@
   document.addEventListener('DOMContentLoaded', function(){
     console.log('DOMContentLoaded disparado - Iniciando configuração de grupos');
     
-    // Inicializar Select2 com busca
+    // Inicializar Select2 com busca para grupos
     $('.select2-usuario').select2({
       theme: 'bootstrap-5',
       placeholder: 'Pesquise por email, nome ou username...',
       allowClear: true,
       width: '100%'
+    });
+
+    // Inicializar Select2 com busca avançada para redefinir senha
+    $('.select2-usuario-senha').select2({
+      theme: 'bootstrap-5',
+      placeholder: 'Digite para buscar: nome, email, username ou CPF...',
+      allowClear: true,
+      width: '100%',
+      matcher: function(params, data) {
+        // Se não há termo de busca, retorna todos
+        if ($.trim(params.term) === '') {
+          return data;
+        }
+        
+        // Se não tem texto na opção, ignora
+        if (typeof data.text === 'undefined') {
+          return null;
+        }
+        
+        // Busca case-insensitive no texto da opção e nos data attributes
+        const term = params.term.toLowerCase();
+        const text = data.text.toLowerCase();
+        const email = $(data.element).data('email') ? $(data.element).data('email').toLowerCase() : '';
+        const cpf = $(data.element).data('cpf') ? $(data.element).data('cpf').toLowerCase() : '';
+        
+        // Se encontrou em qualquer campo, retorna a opção
+        if (text.indexOf(term) > -1 || email.indexOf(term) > -1 || cpf.indexOf(term) > -1) {
+          return data;
+        }
+        
+        return null;
+      }
     });
 
     const usuarioAdd = document.getElementById('usuario_add');
@@ -1131,6 +1295,55 @@
         badge.textContent = 'Inativo';
       }
     });
+  });
+
+  // === REDEFINIR SENHA - EVENTOS ===
+  // Exibir informações do usuário selecionado
+  $('#usuario_senha').on('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const infoCard = document.getElementById('infoUsuarioSelecionado');
+    
+    if (this.value) {
+      const nome = selectedOption.text.split('(')[0].trim();
+      const email = selectedOption.dataset.email || '-';
+      const grupos = selectedOption.dataset.grupos || 'Nenhum grupo';
+      
+      document.getElementById('info-nome').textContent = nome;
+      document.getElementById('info-email').textContent = email;
+      document.getElementById('info-grupos').textContent = grupos;
+      
+      infoCard.style.display = 'block';
+    } else {
+      infoCard.style.display = 'none';
+    }
+  });
+
+  // Validação do formulário de redefinir senha
+  document.getElementById('formRedefinirSenha').addEventListener('submit', function(e) {
+    const novaSenha = document.getElementById('nova_senha').value;
+    const confirmarSenha = document.getElementById('confirmar_senha').value;
+    
+    if (novaSenha !== confirmarSenha) {
+      e.preventDefault();
+      alert('As senhas não conferem! Por favor, verifique e tente novamente.');
+      return false;
+    }
+    
+    if (novaSenha.length < 6) {
+      e.preventDefault();
+      alert('A senha deve ter no mínimo 6 caracteres!');
+      return false;
+    }
+    
+    const usuarioSelect = document.getElementById('usuario_senha');
+    const usuarioNome = usuarioSelect.options[usuarioSelect.selectedIndex].text.split('(')[0].trim();
+    
+    if (!confirm(`Confirma a alteração de senha para o usuário:\n\n${usuarioNome}\n\nEsta ação não pode ser desfeita!`)) {
+      e.preventDefault();
+      return false;
+    }
+    
+    return true;
   });
 </script>
 {% endblock %}

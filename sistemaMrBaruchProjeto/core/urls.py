@@ -16,6 +16,10 @@ urlpatterns = [
    path('painel_configuracoes/grupos/adicionar/', views.adicionar_usuario_grupo, name='adicionar_usuario_grupo'),
    path('painel_configuracoes/grupos/remover/', views.remover_usuario_grupo, name='remover_usuario_grupo'),
    path('painel_configuracoes/grupos/usuario/<int:usuario_id>/', views.obter_grupos_usuario_ajax, name='obter_grupos_usuario_ajax'),
+   path('painel_configuracoes/senha/redefinir/', views.redefinir_senha_usuario, name='redefinir_senha_usuario'),
+   
+   # Redefinir Senha de Usuários
+   path('painel_configuracoes/redefinir-senha/', views.redefinir_senha_usuario, name='redefinir_senha_usuario'),
    
    # Gerenciamento de Origens de Lead
    path('painel_configuracoes/origens/adicionar/', views.adicionar_origem_lead, name='adicionar_origem_lead'),
