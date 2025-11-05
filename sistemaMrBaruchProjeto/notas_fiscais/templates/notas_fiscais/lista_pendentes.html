@@ -1,0 +1,203 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Notas Pendentes{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'relatorios:painel_central' %}">Painel Central</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'notas_fiscais:dashboard' %}">Notas Fiscais</a></li>
+            <li class="breadcrumb-item active">Pendentes</li>
+        </ol>
+    </nav>
+
+    <!-- Título e Filtros -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-clock"></i> Notas Fiscais Pendentes</h4>
+                <a href="{% url 'notas_fiscais:dashboard' %}" class="btn btn-sm btn-outline-dark">
+                    <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Filtros -->
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="PENDENTE" {% if request.GET.status == 'PENDENTE' %}selected{% endif %}>Pendente</option>
+                        <option value="ERRO" {% if request.GET.status == 'ERRO' %}selected{% endif %}>Com Erro</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Data Inicial</label>
+                    <input type="date" name="data_inicial" class="form-control" value="{{ request.GET.data_inicial }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Data Final</label>
+                    <input type="date" name="data_final" class="form-control" value="{{ request.GET.data_final }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Notas -->
+    <div class="card">
+        <div class="card-body p-0">
+            {% if notas_pendentes %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Status</th>
+                            <th>Cliente</th>
+                            <th>Venda</th>
+                            <th>Tipo</th>
+                            <th>Valor</th>
+                            <th>Criada em</th>
+                            <th>Tentativas</th>
+                            <th style="width: 250px;">Motivo Pendência</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for nota in notas_pendentes %}
+                        <tr>
+                            <td><strong>#{{ nota.id }}</strong></td>
+                            <td>
+                                {% if nota.status == 'ERRO' %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times-circle"></i> {{ nota.get_status_display }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-clock"></i> {{ nota.get_status_display }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ nota.cliente_nome }}</strong><br>
+                                <small class="text-muted">{{ nota.venda.cliente.cpf_cnpj }}</small>
+                            </td>
+                            <td>
+                                <a href="{% url 'vendas:detalhes_venda' nota.venda.id %}" class="text-decoration-none" target="_blank">
+                                    #{{ nota.venda.id }}
+                                    <i class="fas fa-external-link-alt fa-xs"></i>
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ nota.get_tipo_display }}</span>
+                            </td>
+                            <td><strong>R$ {{ nota.valor_servico|floatformat:2 }}</strong></td>
+                            <td>{{ nota.data_criacao|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <span class="badge bg-secondary">{{ nota.tentativas_emissao }}</span>
+                            </td>
+                            <td>
+                                {% with motivo=nota.get_motivo_pendente %}
+                                {% if motivo %}
+                                <small class="text-danger">
+                                    <i class="fas fa-exclamation-triangle"></i> 
+                                    {{ motivo }}
+                                </small>
+                                {% else %}
+                                <span class="text-muted">Pronto para emissão</span>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    {% if nota.status == 'ERRO' %}
+                                    <a href="{% url 'notas_fiscais:reprocessar' nota.id %}" 
+                                       class="btn btn-sm btn-warning"
+                                       onclick="return confirm('Deseja reprocessar esta nota?')">
+                                        <i class="fas fa-redo"></i>
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'notas_fiscais:emitir_manual' nota.id %}" 
+                                       class="btn btn-sm btn-primary"
+                                       onclick="return confirm('Deseja emitir esta nota manualmente?')">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </a>
+                                    {% endif %}
+                                    <a href="{% url 'vendas:detalhes_venda' nota.venda.id %}" 
+                                       class="btn btn-sm btn-outline-secondary" 
+                                       target="_blank"
+                                       title="Ver Venda">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            {% if notas_pendentes.has_other_pages %}
+            <div class="card-footer">
+                <nav aria-label="Navegação de páginas">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if notas_pendentes.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ notas_pendentes.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.data_inicial %}&data_inicial={{ request.GET.data_inicial }}{% endif %}{% if request.GET.data_final %}&data_final={{ request.GET.data_final }}{% endif %}">
+                                <i class="fas fa-chevron-left"></i> Anterior
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Página {{ notas_pendentes.number }} de {{ notas_pendentes.paginator.num_pages }}
+                            </span>
+                        </li>
+
+                        {% if notas_pendentes.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ notas_pendentes.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.data_inicial %}&data_inicial={{ request.GET.data_inicial }}{% endif %}{% if request.GET.data_final %}&data_final={{ request.GET.data_final }}{% endif %}">
+                                Próxima <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+            {% else %}
+            <!-- Lista Vazia -->
+            <div class="text-center py-5">
+                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                <h4>Nenhuma nota pendente!</h4>
+                <p class="text-muted">Todas as notas foram processadas com sucesso.</p>
+                <a href="{% url 'notas_fiscais:dashboard' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Ativar tooltips do Bootstrap
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+});
+</script>
+{% endblock %}

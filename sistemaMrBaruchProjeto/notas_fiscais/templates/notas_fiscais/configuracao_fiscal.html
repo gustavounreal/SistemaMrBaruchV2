@@ -1,0 +1,259 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Configuração Fiscal{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'relatorios:painel_central' %}">Painel Central</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'notas_fiscais:dashboard' %}">Notas Fiscais</a></li>
+            <li class="breadcrumb-item active">Configuração Fiscal</li>
+        </ol>
+    </nav>
+
+    <!-- Título -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-cog"></i> Configuração Fiscal da Empresa</h4>
+                <a href="{% url 'notas_fiscais:dashboard' %}" class="btn btn-sm btn-light">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                <strong>Importante:</strong> Essas informações serão utilizadas para emissão das Notas Fiscais de Serviço.
+                Certifique-se de que todos os dados estão corretos antes de salvar.
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulário -->
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- Dados da Empresa -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-building"></i> Dados da Empresa</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">CNPJ <span class="text-danger">*</span></label>
+                        <input type="text" name="cnpj" class="form-control" 
+                               value="{{ config.cnpj|default:'' }}" 
+                               placeholder="00.000.000/0000-00"
+                               required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Razão Social <span class="text-danger">*</span></label>
+                        <input type="text" name="razao_social" class="form-control" 
+                               value="{{ config.razao_social|default:'' }}" 
+                               placeholder="Ex: Mr Baruch Consultoria Ltda"
+                               required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Nome Fantasia</label>
+                        <input type="text" name="nome_fantasia" class="form-control" 
+                               value="{{ config.nome_fantasia|default:'' }}" 
+                               placeholder="Ex: Mr Baruch">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Endereço -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-map-marker-alt"></i> Endereço</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">CEP <span class="text-danger">*</span></label>
+                        <input type="text" name="cep" class="form-control" 
+                               value="{{ config.cep|default:'' }}" 
+                               placeholder="00000-000"
+                               required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Logradouro <span class="text-danger">*</span></label>
+                        <input type="text" name="logradouro" class="form-control" 
+                               value="{{ config.logradouro|default:'' }}" 
+                               placeholder="Rua, Avenida, etc."
+                               required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Número <span class="text-danger">*</span></label>
+                        <input type="text" name="numero" class="form-control" 
+                               value="{{ config.numero|default:'' }}" 
+                               placeholder="123"
+                               required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Complemento</label>
+                        <input type="text" name="complemento" class="form-control" 
+                               value="{{ config.complemento|default:'' }}" 
+                               placeholder="Sala, Andar, etc.">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Bairro <span class="text-danger">*</span></label>
+                        <input type="text" name="bairro" class="form-control" 
+                               value="{{ config.bairro|default:'' }}" 
+                               placeholder="Centro, Jardim, etc."
+                               required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Cidade <span class="text-danger">*</span></label>
+                        <input type="text" name="cidade" class="form-control" 
+                               value="{{ config.cidade|default:'' }}" 
+                               placeholder="São Paulo"
+                               required>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">UF <span class="text-danger">*</span></label>
+                        <select name="estado" class="form-select" required>
+                            <option value="">-</option>
+                            <option value="AC" {% if config.estado == 'AC' %}selected{% endif %}>AC</option>
+                            <option value="AL" {% if config.estado == 'AL' %}selected{% endif %}>AL</option>
+                            <option value="AP" {% if config.estado == 'AP' %}selected{% endif %}>AP</option>
+                            <option value="AM" {% if config.estado == 'AM' %}selected{% endif %}>AM</option>
+                            <option value="BA" {% if config.estado == 'BA' %}selected{% endif %}>BA</option>
+                            <option value="CE" {% if config.estado == 'CE' %}selected{% endif %}>CE</option>
+                            <option value="DF" {% if config.estado == 'DF' %}selected{% endif %}>DF</option>
+                            <option value="ES" {% if config.estado == 'ES' %}selected{% endif %}>ES</option>
+                            <option value="GO" {% if config.estado == 'GO' %}selected{% endif %}>GO</option>
+                            <option value="MA" {% if config.estado == 'MA' %}selected{% endif %}>MA</option>
+                            <option value="MT" {% if config.estado == 'MT' %}selected{% endif %}>MT</option>
+                            <option value="MS" {% if config.estado == 'MS' %}selected{% endif %}>MS</option>
+                            <option value="MG" {% if config.estado == 'MG' %}selected{% endif %}>MG</option>
+                            <option value="PA" {% if config.estado == 'PA' %}selected{% endif %}>PA</option>
+                            <option value="PB" {% if config.estado == 'PB' %}selected{% endif %}>PB</option>
+                            <option value="PR" {% if config.estado == 'PR' %}selected{% endif %}>PR</option>
+                            <option value="PE" {% if config.estado == 'PE' %}selected{% endif %}>PE</option>
+                            <option value="PI" {% if config.estado == 'PI' %}selected{% endif %}>PI</option>
+                            <option value="RJ" {% if config.estado == 'RJ' %}selected{% endif %}>RJ</option>
+                            <option value="RN" {% if config.estado == 'RN' %}selected{% endif %}>RN</option>
+                            <option value="RS" {% if config.estado == 'RS' %}selected{% endif %}>RS</option>
+                            <option value="RO" {% if config.estado == 'RO' %}selected{% endif %}>RO</option>
+                            <option value="RR" {% if config.estado == 'RR' %}selected{% endif %}>RR</option>
+                            <option value="SC" {% if config.estado == 'SC' %}selected{% endif %}>SC</option>
+                            <option value="SP" {% if config.estado == 'SP' %}selected{% endif %}>SP</option>
+                            <option value="SE" {% if config.estado == 'SE' %}selected{% endif %}>SE</option>
+                            <option value="TO" {% if config.estado == 'TO' %}selected{% endif %}>TO</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dados Fiscais -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-file-invoice"></i> Dados Fiscais</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Inscrição Municipal</label>
+                        <input type="text" name="inscricao_municipal" class="form-control" 
+                               value="{{ config.inscricao_municipal|default:'' }}" 
+                               placeholder="000000000">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Regime Tributário</label>
+                        <select name="regime_tributario" class="form-select">
+                            <option value="SIMPLES_NACIONAL" {% if config.regime_tributario == 'SIMPLES_NACIONAL' %}selected{% endif %}>Simples Nacional</option>
+                            <option value="LUCRO_PRESUMIDO" {% if config.regime_tributario == 'LUCRO_PRESUMIDO' %}selected{% endif %}>Lucro Presumido</option>
+                            <option value="LUCRO_REAL" {% if config.regime_tributario == 'LUCRO_REAL' %}selected{% endif %}>Lucro Real</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Alíquota ISS Padrão (%)</label>
+                        <input type="number" step="0.01" name="aliquota_iss" class="form-control" 
+                               value="{{ config.aliquota_iss_padrao|default:'2.00' }}" 
+                               placeholder="2.00">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Código de Serviço</label>
+                        <input type="text" name="codigo_servico_padrao" class="form-control" 
+                               value="{{ config.codigo_servico_padrao|default:'' }}" 
+                               placeholder="Ex: 17.06">
+                        <small class="text-muted">Consultoria Financeira</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Automação -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-robot"></i> Configurações de Automação</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="emissao_automatica" 
+                                   id="emissao_automatica" 
+                                   {% if config.emissao_automatica %}checked{% endif %}>
+                            <label class="form-check-label" for="emissao_automatica">
+                                <strong>Emissão Automática</strong><br>
+                                <small class="text-muted">Emitir NF automaticamente ao confirmar pagamento</small>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="envio_automatico_email" 
+                                   id="envio_automatico_email" 
+                                   {% if config.envio_automatico_email %}checked{% endif %}>
+                            <label class="form-check-label" for="envio_automatico_email">
+                                <strong>Envio Automático por E-mail</strong><br>
+                                <small class="text-muted">Enviar NF por e-mail automaticamente</small>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Prazo para Cancelamento (horas)</label>
+                        <input type="number" name="prazo_cancelamento_horas" class="form-control" 
+                               value="{{ config.prazo_cancelamento_horas|default:'24' }}" 
+                               placeholder="24">
+                        <small class="text-muted">Geralmente 24 horas</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botões -->
+        <div class="card">
+            <div class="card-body text-end">
+                <a href="{% url 'notas_fiscais:dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save"></i> Salvar Configuração
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+.form-label {
+    font-weight: 500;
+}
+.text-danger {
+    font-weight: bold;
+}
+.card-header {
+    font-weight: 600;
+}
+</style>
+{% endblock %}

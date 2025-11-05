@@ -1,0 +1,265 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Notas Emitidas{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'relatorios:painel_central' %}">Painel Central</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'notas_fiscais:dashboard' %}">Notas Fiscais</a></li>
+            <li class="breadcrumb-item active">Emitidas</li>
+        </ol>
+    </nav>
+
+    <!-- Título e Totais -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-check-circle"></i> Notas Fiscais Emitidas</h4>
+                <a href="{% url 'notas_fiscais:dashboard' %}" class="btn btn-sm btn-outline-light">
+                    <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Total de Notas</h6>
+                            <h3 class="text-primary mb-0">{{ notas.paginator.count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Valor Total Serviços</h6>
+                            <h3 class="text-success mb-0">R$ {{ total_valor|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Total ISS</h6>
+                            <h3 class="text-info mb-0">R$ {{ total_iss|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Notas -->
+    <div class="card">
+        <div class="card-body p-0">
+            {% if notas %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Número NF</th>
+                            <th>Status</th>
+                            <th>Cliente</th>
+                            <th>Venda</th>
+                            <th>Tipo</th>
+                            <th>Valor Serviço</th>
+                            <th>ISS (2%)</th>
+                            <th>Valor Líquido</th>
+                            <th>Emissão</th>
+                            <th>Arquivos</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for nota in notas %}
+                        <tr>
+                            <td>
+                                <strong>{{ nota.numero_nf }}</strong><br>
+                                <small class="text-muted">Série: {{ nota.serie_nf|default:"---" }}</small>
+                            </td>
+                            <td>
+                                {% if nota.status == 'ENVIADA' %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-envelope-circle-check"></i> {{ nota.get_status_display }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-info">
+                                    <i class="fas fa-check"></i> {{ nota.get_status_display }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ nota.cliente_nome }}</strong><br>
+                                <small class="text-muted">{{ nota.venda.cliente.cpf_cnpj }}</small>
+                                {% if nota.email_destinatario %}
+                                <br><small class="text-primary">
+                                    <i class="fas fa-envelope"></i> {{ nota.email_destinatario }}
+                                </small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'vendas:detalhes_venda' nota.venda.id %}" 
+                                   class="text-decoration-none" 
+                                   target="_blank">
+                                    #{{ nota.venda.id }}
+                                    <i class="fas fa-external-link-alt fa-xs"></i>
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ nota.get_tipo_display }}</span>
+                            </td>
+                            <td><strong>R$ {{ nota.valor_servico|floatformat:2 }}</strong></td>
+                            <td>R$ {{ nota.valor_iss|floatformat:2 }}</td>
+                            <td class="text-success"><strong>R$ {{ nota.valor_liquido|floatformat:2 }}</strong></td>
+                            <td>
+                                {{ nota.data_emissao|date:"d/m/Y" }}<br>
+                                <small class="text-muted">{{ nota.data_emissao|date:"H:i" }}</small>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    {% if nota.url_pdf %}
+                                    <a href="{{ nota.url_pdf }}" 
+                                       target="_blank" 
+                                       class="btn btn-sm btn-danger" 
+                                       title="Baixar PDF">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </a>
+                                    {% endif %}
+                                    {% if nota.url_xml %}
+                                    <a href="{{ nota.url_xml }}" 
+                                       target="_blank" 
+                                       class="btn btn-sm btn-primary" 
+                                       title="Baixar XML">
+                                        <i class="fas fa-file-code"></i> XML
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    {% if not nota.email_enviado %}
+                                    <a href="{% url 'notas_fiscais:reenviar_email' nota.id %}" 
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="Enviar por E-mail"
+                                       onclick="return confirm('Deseja enviar esta nota por e-mail?')">
+                                        <i class="fas fa-envelope"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if nota.pode_cancelar %}
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#modalCancelar{{ nota.id }}"
+                                            title="Cancelar NF">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Modal de Cancelamento -->
+                        {% if nota.pode_cancelar %}
+                        <div class="modal fade" id="modalCancelar{{ nota.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form method="post" action="{% url 'notas_fiscais:cancelar' nota.id %}">
+                                        {% csrf_token %}
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title">
+                                                <i class="fas fa-ban"></i> Cancelar Nota Fiscal
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="alert alert-warning">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                                <strong>Atenção!</strong> Esta ação é irreversível.
+                                            </div>
+                                            <p><strong>Nota:</strong> {{ nota.numero_nf }}</p>
+                                            <p><strong>Cliente:</strong> {{ nota.cliente_nome }}</p>
+                                            <p><strong>Valor:</strong> R$ {{ nota.valor_servico|floatformat:2 }}</p>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Motivo do Cancelamento *</label>
+                                                <textarea name="motivo" class="form-control" rows="3" required></textarea>
+                                                <small class="text-muted">Este motivo será registrado no sistema.</small>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                Fechar
+                                            </button>
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="fas fa-ban"></i> Confirmar Cancelamento
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <td colspan="5" class="text-end"><strong>TOTAIS:</strong></td>
+                            <td><strong>R$ {{ total_valor|floatformat:2 }}</strong></td>
+                            <td><strong>R$ {{ total_iss|floatformat:2 }}</strong></td>
+                            <td class="text-success"><strong>R$ {{ total_liquido|floatformat:2 }}</strong></td>
+                            <td colspan="3"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            {% if notas.has_other_pages %}
+            <div class="card-footer">
+                <nav aria-label="Navegação de páginas">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if notas.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ notas.previous_page_number }}">
+                                <i class="fas fa-chevron-left"></i> Anterior
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Página {{ notas.number }} de {{ notas.paginator.num_pages }}
+                            </span>
+                        </li>
+
+                        {% if notas.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ notas.next_page_number }}">
+                                Próxima <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+            {% else %}
+            <!-- Lista Vazia -->
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                <h4>Nenhuma nota emitida</h4>
+                <p class="text-muted">Ainda não há notas fiscais emitidas no sistema.</p>
+                <a href="{% url 'notas_fiscais:dashboard' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -80,6 +80,182 @@ def formatar_nome_completo(nome):
     
     return ' '.join(palavras_formatadas)
 
+
+def salvar_ou_atualizar_lead_inteligente(nome_completo, telefone, email, cpf_cnpj, data_nascimento, origem, captador, atendente, status_inicial):
+    """
+    Lógica inteligente para salvar/atualizar lead com regras de negócio:
+    
+    REGRA DE OURO:
+    1. CPF/CNPJ = IDENTIFICADOR ABSOLUTO (nunca duplicar)
+    2. TELEFONE = IDENTIFICADOR SECUNDÁRIO (pode duplicar em casos específicos)
+    3. SEMPRE AVISAR em situações de conflito
+    
+    PRIORIDADE DE BUSCA:
+    1º → Busca por CPF/CNPJ (se fornecido)
+    2º → Busca por TELEFONE (se não tem CPF/CNPJ OU se não encontrou)
+    3º → Criar novo lead
+    
+    CONFLITOS:
+    - Mesmo tel + docs diferentes → CRIAR NOVO + AVISAR ATENDENTE
+    - Mesmo doc + tel diferente → ATUALIZAR telefone
+    - Sem doc agora com doc → ATUALIZAR lead existente
+    
+    Args:
+        nome_completo (str): Nome formatado do lead
+        telefone (str): Telefone do lead
+        email (str): Email do lead
+        cpf_cnpj (str): CPF ou CNPJ (pode ser None)
+        data_nascimento (date): Data de nascimento (pode ser None)
+        origem (OrigemLead): Origem do lead
+        captador (User): Captador responsável
+        atendente (User): Atendente que cadastrou
+        status_inicial (str): Status inicial do lead
+        
+    Returns:
+        tuple: (lead, created, aviso)
+            - lead: Instância do Lead
+            - created: Boolean indicando se foi criado novo
+            - aviso: String com mensagem de aviso (ou None)
+    """
+    
+    aviso = None
+    
+    # ========== CASO 1: TEM CPF/CNPJ (fez levantamento ou consulta) ==========
+    if cpf_cnpj:
+        # Busca por CPF/CNPJ primeiro (identificador forte)
+        lead_por_documento = Lead.objects.filter(cpf_cnpj=cpf_cnpj).first()
+        
+        if lead_por_documento:
+            # ✅ ENCONTROU por documento - ATUALIZAR
+            lead_por_documento.nome_completo = nome_completo
+            lead_por_documento.email = email
+            
+            # Atualiza telefone se mudou (mesmo doc + tel diferente)
+            if lead_por_documento.telefone != telefone:
+                aviso = f"Telefone atualizado de {lead_por_documento.telefone} para {telefone}"
+                lead_por_documento.telefone = telefone
+            
+            # Atualiza data de nascimento se fornecida
+            if data_nascimento:
+                lead_por_documento.data_nascimento = data_nascimento
+            
+            # Atualiza origem, captador e status
+            lead_por_documento.origem = origem
+            lead_por_documento.captador = captador
+            lead_por_documento.atendente = atendente
+            lead_por_documento.status = status_inicial
+            lead_por_documento.data_atualizacao = timezone.now()
+            lead_por_documento.save()
+            
+            logger.info(f"Lead atualizado (encontrado por CPF/CNPJ): {lead_por_documento.id}")
+            return lead_por_documento, False, aviso
+        
+        else:
+            # ❌ NÃO encontrou por documento
+            # Busca por telefone (pode ser evolução do lead)
+            lead_por_telefone = Lead.objects.filter(telefone=telefone).first()
+            
+            if lead_por_telefone and not lead_por_telefone.cpf_cnpj:
+                # ✅ Encontrou por telefone E não tinha documento
+                # É EVOLUÇÃO do lead (agora fez levantamento/consulta)
+                lead_por_telefone.cpf_cnpj = cpf_cnpj
+                lead_por_telefone.nome_completo = nome_completo
+                lead_por_telefone.email = email
+                
+                if data_nascimento:
+                    lead_por_telefone.data_nascimento = data_nascimento
+                
+                lead_por_telefone.origem = origem
+                lead_por_telefone.captador = captador
+                lead_por_telefone.atendente = atendente
+                lead_por_telefone.status = status_inicial
+                lead_por_telefone.data_atualizacao = timezone.now()
+                lead_por_telefone.save()
+                
+                aviso = f"✅ CPF/CNPJ adicionado ao lead existente (ID: {lead_por_telefone.id})"
+                logger.info(f"Lead evoluído (adicionado CPF/CNPJ): {lead_por_telefone.id}")
+                return lead_por_telefone, False, aviso
+            
+            elif lead_por_telefone and lead_por_telefone.cpf_cnpj and lead_por_telefone.cpf_cnpj != cpf_cnpj:
+                # ⚠️ CONFLITO! Mesmo telefone mas documentos DIFERENTES
+                # CRIAR NOVO LEAD mas AVISAR
+                novo_lead = Lead.objects.create(
+                    cpf_cnpj=cpf_cnpj,
+                    telefone=telefone,
+                    nome_completo=nome_completo,
+                    email=email,
+                    data_nascimento=data_nascimento,
+                    origem=origem,
+                    captador=captador,
+                    atendente=atendente,
+                    status=status_inicial,
+                    data_cadastro=timezone.now()
+                )
+                
+                aviso = f"ATENÇÃO: Já existe lead com este telefone mas CPF/CNPJ diferente! Lead anterior: #{lead_por_telefone.id} ({lead_por_telefone.cpf_cnpj}). Novo lead criado: #{novo_lead.id}"
+                logger.warning(f"CONFLITO: Mesmo telefone, docs diferentes. Lead antigo: {lead_por_telefone.id}, Novo: {novo_lead.id}")
+                return novo_lead, True, aviso
+            
+            else:
+                # ✅ Não encontrou nem por documento nem por telefone
+                # CRIAR NOVO LEAD
+                lead = Lead.objects.create(
+                    cpf_cnpj=cpf_cnpj,
+                    telefone=telefone,
+                    nome_completo=nome_completo,
+                    email=email,
+                    data_nascimento=data_nascimento,
+                    origem=origem,
+                    captador=captador,
+                    atendente=atendente,
+                    status=status_inicial,
+                    data_cadastro=timezone.now()
+                )
+                
+                logger.info(f"Novo lead criado com CPF/CNPJ: {lead.id}")
+                return lead, True, None
+    
+    # ========== CASO 2: NÃO TEM CPF/CNPJ (não fez levantamento) ==========
+    else:
+        # Busca APENAS por telefone
+        lead_por_telefone = Lead.objects.filter(telefone=telefone).first()
+        
+        if lead_por_telefone:
+            # ✅ ENCONTROU - ATUALIZAR
+            lead_por_telefone.nome_completo = nome_completo
+            lead_por_telefone.email = email
+            
+            if data_nascimento:
+                lead_por_telefone.data_nascimento = data_nascimento
+            
+            lead_por_telefone.origem = origem
+            lead_por_telefone.captador = captador
+            lead_por_telefone.atendente = atendente
+            lead_por_telefone.status = status_inicial
+            lead_por_telefone.data_atualizacao = timezone.now()
+            lead_por_telefone.save()
+            
+            logger.info(f"Lead atualizado (encontrado por telefone): {lead_por_telefone.id}")
+            return lead_por_telefone, False, None
+        
+        else:
+            # ✅ CRIAR NOVO LEAD
+            lead = Lead.objects.create(
+                telefone=telefone,
+                nome_completo=nome_completo,
+                email=email,
+                data_nascimento=data_nascimento,
+                origem=origem,
+                captador=captador,
+                atendente=atendente,
+                status=status_inicial,
+                data_cadastro=timezone.now()
+            )
+            
+            logger.info(f"Novo lead criado sem CPF/CNPJ: {lead.id}")
+            return lead, True, None
+
+
 def autenticar_via_token(request, token):
     """
     Autenticação segura via token JWT com validações
@@ -389,33 +565,33 @@ def salvar_lead_sem_levantamento(request):
             return JsonResponse({'success': False, 'message': 'ID do captador é obrigatório.'})
         
         status_inicial = str(ConfiguracaoService.obter_config('LEAD_STATUS_INICIAL', 'NOVO') or 'NOVO')
-        lead, created = Lead.objects.get_or_create(
+        
+        # Usa função inteligente para salvar/atualizar lead
+        lead, created, aviso = salvar_ou_atualizar_lead_inteligente(
+            nome_completo=nome_completo,
             telefone=telefone,
-            defaults={
-                'nome_completo': nome_completo,
-                'email': email,
-                'cpf_cnpj': cpf_cnpj,
-                'data_nascimento': data_nascimento if data_nascimento else None,
-                'origem': origem,
-                'status': status_inicial,
-                'captador': captador,
-                'atendente': request.user,
-            }
+            email=email,
+            cpf_cnpj=cpf_cnpj if cpf_cnpj else None,
+            data_nascimento=data_nascimento if data_nascimento else None,
+            origem=origem,
+            captador=captador,
+            atendente=request.user,
+            status_inicial=status_inicial
         )
-        if not created:
-            # Atualiza dados se já existe
-            lead.nome_completo = nome_completo
-            lead.email = email
-            lead.cpf_cnpj = cpf_cnpj
-            if data_nascimento:
-                lead.data_nascimento = data_nascimento
-            lead.origem = origem
-            lead.captador = captador
-            lead.atendente = request.user
-            lead.status = status_inicial
-            lead.save()
-
-        return JsonResponse({'success': True, 'lead_id': lead.id, 'message': 'Lead salvo com sucesso.'})
+        
+        # Prepara resposta
+        response_data = {
+            'success': True,
+            'lead_id': lead.id,
+            'created': created,
+            'message': 'Novo lead cadastrado com sucesso!' if created else 'Lead atualizado com sucesso!'
+        }
+        
+        # Adiciona aviso se houver
+        if aviso:
+            response_data['aviso'] = aviso
+        
+        return JsonResponse(response_data)
     except Exception as e:
         return JsonResponse({'success': False, 'message': f'Erro ao salvar lead: {str(e)}'})
  
@@ -488,48 +664,43 @@ def salvar_lead_api(request):
             return JsonResponse({'success': False, 'message': 'ID do captador é obrigatório.'})
         
         status_inicial = str(ConfiguracaoService.obter_config('LEAD_STATUS_INICIAL', 'CONTATADO') or 'CONTATADO')
-        lead, created = Lead.objects.get_or_create(
+        
+        # Usa função inteligente para salvar/atualizar lead
+        lead, created, aviso = salvar_ou_atualizar_lead_inteligente(
+            nome_completo=nome_completo,
             telefone=telefone,
-            defaults={
-                'nome_completo': nome_completo,
-                'email': email,
-                'cpf_cnpj': cpf_cnpj,
-                'data_nascimento': data_nascimento if data_nascimento else None,
-                'origem': origem,
-                'status': status_inicial,
-                'captador': captador,
-                'atendente': request.user,
-            }
+            email=email,
+            cpf_cnpj=cpf_cnpj if cpf_cnpj else None,
+            data_nascimento=data_nascimento if data_nascimento else None,
+            origem=origem,
+            captador=captador,
+            atendente=request.user,
+            status_inicial=status_inicial
         )
-
-        if not created:
-            # Atualizar os dados do lead existente
-            lead.nome_completo = nome_completo
-            lead.email = email
-            lead.cpf_cnpj = cpf_cnpj
-            if data_nascimento:
-                lead.data_nascimento = data_nascimento
-            lead.origem = origem
-            lead.status = status_inicial
-            lead.captador = captador
-            lead.data_atualizacao = timezone.now()
-            lead.save()
 
         # Registrar log de criação ou atualização
         LogService.registrar(
             usuario=request.user,
             nivel='INFO',
-            mensagem=f'Lead {"criado" if created else "atualizado"}: {nome_completo}',
+            mensagem=f'Lead {"criado" if created else "atualizado"}: {nome_completo}' + (f' - {aviso}' if aviso else ''),
             modulo='atendimento',
             acao='CRIAR_LEAD' if created else 'ATUALIZAR_LEAD',
             ip=get_client_ip(request)
         )
 
-        return JsonResponse({
+        # Prepara resposta
+        response_data = {
             'success': True,
             'lead_id': lead.id,
+            'created': created,
             'message': f'Lead {"criado" if created else "atualizado"} com sucesso!'
-        })
+        }
+        
+        # Adiciona aviso se houver
+        if aviso:
+            response_data['aviso'] = aviso
+        
+        return JsonResponse(response_data)
 
     except Exception as e:
         LogService.registrar(
