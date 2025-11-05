@@ -571,6 +571,69 @@
     }
   }
 
+  // Funções para gerenciar origens de lead
+  function salvarOrigemLead(origemId) {
+    const nome = document.getElementById(`origem-nome-${origemId}`).value.trim();
+    const ativo = document.getElementById(`origem-ativo-${origemId}`).checked;
+    
+    if (!nome) {
+      alert('O nome da origem não pode estar vazio.');
+      return;
+    }
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    formData.append('origem_id', origemId);
+    formData.append('nome', nome);
+    if (ativo) {
+      formData.append('ativo', 'on');
+    }
+    
+    fetch('{% url "core:editar_origem_lead" %}', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => {
+      if (response.ok) {
+        alert('Origem atualizada com sucesso!');
+        location.reload();
+      } else {
+        alert('Erro ao atualizar origem. Tente novamente.');
+      }
+    })
+    .catch(err => {
+      console.error('Erro:', err);
+      alert('Erro ao atualizar origem. Verifique sua conexão.');
+    });
+  }
+
+  function excluirOrigemLead(origemId, origemNome) {
+    if (!confirm(`Tem certeza que deseja excluir a origem "${origemNome}"?\n\nEsta ação não pode ser desfeita e só funcionará se não houver leads associados.`)) {
+      return;
+    }
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    formData.append('origem_id', origemId);
+    
+    fetch('{% url "core:excluir_origem_lead" %}', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => {
+      if (response.ok) {
+        alert('Origem excluída com sucesso!');
+        location.reload();
+      } else {
+        alert('Erro ao excluir origem. Pode haver leads associados a ela.');
+      }
+    })
+    .catch(err => {
+      console.error('Erro:', err);
+      alert('Erro ao excluir origem. Verifique sua conexão.');
+    });
+  }
+
   // Mapa de grupos com metadados
   const gruposInfo = {
     {% for g in grupos %}
@@ -1166,121 +1229,6 @@
       }
     }
   });
-</script>
-
-
-      const modalHtml = `
-      <div class="modal fade" id="asaasDiagModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-          <div class="modal-content shadow-lg rounded-4">
-            <div class="modal-header ${ok ? 'bg-success text-white' : 'bg-danger text-white'}">
-              <h5 class="modal-title"><i class="bi bi-plug me-2"></i>Diagnóstico da Integração ASAAS</h5>
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-              <div class="mb-3">
-                <p class="mb-1"><strong>Resultado:</strong> ${ok ? 'OK' : 'Falhou'} — ${data.executado_em || ''}</p>
-                <p class="mb-0 small text-muted">Base URL: <code>${cfg.base_url || ''}</code> | Timeout: ${cfg.timeout || 0}s | Retries: ${cfg.max_retries || 0} | Token configurado: ${cfg.token_configurado ? 'Sim' : 'Não'}</p>
-              </div>
-              <div class="card">
-                <div class="card-body p-0">
-                  <table class="table table-sm mb-0">
-                    <thead>
-                      <tr><th>Check</th><th>Status</th><th>Detalhe</th></tr>
-                    </thead>
-                    <tbody>
-                      ${checks.map(c => `
-                        <tr>
-                          <td>${c.nome || ''}</td>
-                          <td>${c.status ? '<span class="badge bg-success">OK</span>' : '<span class="badge bg-danger">Falha</span>'}</td>
-                          <td class="small">${c.detalhe || ''}</td>
-                        </tr>
-                      `).join('')}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-            </div>
-          </div>
-        </div>
-      </div>`;
-
-      const container = document.createElement('div');
-      container.innerHTML = modalHtml;
-      document.body.appendChild(container);
-      const modalEl = document.getElementById('asaasDiagModal');
-      const modal = new bootstrap.Modal(modalEl);
-      modal.show();
-    } catch (e) {
-      console.error('Erro ao exibir diagnóstico ASAAS:', e);
-    }
-  });
-
-  // Funções para gerenciar origens de lead
-  function salvarOrigemLead(origemId) {
-    const nome = document.getElementById(`origem-nome-${origemId}`).value.trim();
-    const ativo = document.getElementById(`origem-ativo-${origemId}`).checked;
-    
-    if (!nome) {
-      alert('O nome da origem não pode estar vazio.');
-      return;
-    }
-    
-    const formData = new FormData();
-    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-    formData.append('origem_id', origemId);
-    formData.append('nome', nome);
-    if (ativo) {
-      formData.append('ativo', 'on');
-    }
-    
-    fetch('{% url "core:editar_origem_lead" %}', {
-      method: 'POST',
-      body: formData
-    })
-    .then(response => {
-      if (response.ok) {
-        alert('Origem atualizada com sucesso!');
-        location.reload();
-      } else {
-        alert('Erro ao atualizar origem. Tente novamente.');
-      }
-    })
-    .catch(err => {
-      console.error('Erro:', err);
-      alert('Erro ao atualizar origem. Verifique sua conexão.');
-    });
-  }
-
-  function excluirOrigemLead(origemId, origemNome) {
-    if (!confirm(`Tem certeza que deseja excluir a origem "${origemNome}"?\n\nEsta ação não pode ser desfeita e só funcionará se não houver leads associados.`)) {
-      return;
-    }
-    
-    const formData = new FormData();
-    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-    formData.append('origem_id', origemId);
-    
-    fetch('{% url "core:excluir_origem_lead" %}', {
-      method: 'POST',
-      body: formData
-    })
-    .then(response => {
-      if (response.ok) {
-        alert('Origem excluída com sucesso!');
-        location.reload();
-      } else {
-        alert('Erro ao excluir origem. Pode haver leads associados a ela.');
-      }
-    })
-    .catch(err => {
-      console.error('Erro:', err);
-      alert('Erro ao excluir origem. Verifique sua conexão.');
-    });
-  }
 
   // Atualiza label do checkbox de ativo/inativo
   document.querySelectorAll('[id^="origem-ativo-"]').forEach(checkbox => {
