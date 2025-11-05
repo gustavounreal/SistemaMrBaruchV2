@@ -1,0 +1,348 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ cliente.nome }} - Detalhes - Sistema Mr. Baruch{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'asaas_sync:dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'asaas_sync:lista_clientes' %}">Clientes</a></li>
+                    <li class="breadcrumb-item active">{{ cliente.nome }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Informações do Cliente -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-user me-2"></i>{{ cliente.nome }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>ID Asaas:</strong> {{ cliente.asaas_customer_id }}</p>
+                            <p class="mb-2"><strong>CPF/CNPJ:</strong> {{ cliente.cpf_cnpj|default:"-" }}</p>
+                            <p class="mb-2"><strong>E-mail:</strong> {{ cliente.email|default:"-" }}</p>
+                            <p class="mb-2"><strong>Telefone:</strong> {{ cliente.telefone|default:"-" }}</p>
+                            <p class="mb-2"><strong>Celular:</strong> {{ cliente.celular|default:"-" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2"><strong>CEP:</strong> {{ cliente.cep|default:"-" }}</p>
+                            <p class="mb-2"><strong>Endereço:</strong> {{ cliente.endereco|default:"-" }}, {{ cliente.numero|default:"-" }}</p>
+                            <p class="mb-2"><strong>Complemento:</strong> {{ cliente.complemento|default:"-" }}</p>
+                            <p class="mb-2"><strong>Bairro:</strong> {{ cliente.bairro|default:"-" }}</p>
+                            <p class="mb-2"><strong>Cidade/UF:</strong> {{ cliente.cidade|default:"-" }}/{{ cliente.estado|default:"-" }}</p>
+                        </div>
+                    </div>
+                    {% if cliente.observacoes %}
+                    <div class="alert alert-info mt-3">
+                        <strong>Observações:</strong> {{ cliente.observacoes }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumo Financeiro -->
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Total de Cobranças</h6>
+                    <h2 class="mb-0">{{ stats.total_cobrancas }}</h2>
+                </div>
+            </div>
+            <div class="card mb-3 bg-success text-white">
+                <div class="card-body text-center">
+                    <h6 class="text-white-50 mb-2">Total Recebido</h6>
+                    <h3 class="mb-0">R$ {{ stats.total_recebido|floatformat:2 }}</h3>
+                </div>
+            </div>
+            <div class="card mb-3 bg-warning text-white">
+                <div class="card-body text-center">
+                    <h6 class="text-white-50 mb-2">Total Pendente</h6>
+                    <h3 class="mb-0">R$ {{ stats.total_pendente|floatformat:2 }}</h3>
+                </div>
+            </div>
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <h6 class="text-white-50 mb-2">Total Vencido</h6>
+                    <h3 class="mb-0">R$ {{ stats.total_vencido|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cobranças Pagas -->
+    {% if cobrancas_pagas %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Cobranças Pagas ({{ cobrancas_pagas.count }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID Asaas</th>
+                                    <th>Tipo</th>
+                                    <th>Descrição</th>
+                                    <th class="text-end">Valor</th>
+                                    <th>Vencimento</th>
+                                    <th>Pagamento</th>
+                                    <th>Parcela</th>
+                                    <th>Links</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cobranca in cobrancas_pagas %}
+                                <tr>
+                                    <td><code>{{ cobranca.asaas_payment_id|slice:":8" }}...</code></td>
+                                    <td><span class="badge bg-info">{{ cobranca.get_tipo_cobranca_display }}</span></td>
+                                    <td>{{ cobranca.descricao|default:"-"|truncatewords:5 }}</td>
+                                    <td class="text-end fw-bold text-success">R$ {{ cobranca.valor|floatformat:2 }}</td>
+                                    <td>{{ cobranca.data_vencimento|date:"d/m/Y" }}</td>
+                                    <td>{{ cobranca.data_pagamento|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if cobranca.total_parcelas %}
+                                        {{ cobranca.numero_parcela }}/{{ cobranca.total_parcelas }}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if cobranca.invoice_url %}
+                                        <a href="{{ cobranca.invoice_url }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Fatura">
+                                            <i class="fas fa-file-invoice"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Cobranças Pendentes -->
+    {% if cobrancas_pendentes %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Cobranças Pendentes ({{ cobrancas_pendentes.count }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID Asaas</th>
+                                    <th>Tipo</th>
+                                    <th>Descrição</th>
+                                    <th class="text-end">Valor</th>
+                                    <th>Vencimento</th>
+                                    <th>Dias</th>
+                                    <th>Parcela</th>
+                                    <th>Links</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cobranca in cobrancas_pendentes %}
+                                <tr>
+                                    <td><code>{{ cobranca.asaas_payment_id|slice:":8" }}...</code></td>
+                                    <td><span class="badge bg-info">{{ cobranca.get_tipo_cobranca_display }}</span></td>
+                                    <td>{{ cobranca.descricao|default:"-"|truncatewords:5 }}</td>
+                                    <td class="text-end fw-bold text-warning">R$ {{ cobranca.valor|floatformat:2 }}</td>
+                                    <td>{{ cobranca.data_vencimento|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if cobranca.dias_vencimento > 0 %}
+                                        <span class="badge bg-info">{{ cobranca.dias_vencimento }} dias</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Vence hoje</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if cobranca.total_parcelas %}
+                                        {{ cobranca.numero_parcela }}/{{ cobranca.total_parcelas }}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if cobranca.invoice_url %}
+                                        <a href="{{ cobranca.invoice_url }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Fatura">
+                                            <i class="fas fa-file-invoice"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if cobranca.bank_slip_url %}
+                                        <a href="{{ cobranca.bank_slip_url }}" target="_blank" class="btn btn-sm btn-outline-success" title="Boleto">
+                                            <i class="fas fa-barcode"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if cobranca.pix_qrcode_url %}
+                                        <button class="btn btn-sm btn-outline-info" onclick="mostrarPix('{{ cobranca.pix_copy_paste }}', '{{ cobranca.pix_qrcode_url }}')" title="PIX">
+                                            <i class="fab fa-pix"></i>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Cobranças Vencidas -->
+    {% if cobrancas_vencidas %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Cobranças Vencidas ({{ cobrancas_vencidas.count }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID Asaas</th>
+                                    <th>Tipo</th>
+                                    <th>Descrição</th>
+                                    <th class="text-end">Valor</th>
+                                    <th>Vencimento</th>
+                                    <th>Dias Vencido</th>
+                                    <th>Parcela</th>
+                                    <th>Links</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cobranca in cobrancas_vencidas %}
+                                <tr>
+                                    <td><code>{{ cobranca.asaas_payment_id|slice:":8" }}...</code></td>
+                                    <td><span class="badge bg-info">{{ cobranca.get_tipo_cobranca_display }}</span></td>
+                                    <td>{{ cobranca.descricao|default:"-"|truncatewords:5 }}</td>
+                                    <td class="text-end fw-bold text-danger">R$ {{ cobranca.valor|floatformat:2 }}</td>
+                                    <td>{{ cobranca.data_vencimento|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <span class="badge bg-danger">{{ cobranca.dias_vencimento_abs }} dias</span>
+                                    </td>
+                                    <td>
+                                        {% if cobranca.total_parcelas %}
+                                        {{ cobranca.numero_parcela }}/{{ cobranca.total_parcelas }}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if cobranca.invoice_url %}
+                                        <a href="{{ cobranca.invoice_url }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Fatura">
+                                            <i class="fas fa-file-invoice"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Outras Cobranças -->
+    {% if cobrancas_outras %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Outras Cobranças ({{ cobrancas_outras.count }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID Asaas</th>
+                                    <th>Tipo</th>
+                                    <th>Status</th>
+                                    <th>Descrição</th>
+                                    <th class="text-end">Valor</th>
+                                    <th>Vencimento</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cobranca in cobrancas_outras %}
+                                <tr>
+                                    <td><code>{{ cobranca.asaas_payment_id|slice:":8" }}...</code></td>
+                                    <td><span class="badge bg-info">{{ cobranca.get_tipo_cobranca_display }}</span></td>
+                                    <td><span class="badge bg-secondary">{{ cobranca.get_status_display }}</span></td>
+                                    <td>{{ cobranca.descricao|default:"-"|truncatewords:5 }}</td>
+                                    <td class="text-end fw-bold">R$ {{ cobranca.valor|floatformat:2 }}</td>
+                                    <td>{{ cobranca.data_vencimento|date:"d/m/Y" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal PIX -->
+<div class="modal fade" id="modalPix" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Pagamento via PIX</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="pixQrCode" src="" alt="QR Code PIX" class="img-fluid mb-3" style="max-width: 300px;">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="pixCopyPaste" readonly>
+                    <button class="btn btn-primary" onclick="copiarPix()">
+                        <i class="fas fa-copy"></i> Copiar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function mostrarPix(copyPaste, qrcodeUrl) {
+    document.getElementById('pixCopyPaste').value = copyPaste;
+    document.getElementById('pixQrCode').src = qrcodeUrl;
+    new bootstrap.Modal(document.getElementById('modalPix')).show();
+}
+
+function copiarPix() {
+    const input = document.getElementById('pixCopyPaste');
+    input.select();
+    document.execCommand('copy');
+    alert('PIX copiado para a área de transferência!');
+}
+</script>
+{% endblock %}

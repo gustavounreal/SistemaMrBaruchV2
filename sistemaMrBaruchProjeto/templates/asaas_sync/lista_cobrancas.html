@@ -1,0 +1,151 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Cobranças Asaas - Sistema Mr. Baruch{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'asaas_sync:dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Cobranças</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-receipt me-2"></i>Cobranças Sincronizadas do Asaas</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <form method="get" class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <label for="cliente" class="form-label">Cliente</label>
+                            <input type="text" class="form-control" id="cliente" name="cliente" 
+                                   placeholder="Nome ou CPF/CNPJ" value="{{ cliente_busca }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">Todos</option>
+                                {% for key, value in status_choices %}
+                                <option value="{{ key }}" {% if status == key %}selected{% endif %}>{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="tipo" class="form-label">Tipo</label>
+                            <select class="form-select" id="tipo" name="tipo">
+                                <option value="">Todos</option>
+                                {% for key, value in tipo_choices %}
+                                <option value="{{ key }}" {% if tipo == key %}selected{% endif %}>{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="data_inicio" class="form-label">Data Início</label>
+                            <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="data_fim" class="form-label">Data Fim</label>
+                            <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Totais -->
+                    {% if totais.quantidade > 0 %}
+                    <div class="alert alert-info mb-4">
+                        <strong><i class="fas fa-info-circle me-2"></i>Totais:</strong>
+                        {{ totais.quantidade }} cobranças | 
+                        Valor Total: <strong>R$ {{ totais.valor_total|floatformat:2 }}</strong>
+                    </div>
+                    {% endif %}
+
+                    <!-- Tabela de Cobranças -->
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Tipo</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Valor</th>
+                                    <th>Vencimento</th>
+                                    <th>Pagou em</th>
+                                    <th>Descrição</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cobranca in cobrancas %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'asaas_sync:detalhes_cliente' cobranca.cliente.id %}">
+                                            {{ cobranca.cliente.nome|truncatewords:3 }}
+                                        </a>
+                                    </td>
+                                    <td><span class="badge bg-info">{{ cobranca.get_tipo_cobranca_display }}</span></td>
+                                    <td>
+                                        {% if cobranca.status == 'RECEIVED' or cobranca.status == 'CONFIRMED' %}
+                                            <span class="badge bg-success">{{ cobranca.get_status_display }}</span>
+                                        {% elif cobranca.status == 'PENDING' %}
+                                            <span class="badge bg-warning">{{ cobranca.get_status_display }}</span>
+                                        {% elif cobranca.status == 'OVERDUE' %}
+                                            <span class="badge bg-danger">{{ cobranca.get_status_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ cobranca.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end fw-bold">R$ {{ cobranca.valor|floatformat:2 }}</td>
+                                    <td>
+                                        {{ cobranca.data_vencimento|date:"d/m/Y" }}
+                                        {% if cobranca.esta_vencida %}
+                                        <span class="badge bg-danger ms-1">Vencido</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ cobranca.data_pagamento|date:"d/m/Y"|default:"-" }}</td>
+                                    <td>{{ cobranca.descricao|truncatewords:5|default:"-" }}</td>
+                                    <td>
+                                        {% if cobranca.invoice_url %}
+                                        <a href="{{ cobranca.invoice_url }}" target="_blank" 
+                                           class="btn btn-sm btn-outline-primary" title="Ver Fatura">
+                                            <i class="fas fa-file-invoice"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                        Nenhuma cobrança encontrada
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if cobrancas %}
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Mostrando até 200 cobranças. Use os filtros para refinar a busca.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

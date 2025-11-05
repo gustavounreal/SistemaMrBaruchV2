@@ -13,6 +13,7 @@ def home_view(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls', namespace='accounts')),
+    path('asaas-sync/', include('asaas_sync.urls', namespace='asaas_sync')),
     path('atendimento/', include('atendimento.urls', namespace='atendimento')),
     
     # Link curto público (antes do include de captadores para não conflitar)
