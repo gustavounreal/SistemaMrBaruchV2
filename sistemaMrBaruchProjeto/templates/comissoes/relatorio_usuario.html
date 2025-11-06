@@ -1,0 +1,387 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Comissões - {{ usuario.get_full_name|default:usuario.username }}</title>
+    
+    <!-- Bootstrap 5.3.0 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(120deg, #eef2ff, #fdf2e9);
+    min-height: 100vh;
+    font-size: 0.97rem;
+  }
+
+  .main-content {
+    padding: 2rem;
+    min-height: 100vh;
+  }
+
+  .central-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(102, 126, 234, 0.08);
+    padding: 2.5rem 2rem;
+  }
+
+  .hero-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+  }
+
+  .hero-header h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 1.5rem 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #667eea;
+    display: flex;
+    align-items: center;
+  }
+
+  .section-title i {
+    margin-right: 0.5rem;
+    color: #667eea;
+  }
+
+  .metric-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border-left: 4px solid;
+  }
+
+  .metric-card.primary { border-left-color: #667eea; }
+  .metric-card.success { border-left-color: #28a745; }
+  .metric-card.warning { border-left-color: #ffc107; }
+  .metric-card.info { border-left-color: #17a2b8; }
+
+  .metric-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+    color: #2d3748;
+  }
+
+  .metric-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.5rem;
+    font-weight: 600;
+  }
+
+  .filters-container {
+    background: #f8f9ff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #e3e6f0;
+  }
+
+  .table-comissoes {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .table-comissoes thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .table-comissoes th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    padding: 0.9rem;
+    border: none;
+  }
+
+  .table-comissoes td {
+    padding: 0.9rem;
+    vertical-align: middle;
+    border-color: #f0f0f0;
+  }
+
+  .table-comissoes tbody tr:hover {
+    background: #f8f9ff;
+  }
+
+  .badge-status {
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .badge-disponivel { background: #cce5ff; color: #004085; }
+  .badge-autorizado { background: #fff3cd; color: #856404; }
+  .badge-pago { background: #d4edda; color: #155724; }
+  .badge-cancelado { background: #f8d7da; color: #721c24; }
+
+  .info-box {
+    background: #fff9e6;
+    border-left: 4px solid #ffc107;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+  }
+
+  .info-box h6 {
+    font-weight: 700;
+    color: #856404;
+    margin-bottom: 0.5rem;
+  }
+
+  .info-box p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+
+  @media print {
+    .no-print { display: none; }
+    body { background: white; }
+    .central-container { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="main-content">
+  <div class="central-container">
+    <!-- Hero Header -->
+    <div class="hero-header">
+      <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+          <h2><i class="bi bi-person-badge me-2"></i>Relatório de Comissões</h2>
+          <p class="mb-0">
+            <strong>{{ usuario.get_full_name|default:usuario.username }}</strong> - {{ tipo_display }}
+          </p>
+          <small class="opacity-75">{{ usuario.email }}</small>
+        </div>
+        <div class="mt-3 mt-md-0 no-print">
+          <button onclick="window.print()" class="btn btn-light me-2">
+            <i class="bi bi-printer me-2"></i>Imprimir
+          </button>
+          <a href="{% url 'comissoes:painel_gestao' %}" class="btn btn-light">
+            <i class="bi bi-arrow-left me-2"></i>Voltar
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Regra de Comissão -->
+    <div class="info-box">
+      <h6><i class="bi bi-info-circle me-2"></i>Regra de Comissão</h6>
+      <div>{{ regra_comissao|safe }}</div>
+    </div>
+
+    <!-- Métricas -->
+    <div class="section-title">
+      <i class="bi bi-bar-chart-line"></i>Resumo
+    </div>
+    <div class="row">
+      <div class="col-md-2 col-sm-6">
+        <div class="metric-card info">
+          <div class="metric-value">{{ stats.total_comissoes }}</div>
+          <div class="metric-label">Total de Comissões</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-sm-6">
+        <div class="metric-card success">
+          <div class="metric-value">R$ {{ stats.valor_total|floatformat:2 }}</div>
+          <div class="metric-label">Total Pago</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-sm-6">
+        <div class="metric-card warning">
+          <div class="metric-value">R$ {{ stats.valor_a_receber|floatformat:2 }}</div>
+          <div class="metric-label">A Receber</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-sm-6">
+        <div class="metric-card primary">
+          <div class="metric-value">{{ stats.pagas }}</div>
+          <div class="metric-label">Comissões Pagas</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-sm-6">
+        <div class="metric-card warning">
+          <div class="metric-value">{{ stats.disponiveis }}</div>
+          <div class="metric-label">Disponíveis</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-sm-6">
+        <div class="metric-card info">
+          <div class="metric-value">{{ stats.autorizadas }}</div>
+          <div class="metric-label">Autorizadas</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="section-title no-print">
+      <i class="bi bi-funnel"></i>Filtros
+    </div>
+    <div class="filters-container no-print">
+      <form method="GET">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label"><strong>Mês</strong></label>
+            <select name="mes" class="form-select">
+              <option value="">Todos</option>
+              {% for mes in meses_disponiveis %}
+              <option value="{{ mes.valor }}" {% if mes_filtro == mes.valor %}selected{% endif %}>
+                {{ mes.nome }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label"><strong>Ano</strong></label>
+            <select name="ano" class="form-select">
+              {% for ano in anos_disponiveis %}
+              <option value="{{ ano|stringformat:'d' }}" {% if ano_filtro == ano|stringformat:"s" %}selected{% endif %}>
+                {{ ano|stringformat:"d" }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label"><strong>Status</strong></label>
+            <select name="status" class="form-select">
+              <option value="todos" {% if status_filtro == 'todos' %}selected{% endif %}>Todos</option>
+              <option value="DISPONIVEL" {% if status_filtro == 'DISPONIVEL' %}selected{% endif %}>Disponível</option>
+              <option value="AUTORIZADO" {% if status_filtro == 'AUTORIZADO' %}selected{% endif %}>Autorizado</option>
+              <option value="PAGO" {% if status_filtro == 'PAGO' %}selected{% endif %}>Pago</option>
+              <option value="CANCELADO" {% if status_filtro == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">&nbsp;</label>
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="bi bi-search me-2"></i>Filtrar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Tabela de Comissões -->
+    <div class="section-title">
+      <i class="bi bi-list-ul"></i>Histórico de Comissões ({{ comissoes|length }})
+    </div>
+
+    {% if comissoes %}
+    <div class="table-responsive table-comissoes">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Referência</th>
+            <th>Valor Base</th>
+            <th>Percentual</th>
+            <th>Comissão</th>
+            <th>Status</th>
+            <th>Competência</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for comissao in comissoes %}
+          <tr>
+            <td>{{ comissao.data|date:"d/m/Y" }}</td>
+            <td>{{ comissao.referencia }}</td>
+            <td>
+              {% if tipo == 'atendente' %}
+                <span class="text-muted">—</span>
+              {% else %}
+                <strong>R$ {{ comissao.valor_base|floatformat:2 }}</strong>
+              {% endif %}
+            </td>
+            <td>
+              {% if comissao.percentual %}
+                <span class="badge bg-info">{{ comissao.percentual }}%</span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <strong class="text-success">R$ {{ comissao.valor|floatformat:2 }}</strong>
+            </td>
+            <td>
+              {% if comissao.status == 'DISPONIVEL' %}
+              <span class="badge-status badge-disponivel">{{ comissao.status_display }}</span>
+              {% elif comissao.status == 'AUTORIZADO' %}
+              <span class="badge-status badge-autorizado">{{ comissao.status_display }}</span>
+              {% elif comissao.status == 'PAGO' %}
+              <span class="badge-status badge-pago">{{ comissao.status_display }}</span>
+              {% elif comissao.status == 'CANCELADO' %}
+              <span class="badge-status badge-cancelado">{{ comissao.status_display }}</span>
+              {% endif %}
+            </td>
+            <td>{{ comissao.competencia|date:"m/Y" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr class="table-light">
+            <td colspan="4" class="text-end"><strong>TOTAL PAGO:</strong></td>
+            <td colspan="3"><strong class="text-success fs-5">R$ {{ stats.valor_total|floatformat:2 }}</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center" role="alert">
+      <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+      <p class="mt-3 mb-0">Nenhuma comissão encontrada com os filtros aplicados.</p>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

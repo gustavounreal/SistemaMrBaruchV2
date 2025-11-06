@@ -221,6 +221,47 @@
     color: white;
   }
 
+  /* Estilos de Paginação */
+  .pagination-container {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .pagination .page-link {
+    border: 1px solid #e3e6f0;
+    color: #667eea;
+    padding: 0.5rem 0.75rem;
+    margin: 0 0.15rem;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+
+  .pagination .page-link:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+  }
+
+  .pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+
+  .pagination .page-item.disabled .page-link {
+    background: #f8f9fa;
+    border-color: #e3e6f0;
+    color: #6c757d;
+    cursor: not-allowed;
+  }
+
   @media (max-width: 768px) {
     .main-content {
       padding: 1rem;
@@ -233,6 +274,11 @@
     .btn-action {
       font-size: 0.7rem;
       padding: 0.3rem 0.6rem;
+    }
+    
+    .pagination .page-link {
+      padding: 0.4rem 0.6rem;
+      font-size: 0.85rem;
     }
   }
 </style>
@@ -307,7 +353,7 @@
     <div class="filters-container">
       <form method="GET" action="{% url 'comissoes:painel_gestao' %}">
         <div class="row g-3">
-          <div class="col-md-3">
+          <div class="col-md-4">
             <label class="form-label"><strong>Tipo</strong></label>
             <select name="tipo" class="form-select" onchange="this.form.submit()">
               <option value="todos" {% if tipo_filtro == 'todos' %}selected{% endif %}>Todos</option>
@@ -316,7 +362,7 @@
               <option value="captador" {% if tipo_filtro == 'captador' %}selected{% endif %}>Captadores</option>
             </select>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-4">
             <label class="form-label"><strong>Status</strong></label>
             <select name="status" class="form-select" onchange="this.form.submit()">
               <option value="todos" {% if status_filtro == 'todos' %}selected{% endif %}>Todos</option>
@@ -326,18 +372,7 @@
               <option value="CANCELADO" {% if status_filtro == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
             </select>
           </div>
-          <div class="col-md-3">
-            <label class="form-label"><strong>Competência</strong></label>
-            <select name="competencia" class="form-select" onchange="this.form.submit()">
-              <option value="">Todas</option>
-              {% for comp in competencias %}
-              <option value="{{ comp.valor }}" {% if competencia_filtro == comp.valor %}selected{% endif %}>
-                {{ comp.texto }}
-              </option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-md-3">
+          <div class="col-md-4">
             <label class="form-label"><strong>Buscar Usuário</strong></label>
             <div class="input-group">
               <input type="text" name="busca" class="form-control" placeholder="Nome ou email" value="{{ busca }}">
@@ -352,7 +387,8 @@
 
     <!-- Tabela de Comissões -->
     <div class="section-title">
-      <i class="bi bi-list-ul"></i>Lista de Comissões ({{ comissoes|length }})
+      <i class="bi bi-list-ul"></i>Lista de Comissões 
+      <small class="text-muted ms-2">({{ total_comissoes }} total{{ total_comissoes|pluralize }} - Mostrando {{ page_obj.start_index }} a {{ page_obj.end_index }})</small>
     </div>
 
     {% if comissoes %}
@@ -366,7 +402,6 @@
             <th>Referência</th>
             <th>Valor</th>
             <th>Status</th>
-            <th>Competência</th>
             <th>Criado em</th>
             <th>Ações</th>
           </tr>
@@ -379,7 +414,12 @@
               <span class="badge bg-secondary">{{ comissao.tipo_display }}</span>
             </td>
             <td>
-              <strong>{{ comissao.usuario.get_full_name|default:comissao.usuario.username }}</strong><br>
+              <a href="{% url 'comissoes:relatorio_usuario' comissao.tipo comissao.usuario.id %}" 
+                 class="text-decoration-none" 
+                 title="Ver relatório detalhado">
+                <strong class="text-primary">{{ comissao.usuario.get_full_name|default:comissao.usuario.username }}</strong>
+              </a>
+              <br>
               <small class="text-muted">{{ comissao.usuario.email }}</small>
             </td>
             <td>{{ comissao.referencia }}</td>
@@ -400,7 +440,6 @@
               <span class="badge-status badge-cancelado">{{ comissao.status_display }}</span>
               {% endif %}
             </td>
-            <td>{{ comissao.competencia|date:"m/Y" }}</td>
             <td>{{ comissao.data_criacao|date:"d/m/Y H:i" }}</td>
             <td>
               {% if comissao.status == 'DISPONIVEL' %}
@@ -430,6 +469,80 @@
         </tbody>
       </table>
     </div>
+    
+    <!-- Paginação -->
+    {% if page_obj.has_other_pages %}
+    <div class="pagination-container mt-4">
+      <nav aria-label="Navegação de páginas">
+        <ul class="pagination justify-content-center mb-0">
+          <!-- Primeira página -->
+          {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1{% if tipo_filtro != 'todos' %}&tipo={{ tipo_filtro }}{% endif %}{% if status_filtro != 'todos' %}&status={{ status_filtro }}{% endif %}{% if busca %}&busca={{ busca }}{% endif %}" title="Primeira página">
+              <i class="bi bi-chevron-double-left"></i>
+            </a>
+          </li>
+          <!-- Página anterior -->
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if tipo_filtro != 'todos' %}&tipo={{ tipo_filtro }}{% endif %}{% if status_filtro != 'todos' %}&status={{ status_filtro }}{% endif %}{% if busca %}&busca={{ busca }}{% endif %}" title="Página anterior">
+              <i class="bi bi-chevron-left"></i>
+            </a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <span class="page-link"><i class="bi bi-chevron-double-left"></i></span>
+          </li>
+          <li class="page-item disabled">
+            <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+          </li>
+          {% endif %}
+          
+          <!-- Números de página -->
+          {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+              <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+              </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ num }}{% if tipo_filtro != 'todos' %}&tipo={{ tipo_filtro }}{% endif %}{% if status_filtro != 'todos' %}&status={{ status_filtro }}{% endif %}{% if busca %}&busca={{ busca }}{% endif %}">{{ num }}</a>
+              </li>
+            {% endif %}
+          {% endfor %}
+          
+          <!-- Próxima página -->
+          {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if tipo_filtro != 'todos' %}&tipo={{ tipo_filtro }}{% endif %}{% if status_filtro != 'todos' %}&status={{ status_filtro }}{% endif %}{% if busca %}&busca={{ busca }}{% endif %}" title="Próxima página">
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          </li>
+          <!-- Última página -->
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if tipo_filtro != 'todos' %}&tipo={{ tipo_filtro }}{% endif %}{% if status_filtro != 'todos' %}&status={{ status_filtro }}{% endif %}{% if busca %}&busca={{ busca }}{% endif %}" title="Última página">
+              <i class="bi bi-chevron-double-right"></i>
+            </a>
+          </li>
+          {% else %}
+          <li class="page-item disabled">
+            <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+          </li>
+          <li class="page-item disabled">
+            <span class="page-link"><i class="bi bi-chevron-double-right"></i></span>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      
+      <!-- Informação de página -->
+      <div class="text-center mt-3">
+        <small class="text-muted">
+          Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+        </small>
+      </div>
+    </div>
+    {% endif %}
+    
     {% else %}
     <div class="alert alert-info text-center" role="alert">
       <i class="bi bi-inbox" style="font-size: 3rem;"></i>

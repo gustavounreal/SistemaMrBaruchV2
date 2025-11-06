@@ -5,7 +5,8 @@ from .views_gestao import (
     autorizar_comissao_view,
     processar_pagamento_view,
     cancelar_comissao_view,
-    dashboard_comissoes
+    dashboard_comissoes,
+    relatorio_usuario
 )
 
 app_name = 'comissoes'
@@ -22,4 +23,5 @@ urlpatterns = [
     path('gestao/<str:tipo>/<int:comissao_id>/autorizar/', autorizar_comissao_view, name='autorizar'),
     path('gestao/<str:tipo>/<int:comissao_id>/pagar/', processar_pagamento_view, name='pagar'),
     path('gestao/<str:tipo>/<int:comissao_id>/cancelar/', cancelar_comissao_view, name='cancelar'),
+    path('gestao/relatorio/<str:tipo>/<int:user_id>/', relatorio_usuario, name='relatorio_usuario'),
 ]

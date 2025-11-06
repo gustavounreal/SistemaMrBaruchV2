@@ -1,0 +1,52 @@
+/* Comercial2 specific styles - improved visual for repescagem/comercial2 */
+:root{
+  --c-primary:#6f42c1;
+  --c-accent:#0d6efd;
+  --card-bg:#ffffff;
+  --muted:#6c757d;
+}
+
+/* Page header */
+.comercial2-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  padding:1.25rem 1.5rem;
+  background:linear-gradient(90deg, rgba(111,66,193,0.06), rgba(13,110,253,0.03));
+  border-radius:0.75rem;
+  margin-bottom:1rem;
+}
+.comercial2-header h1{
+  font-size:1.5rem;
+  margin:0;
+  color:var(--c-primary);
+}
+
+/* Stat cards */
+.comercial2-stats{display:flex;gap:1rem;flex-wrap:wrap}
+.comercial2-card{
+  background:var(--card-bg);
+  border-radius:0.75rem;
+  padding:1rem 1.25rem;
+  box-shadow:0 6px 18px rgba(15,23,42,0.04);
+  min-width:140px;
+  flex:1 1 160px;
+}
+.comercial2-card .value{font-weight:700;font-size:1.25rem;color:var(--c-primary)}
+.comercial2-card .label{font-size:0.85rem;color:var(--muted)}
+
+/* Filters area compact */
+.comercial2-filters{background:#fff;padding:0.9rem;border-radius:0.75rem;box-shadow:0 3px 10px rgba(15,23,42,0.03)}
+
+/* Buttons */
+.btn-comercial2{background:var(--c-accent);color:#fff;border:none}
+.btn-comercial2-outline{border:1px solid rgba(13,110,253,0.12);color:var(--c-accent);background:transparent}
+
+/* Empty state */
+.comercial2-empty{padding:1rem;border-radius:0.5rem;background:#f8fafc;border:1px dashed #e6eefc;color:var(--muted)}
+
+/* Responsive tweaks */
+@media (max-width:768px){
+  .comercial2-stats{flex-direction:column}
+}
