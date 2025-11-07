@@ -640,29 +640,34 @@ def gestao_pos_venda(request, venda_id):
     
     parcelas = Parcela.objects.filter(venda=venda).order_by('numero_parcela')
     
-    # Calcular valores reais a partir das parcelas
-    valor_total_real = venda.valor_total
-    valor_entrada_real = venda.valor_entrada
-    valor_parcela_real = venda.valor_parcela
-    quantidade_parcelas_real = venda.quantidade_parcelas
+    # PRIORIDADE 1: Usar valores diretamente da Venda (se existirem)
+    valor_total_real = venda.valor_total if venda.valor_total is not None else None
+    valor_entrada_real = venda.valor_entrada if venda.valor_entrada is not None else Decimal('0')
+    valor_parcela_real = venda.valor_parcela if venda.valor_parcela is not None else None
+    quantidade_parcelas_real = venda.quantidade_parcelas if venda.quantidade_parcelas is not None else None
     
-    if parcelas.exists():
-        # Se temos parcelas, calcular a partir delas
+    # PRIORIDADE 2: Se algum valor estiver vazio E existirem parcelas, calcular a partir delas
+    if parcelas.exists() and (not valor_total_real or not valor_parcela_real or not quantidade_parcelas_real):
         primeira_parcela = parcelas.first()
-        valor_parcela_real = primeira_parcela.valor if primeira_parcela else valor_parcela_real
-        quantidade_parcelas_real = parcelas.count()
         
-        # Calcular valor total das parcelas
-        total_parcelas = sum([p.valor for p in parcelas])
+        # Só sobrescreve se o valor da venda estiver vazio
+        if not valor_parcela_real:
+            valor_parcela_real = primeira_parcela.valor if primeira_parcela else None
         
-        # Se valor_entrada estiver vazio, buscar do PixEntrada
-        if not valor_entrada_real or valor_entrada_real == 0:
-            from financeiro.models import PixEntrada
-            pix = PixEntrada.objects.filter(venda=venda).first()
-            valor_entrada_real = pix.valor if pix else Decimal('0')
+        if not quantidade_parcelas_real:
+            quantidade_parcelas_real = parcelas.count()
         
-        # Calcular valor total
-        if not valor_total_real or valor_total_real == 0:
+        # Calcular valor total das parcelas apenas se necessário
+        if not valor_total_real:
+            total_parcelas = sum([p.valor for p in parcelas])
+            
+            # Se valor_entrada estiver vazio, buscar do PixEntrada
+            if not valor_entrada_real or valor_entrada_real == 0:
+                from financeiro.models import PixEntrada
+                pix = PixEntrada.objects.filter(venda=venda).first()
+                valor_entrada_real = pix.valor if pix else Decimal('0')
+            
+            # Calcular valor total
             valor_total_real = total_parcelas + (valor_entrada_real or Decimal('0'))
     
     # INTEGRAÇÃO JURÍDICO: Buscar contrato do módulo juridico
@@ -691,9 +696,9 @@ def gestao_pos_venda(request, venda_id):
         conferencia.dados_venda_conferidos
     )
     
+    # Liberação: permitir gerar contrato mesmo sem entrada paga
     pode_gerar_contrato = (
         conferencia_aprovada and 
-        entrada_paga and  # NOVA VALIDAÇÃO: Entrada deve estar paga
         not contrato_juridico
     )
     
@@ -718,11 +723,11 @@ def gestao_pos_venda(request, venda_id):
         'conferencia': conferencia,
         'documentos': documentos,
         
-        # Valores reais calculados
-        'valor_total_real': valor_total_real,
-        'valor_entrada_real': valor_entrada_real,
-        'valor_parcela_real': valor_parcela_real,
-        'quantidade_parcelas_real': quantidade_parcelas_real,
+        # Valores reais calculados (garantir que não sejam None)
+        'valor_total_real': valor_total_real or '',
+        'valor_entrada_real': valor_entrada_real or '',
+        'valor_parcela_real': valor_parcela_real or '',
+        'quantidade_parcelas_real': quantidade_parcelas_real or '',
         
         # Integração Jurídico
         'contrato': contrato_juridico,

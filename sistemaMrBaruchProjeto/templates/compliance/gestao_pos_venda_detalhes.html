@@ -195,6 +195,78 @@
                 </div>
             </div>
 
+            <!-- Dados da Venda (Preenchidos pelo Consultor) -->
+            <div class="info-card bg-light">
+                <h5 class="mb-3"><i class="bi bi-cash-coin"></i> Dados da Venda (Preenchidos pelo Consultor)</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Valor Total da Venda:</label>
+                        <p class="mb-0 fs-5 text-success">
+                            <strong>
+                                {% if pre_venda.valor_total %}
+                                    R$ {{ pre_venda.valor_total|floatformat:2 }}
+                                {% else %}
+                                    <span class="text-danger">Não informado</span>
+                                {% endif %}
+                            </strong>
+                        </p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Valor de Entrada:</label>
+                        <p class="mb-0 fs-5 text-primary">
+                            <strong>
+                                {% if pre_venda.valor_entrada %}
+                                    R$ {{ pre_venda.valor_entrada|floatformat:2 }}
+                                {% else %}
+                                    <span class="text-muted">R$ 0,00</span>
+                                {% endif %}
+                            </strong>
+                        </p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Quantidade de Parcelas:</label>
+                        <p class="mb-0 fs-5">
+                            <strong>
+                                {% if pre_venda.quantidade_parcelas %}
+                                    {{ pre_venda.quantidade_parcelas }}x
+                                {% else %}
+                                    <span class="text-danger">Não informado</span>
+                                {% endif %}
+                            </strong>
+                        </p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Valor de Cada Parcela:</label>
+                        <p class="mb-0 fs-5 text-info">
+                            <strong>
+                                {% if pre_venda.valor_parcela %}
+                                    R$ {{ pre_venda.valor_parcela|floatformat:2 }}
+                                {% else %}
+                                    <span class="text-danger">Não informado</span>
+                                {% endif %}
+                            </strong>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Resumo Financeiro -->
+                {% if pre_venda.valor_total and pre_venda.quantidade_parcelas and pre_venda.valor_parcela %}
+                <div class="alert alert-info mb-0 mt-2">
+                    <strong><i class="bi bi-calculator"></i> Resumo:</strong>
+                    Entrada de <strong>R$ {{ pre_venda.valor_entrada|default:0|floatformat:2 }}</strong> + 
+                    <strong>{{ pre_venda.quantidade_parcelas }}x</strong> de 
+                    <strong>R$ {{ pre_venda.valor_parcela|floatformat:2 }}</strong> = 
+                    <strong class="text-success">R$ {{ pre_venda.valor_total|floatformat:2 }}</strong>
+                </div>
+                {% else %}
+                <div class="alert alert-warning mb-0 mt-2">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Atenção:</strong> Alguns dados da venda não foram preenchidos pelo consultor. 
+                    Solicite as informações completas antes de prosseguir.
+                </div>
+                {% endif %}
+            </div>
+
             <!-- Ações Disponíveis -->
             {% if gestao.status != 'CONCLUIDO' %}
             <div class="action-card">

@@ -1169,7 +1169,13 @@ import random
 
 @login_required
 def lista_leads_pix(request):
-    """Lista de leads PIX cadastrados pelo atendente nas últimas 24 horas"""
+    """Lista de leads que fizeram LEVANTAMENTO nos últimos 7 dias
+    - Administradores: veem todos os leads que fizeram levantamento
+    - Atendentes: veem apenas seus próprios leads que fizeram levantamento
+    
+    IMPORTANTE: Mostra TODOS os leads que tentaram fazer levantamento,
+    mesmo que o PIX não tenha sido gerado com sucesso.
+    """
     # Verifica se o usuário está autenticado via sessão
     if not request.user.is_authenticated:
         # Tenta autenticação JWT se disponível
@@ -1181,13 +1187,31 @@ def lista_leads_pix(request):
                 return redirect('/accounts/login/?next=/atendimento/leads-pix/')
 
     agora = timezone.now()
-    limite = agora - timedelta(hours=24)
+    limite = agora - timedelta(days=7)  # Alterado de 24 horas para 7 dias
     
-    # CORRIGIDO: Filtra por atendente (quem cadastrou) ao invés de captador
-    leads = Lead.objects.filter(
-        atendente=request.user,
-        data_cadastro__gte=limite
-    ).select_related('cliente_asaas', 'captador').prefetch_related('pix_levantamentos').order_by('-data_cadastro')
+    # Verifica se o usuário é administrador
+    is_admin = request.user.is_superuser or request.user.groups.filter(name='Administrador').exists()
+    
+    # FILTRO: Mostra leads que têm CPF/CNPJ (fizeram levantamento) nos últimos 7 dias
+    # Usa data_atualizacao para incluir leads atualizados recentemente
+    # CPF/CNPJ é obrigatório para fazer levantamento, então usamos como indicador
+    if is_admin:
+        # Admin vê TODOS os leads que tentaram levantamento (têm CPF/CNPJ) nos últimos 7 dias
+        leads = Lead.objects.filter(
+            data_atualizacao__gte=limite,  # Usa data_atualizacao ao invés de data_cadastro
+            cpf_cnpj__isnull=False  # Tem CPF/CNPJ = tentou fazer levantamento
+        ).exclude(
+            cpf_cnpj=''  # Exclui CPF/CNPJ vazios
+        ).select_related('cliente_asaas', 'captador', 'atendente').prefetch_related('pix_levantamentos').order_by('-data_atualizacao')
+    else:
+        # Atendente vê apenas SEUS leads que tentaram levantamento nos últimos 7 dias
+        leads = Lead.objects.filter(
+            atendente=request.user,
+            data_atualizacao__gte=limite,  # Usa data_atualizacao ao invés de data_cadastro
+            cpf_cnpj__isnull=False  # Tem CPF/CNPJ = tentou fazer levantamento
+        ).exclude(
+            cpf_cnpj=''  # Exclui CPF/CNPJ vazios
+        ).select_related('cliente_asaas', 'captador').prefetch_related('pix_levantamentos').order_by('-data_atualizacao')
 
     # Paginação
     page = request.GET.get('page', 1)
@@ -1206,15 +1230,17 @@ def lista_leads_pix(request):
         pix_levantamento = lead.pix_levantamentos.order_by('-data_criacao').first()
         
         if pix_levantamento:
+            # Lead tem PIX gerado com sucesso
             lead.pix_real = pix_levantamento
             lead.pix_code = pix_levantamento.pix_code
             lead.pix_valor = pix_levantamento.valor
             lead.pix_status = pix_levantamento.status_pagamento
         else:
+            # Lead tentou fazer levantamento mas PIX não foi gerado (erro)
             lead.pix_real = None
             lead.pix_code = ''
-            lead.pix_valor = 0
-            lead.pix_status = 'sem_pix'
+            lead.pix_valor = float(ConfiguracaoService.obter_config('PIX_VALOR_LEVANTAMENTO', 29.90))
+            lead.pix_status = 'erro_geracao'  # Status especial para indicar erro na geração
 
     return render(request, 'atendimento/lista_leads_pix.html', {'leads': leads_paginated})
 

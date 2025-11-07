@@ -111,8 +111,9 @@
                         <input type="text" class="form-control" id="id_nome_completo" placeholder="Digite o nome completo" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label" for="id_data_nascimento">Data de Nascimento</span></label>
+                        <label class="form-label" for="id_data_nascimento">Data de Nasc/Abertura <span class="text-danger" id="asterisco_data" style="display:none;">*</span></label>
                         <input type="date" class="form-control" id="id_data_nascimento" placeholder="dd/mm/aaaa">
+                        <small class="form-text text-muted">Para CPF: data de nascimento. Para CNPJ: data de abertura da empresa</small>
                         <small id="feedback_data_nascimento" class="form-text" style="display: none;"></small>
                     </div>
                     <div class="mb-3">
@@ -183,7 +184,7 @@
                             <i class="bi bi-exclamation-triangle me-2"></i>Não fez Levantamento
                         </button>
 
-                        <button type="button" class="btn btn-success btn-step" onclick="salvarLead()" id="btnFazerLevantamento">
+                        <button type="button" class="btn btn-success btn-step" onclick="validarEFazerLevantamento()" id="btnFazerLevantamento">
                             <i class="bi bi-arrow-right me-2"></i>Fazer Levantamento
                         </button>
                         
@@ -379,6 +380,34 @@ function reativarLead() {
     }, 1000);
 }
 
+// Nova função para validar campos obrigatórios antes de fazer levantamento
+function validarEFazerLevantamento() {
+    const dataNascimento = document.getElementById('id_data_nascimento').value;
+    const cpfCnpj = document.getElementById('id_cpf_cnpj').value.trim();
+    
+    // Destaca o campo de data como obrigatório
+    document.getElementById('asterisco_data').style.display = 'inline';
+    
+    if (!cpfCnpj) {
+        showAlert('O campo CPF/CNPJ é obrigatório para fazer levantamento.', 'danger');
+        document.getElementById('id_cpf_cnpj').focus();
+        return;
+    }
+    
+    if (!dataNascimento) {
+        showAlert('A Data de Nascimento/Abertura é obrigatória para fazer levantamento.', 'danger');
+        document.getElementById('id_data_nascimento').focus();
+        document.getElementById('id_data_nascimento').classList.add('is-invalid');
+        return;
+    }
+    
+    // Remove o destaque de erro se passou na validação
+    document.getElementById('id_data_nascimento').classList.remove('is-invalid');
+    
+    // Chama a função original de salvar
+    salvarLead();
+}
+
 // Função para salvar lead sem levantamento
 function salvarLeadSemLevantamento() {
     const nome = document.getElementById('id_nome_completo').value.trim();
@@ -453,13 +482,17 @@ function salvarLead() {
     const captadorId = document.getElementById('id_captador') ? document.getElementById('id_captador').value.trim() : '';
     const dataNascimento = document.getElementById('id_data_nascimento') ? document.getElementById('id_data_nascimento').value : '';
 
-    // CPF/CNPJ obrigatório apenas para "Fazer Levantamento"
+    // Validações para "Fazer Levantamento"
     if (!nome || !telefone) {
         showAlert('Preencha nome e telefone corretamente.', 'danger');
         return;
     }
     if (!cpfCnpj) {
         showAlert('O campo CPF/CNPJ é obrigatório para fazer levantamento.', 'danger');
+        return;
+    }
+    if (!dataNascimento) {
+        showAlert('A Data de Nascimento/Abertura é obrigatória para fazer levantamento.', 'danger');
         return;
     }
     if (!captadorId) {
