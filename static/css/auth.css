@@ -56,6 +56,17 @@ button, .btn { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: 
 .input-group-text { background:#f0f4ff; border:2px solid #e5e7eb; border-right:2px solid #e5e7eb; border-radius:1rem 0 0 1rem; }
 .form-control.rounded-end-3 { border-radius:0 1rem 1rem 0; border-left:2px solid #e5e7eb; }
 
+/* Logo styling - reduced margins */
+.auth-logo {
+    margin-top: 0.0rem !important;
+    margin-bottom: 0.0rem !important;
+}
+
+.auth-logo img {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
 /* Mobile specific additions */
 @media (max-width: 767.98px) {
     .auth-welcome-panel { display:none !important; }

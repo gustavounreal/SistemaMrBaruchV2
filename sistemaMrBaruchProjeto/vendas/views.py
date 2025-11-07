@@ -1663,7 +1663,7 @@ def cadastro_venda(request, pre_venda_id):
                     'parcelas_consultor': [],
                 }
                 
-                # 1️⃣ COMISSÕES DA ENTRADA (se houver entrada)
+                #COMISSÕES DA ENTRADA (se houver entrada)
                 if venda.valor_entrada > 0 and not venda.sem_entrada:
                     print(f"\n1️⃣ Criando comissões da ENTRADA (R$ {venda.valor_entrada:.2f})...")
                     try:
@@ -1684,9 +1684,10 @@ def cadastro_venda(request, pre_venda_id):
                 else:
                     print(f"\n1️⃣ Sem entrada - comissões da entrada não criadas")
                 
-                # 2️⃣ GERAR PARCELAS E CRIAR COMISSÕES FUTURAS
+                #GERAR PARCELAS E CRIAR COMISSÕES FUTURAS
                 if venda.quantidade_parcelas > 0:
                     print(f"\n2️⃣ Gerando {venda.quantidade_parcelas} parcelas e suas comissões futuras...")
+                    
                     
                     # Mapear frequência para dias
                     frequencia_dias = {
@@ -1694,10 +1695,8 @@ def cadastro_venda(request, pre_venda_id):
                         'QUINZENAL': 15,
                         'MENSAL': 30,
                     }
-                    dias_intervalo = frequencia_dias.get(venda.frequencia_pagamento, 30)
                     
                     # Data inicial de vencimento
-                    from datetime import timedelta
                     data_vencimento_base = venda.data_vencimento_primeira
                     
                     # Obter percentuais (captador sempre 3%)
@@ -1718,8 +1717,20 @@ def cadastro_venda(request, pre_venda_id):
                     print(f"   Percentual Consultor: {percentual_consultor}% (faturamento mensal: R$ {faturamento_mensal_consultor:.2f})")
                     
                     for i in range(1, venda.quantidade_parcelas + 1):
-                        # Calcular data de vencimento
-                        data_venc = data_vencimento_base + timedelta(days=(i - 1) * dias_intervalo)
+                        #Calcular data de vencimento usando relativedelta para MENSAL
+                        if i == 1:
+                            data_venc = data_vencimento_base
+                        else:
+                            if venda.frequencia_pagamento == 'SEMANAL':
+                                data_venc = data_vencimento_base + timedelta(weeks=(i - 1))
+                            elif venda.frequencia_pagamento == 'QUINZENAL':
+                                data_venc = data_vencimento_base + timedelta(weeks=2 * (i - 1))
+                            elif venda.frequencia_pagamento == 'MENSAL':
+                                #manter sempre o mesmo dia do mês
+                                data_venc = data_vencimento_base + relativedelta(months=(i - 1))
+                            else:
+                                # Padrão: mensal
+                                data_venc = data_vencimento_base + relativedelta(months=(i - 1))
                         
                         # Criar parcela (status inicial: aberta)
                         parcela = Parcela.objects.create(
@@ -1730,7 +1741,7 @@ def cadastro_venda(request, pre_venda_id):
                             status='aberta',
                             enviado_asaas=False,
                         )
-                        
+
                         # Criar comissão FUTURA do CAPTADOR (status: pendente)
                         valor_comissao_captador = (venda.valor_parcela * percentual_captador / Decimal('100')).quantize(Decimal('0.01'))
                         comissao_captador = Comissao.objects.create(
@@ -1762,13 +1773,13 @@ def cadastro_venda(request, pre_venda_id):
                             comissoes_criadas_total['parcelas_consultor'].append(comissao_consultor)
                         
                         if i <= 3:  # Log apenas das 3 primeiras
-                            print(f"   ✅ Parcela {i}: R$ {venda.valor_parcela:.2f} - Vencimento: {data_venc.strftime('%d/%m/%Y')}")
+                            print(f"Parcela {i}: R$ {venda.valor_parcela:.2f} - Vencimento: {data_venc.strftime('%d/%m/%Y')}")
                             print(f"      → Captador: R$ {valor_comissao_captador:.2f} | Consultor: R$ {valor_comissao_consultor:.2f}")
                         elif i == venda.quantidade_parcelas:
                             print(f"   ... (parcelas intermediárias omitidas)")
-                            print(f"   ✅ Parcela {i}: R$ {venda.valor_parcela:.2f} - Vencimento: {data_venc.strftime('%d/%m/%Y')}")
+                            print(f"Parcela {i}: R$ {venda.valor_parcela:.2f} - Vencimento: {data_venc.strftime('%d/%m/%Y')}")
                     
-                    print(f"\n   📊 RESUMO DAS COMISSÕES FUTURAS:")
+                    print(f"\n   RESUMO DAS COMISSÕES FUTURAS:")
                     print(f"   - Parcelas Captador: {len(comissoes_criadas_total['parcelas_captador'])} comissões criadas")
                     print(f"   - Parcelas Consultor: {len(comissoes_criadas_total['parcelas_consultor'])} comissões criadas")
                     
@@ -1779,7 +1790,7 @@ def cadastro_venda(request, pre_venda_id):
                     print(f"   - Total Futuro Consultor: R$ {total_consultor_futuro:.2f}")
                 
                 print("\n" + "="*80)
-                print("✅ COMISSÕES CRIADAS COM SUCESSO!")
+                print("COMISSÕES CRIADAS COM SUCESSO!")
                 print("="*80)
                 
                 # Atualiza pré-venda

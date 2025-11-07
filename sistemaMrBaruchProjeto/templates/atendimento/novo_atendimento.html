@@ -121,9 +121,9 @@
                         <small class="form-text text-muted ms-1">Formato: +DDI (DDD) Número</small>
                     </div>
                      <div class="mb-3">
-                        <label class="form-label required" for="id_origem">Origem do Lead</label>
+                        <label class="form-label required" for="id_origem">Sigla do Lead</label>
                         <select class="form-select" id="id_origem" required>
-                            <option value="" selected disabled>Selecione a origem</option>
+                            <option value="" selected disabled>Selecione a Sigla</option>
                             {% for origem in origens %}
                                 <option value="{{ origem.id }}">{{ origem.nome }}</option>
                             {% endfor %}
