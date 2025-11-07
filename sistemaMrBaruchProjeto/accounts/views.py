@@ -105,11 +105,31 @@ def login_api(request):
             
             print(f"✅ Login bem-sucedido: {user.username}")
 
-            return Response({
+            response = Response({
                 'access_token': str(refresh.access_token),
                 'refresh_token': str(refresh),
                 'user': UserSerializer(user).data
             })
+            
+            # Configurar cookies HTTP com os tokens
+            response.set_cookie(
+                'access_token',
+                str(refresh.access_token),
+                max_age=60*60,  # 1 hora
+                httponly=True,
+                secure=False,  # True em produção com HTTPS
+                samesite='Lax'
+            )
+            response.set_cookie(
+                'refresh_token',
+                str(refresh),
+                max_age=60*60*16,  # 16 horas
+                httponly=True,
+                secure=False,  # True em produção com HTTPS
+                samesite='Lax'
+            )
+            
+            return response
         else:
             print(f"❌ Conta desativada: {user.username}")
             return Response({'error': 'Conta desativada'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -220,6 +240,9 @@ def dashboard_view(request):
 @permission_classes([IsAuthenticated])
 def profile_view(request):
     """Perfil do usuário"""
+    if not request.user.is_authenticated:
+        return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+    
     serializer = UserSerializer(request.user)
     return Response(serializer.data)
 
@@ -280,5 +303,13 @@ def logout_session(request):
     """Encerra a sessão do Django (session auth)."""
     if request.method == 'POST':
         django_logout(request)
-        return redirect('accounts:login')
+        # Criar resposta de redirect
+        response = redirect('accounts:login')
+        # Limpar cookies do JWT
+        response.delete_cookie('access_token')
+        response.delete_cookie('refresh_token')
+        # Limpar header de autorização se existir
+        if 'HTTP_AUTHORIZATION' in request.META:
+            del request.META['HTTP_AUTHORIZATION']
+        return response
     return JsonResponse({'error': 'Método não permitido'}, status=405)

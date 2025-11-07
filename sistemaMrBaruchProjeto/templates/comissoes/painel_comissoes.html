@@ -5,8 +5,6 @@
 
 {% block content %}
 <div class="container-fluid px-4 py-4">
-  
-  <!-- Header -->
   <div class="row align-items-center mb-4">
     <div class="col-md-8">
       <h2 class="fw-bold text-dark mb-1">
@@ -16,11 +14,30 @@
     </div>
     <div class="col-md-4 text-md-end mt-3 mt-md-0">
       <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary rounded-pill">
-        <i class="bi bi-arrow-left-circle me-1"></i> Voltar ao Dashboard
+        <i class="bi bi-arrow-left-circle me-1"></i> Painel Central
       </a>
     </div>
   </div>
-
+  <!-- Painel Central de Gestão -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="card-body text-center text-white p-5">
+          <i class="bi bi-kanban-fill fs-1 mb-3"></i>
+          <h3 class="fw-bold mb-2">Painel Central de Gestão</h3>
+          <p class="mb-4 opacity-90">
+            Gerencie todas as comissões em um só lugar: visualize, filtre, autorize e processe pagamentos de forma centralizada
+          </p>
+          <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a href="{% url 'comissoes:painel_gestao' %}" class="btn btn-light btn-lg rounded-pill px-4">
+              <i class="bi bi-list-check me-2"></i>Acessar Gestão Completa
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
   <!-- Cards de Estatísticas Gerais -->
   <div class="row g-4 mb-4">
     <div class="col-xl-3 col-md-6">
@@ -87,6 +104,7 @@
       </div>
     </div>
   </div>
+  
 
   <!-- Módulos de Comissões -->
   <div class="row mb-3">
@@ -98,28 +116,7 @@
     </div>
   </div>
 
-  <div class="row g-4">
-    <!-- Comissões de Leads -->
-    <div class="col-lg-4 col-md-6">
-      <div class="card h-100 border-0 shadow-sm hover-card">
-        <div class="card-body text-center p-4">
-          <i class="bi bi-person-check-fill text-primary fs-1 mb-3"></i>
-          <h5 class="fw-bold mb-2">Comissões de Leads</h5>
-          <p class="text-muted small mb-3">
-            Comissões geradas por levantamentos de leads com pagamento PIX confirmado via webhook ASAAS.
-          </p>
-          <div class="alert alert-light border mb-3">
-            <small class="text-muted d-block mb-1">Valor Atual Configurado:</small>
-            <strong class="text-primary fs-5">R$ {{ valor_comissao_atual }}</strong>
-            <small class="text-muted d-block mt-1">por levantamento</small>
-          </div>
-          <a href="{% url 'comissoes:painel_comissoes_leads' %}" class="btn btn-primary w-100 rounded-pill">
-            <i class="bi bi-arrow-right-circle me-1"></i> Acessar Painel
-          </a>
-        </div>
-      </div>
-    </div>
-
+  <div class="row g-4">    
     <!-- Comissões de Vendas (Futuro) -->
     <div class="col-lg-4 col-md-6">
       <div class="card h-100 border-0 shadow-sm">
@@ -128,32 +125,92 @@
           <h5 class="fw-bold mb-2">Comissões de Vendas</h5>
           <p class="text-muted small mb-3">
             Comissões sobre vendas de serviços completos e contratos fechados com clientes.
-          </p>
-          <div class="alert alert-secondary border mb-3">
-            <small class="text-muted">Em desenvolvimento</small>
-          </div>
-          <button class="btn btn-outline-secondary w-100 rounded-pill" disabled>
-            <i class="bi bi-lock-fill me-1"></i> Em Breve
-          </button>
+          </p>          
+          <a href="{% url 'comissoes:painel_gestao' %}?tipo=consultor" class="btn btn-success w-100 rounded-pill">
+            <i class="bi bi-arrow-right-circle me-1"></i> Acessar Painel
+          </a>
         </div>
       </div>
     </div>
 
-    <!-- Comissões de Captadores (Futuro) -->
+    <!-- Comissões de Captadores -->
     <div class="col-lg-4 col-md-6">
-      <div class="card h-100 border-0 shadow-sm">
+      <div class="card h-100 border-0 shadow-sm hover-card">
         <div class="card-body text-center p-4">
           <i class="bi bi-people-fill text-warning fs-1 mb-3"></i>
           <h5 class="fw-bold mb-2">Comissões de Captadores</h5>
           <p class="text-muted small mb-3">
             Comissões para captadores externos que trazem leads qualificados para a base.
           </p>
-          <div class="alert alert-secondary border mb-3">
-            <small class="text-muted">Em desenvolvimento</small>
+          <a href="{% url 'comissoes:painel_gestao' %}?tipo=captador" class="btn btn-warning w-100 rounded-pill">
+            <i class="bi bi-arrow-right-circle me-1"></i> Acessar Painel
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comissões de Atendentes -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card h-100 border-0 shadow-sm hover-card">
+        <div class="card-body text-center p-4">
+          <i class="bi bi-headset text-info fs-1 mb-3"></i>
+          <h5 class="fw-bold mb-2">Comissões de Atendentes</h5>
+          <p class="text-muted small mb-3">
+            Comissões para atendentes que processam levantamentos de leads com sucesso.
+          </p>
+          <a href="{% url 'comissoes:painel_gestao' %}?tipo=atendente" class="btn btn-info w-100 rounded-pill">
+            <i class="bi bi-arrow-right-circle me-1"></i> Acessar Painel
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+ 
+  <!-- Estatísticas Detalhadas -->
+  <div class="row mt-5">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light border-0">
+          <h5 class="mb-0">
+            <i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Resumo por Tipo
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row text-center g-4">
+            <div class="col-md-3">
+              <div class="p-3">
+                <i class="bi bi-person-check-fill text-primary fs-2 mb-2"></i>
+                <h6 class="text-muted small mb-1">ATENDENTES</h6>
+                <h4 class="fw-bold text-primary mb-0">{{ total_comissoes.atendentes|default:0 }}</h4>
+                <small class="text-muted">comissões</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3">
+                <i class="bi bi-cart-check-fill text-success fs-2 mb-2"></i>
+                <h6 class="text-muted small mb-1">CONSULTORES</h6>
+                <h4 class="fw-bold text-success mb-0">{{ total_comissoes.consultores|default:0 }}</h4>
+                <small class="text-muted">comissões</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3">
+                <i class="bi bi-people-fill text-warning fs-2 mb-2"></i>
+                <h6 class="text-muted small mb-1">CAPTADORES</h6>
+                <h4 class="fw-bold text-warning mb-0">{{ total_comissoes.captadores|default:0 }}</h4>
+                <small class="text-muted">comissões</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3">
+                <i class="bi bi-cash-stack text-info fs-2 mb-2"></i>
+                <h6 class="text-muted small mb-1">TOTAL GERAL</h6>
+                <h4 class="fw-bold text-info mb-0">R$ {{ total_comissoes.total|floatformat:2|default:"0,00" }}</h4>
+                <small class="text-muted">todas as comissões</small>
+              </div>
+            </div>
           </div>
-          <button class="btn btn-outline-secondary w-100 rounded-pill" disabled>
-            <i class="bi bi-lock-fill me-1"></i> Em Breve
-          </button>
         </div>
       </div>
     </div>

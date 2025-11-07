@@ -15,8 +15,8 @@ class JWTAuthMiddleware(MiddlewareMixin):
         print(f"Path: {request.path}")
         print(f"Method: {request.method}")
         
-        # Skip para paths públicos
-        public_paths = ['/accounts/login/', '/accounts/api/auth/', '/admin/', '/static/', '/media/']
+        # Skip para paths públicos e logout
+        public_paths = ['/accounts/login/', '/accounts/api/auth/', '/admin/', '/static/', '/media/', '/accounts/logout-session/']
         if any(request.path.startswith(path) for path in public_paths):
             print(f"Path publico, pulando: {request.path}")
             return None
@@ -25,6 +25,12 @@ class JWTAuthMiddleware(MiddlewareMixin):
         if hasattr(request, 'session') and '_auth_user_id' in request.session:
             print(f"Usando sessão existente (user_id: {request.session.get('_auth_user_id')})")
             # NÃO retornar aqui - deixar o AuthenticationMiddleware processar
+            return None
+        
+        # Se não há sessão e não há cookies JWT, não tentar autenticar
+        # Isso previne recriar sessão após logout
+        if not request.COOKIES.get('access_token') and not request.COOKIES.get('refresh_token'):
+            print("Sem sessão e sem tokens JWT - pulando autenticação")
             return None
             
         # Tenta autenticação via JWT

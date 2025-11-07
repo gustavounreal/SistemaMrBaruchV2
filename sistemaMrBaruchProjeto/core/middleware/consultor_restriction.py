@@ -23,25 +23,34 @@ class ConsultorRestrictionMiddleware(MiddlewareMixin):
             '/media/',
             '/clientes/',  # Área do cliente sempre permitida
         ]
-        # Se o usuário for do grupo 'captador', restringir acesso apenas a /captadores/ e /captadores/area/
+        
+        # SEMPRE permitir paths públicos PRIMEIRO (antes de qualquer verificação)
+        if any(request.path.startswith(p) for p in public_prefixes):
+            return None
+        
+        # Se não está autenticado, deixar passar (será redirecionado pelo @login_required)
         user = getattr(request, 'user', None)
-        if user and user.is_authenticated:
-            try:
-                is_captador = user.groups.filter(name='captador').exists()
-            except Exception:
-                is_captador = False
-            if is_captador:
-                if request.path.startswith('/captadores/area/') or request.path == '/captadores/' or request.path == '/captadores/area':
-                    return None
-                # Para chamadas AJAX/JSON, devolve 403 em vez de redirecionar
-                is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
-                accepts_json = 'application/json' in request.META.get('HTTP_ACCEPT', '')
-                if is_ajax or accepts_json or request.content_type == 'application/json':
-                    return JsonResponse({'detail': 'Acesso negado: captadores somente acessam sua área.'}, status=403)
-                # Redireciona sempre para a área do captador
-                return redirect('/captadores/area/')
+        if not user or not user.is_authenticated:
+            return None
+        
+        # Se o usuário for do grupo 'captador', restringir acesso apenas a /captadores/ e /captadores/area/
+        try:
+            is_captador = user.groups.filter(name='captador').exists()
+        except Exception:
+            is_captador = False
+            
+        if is_captador:
+            if request.path.startswith('/captadores/area/') or request.path == '/captadores/' or request.path == '/captadores/area':
+                return None
+            # Para chamadas AJAX/JSON, devolve 403 em vez de redirecionar
+            is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+            accepts_json = 'application/json' in request.META.get('HTTP_ACCEPT', '')
+            if is_ajax or accepts_json or request.content_type == 'application/json':
+                return JsonResponse({'detail': 'Acesso negado: captadores somente acessam sua área.'}, status=403)
+            # Redireciona sempre para a área do captador
+            return redirect('/captadores/area/')
 
-            # URLs permitidas para usuários do grupo 'comercial1' (consultores)
+        # URLs permitidas para usuários do grupo 'comercial1' (consultores)
         allowed_paths = [
             '/vendas/',
             '/vendas/painel-leads-pagos/',
@@ -65,11 +74,7 @@ class ConsultorRestrictionMiddleware(MiddlewareMixin):
         print(f"[ConsultorRestriction] request.path: {request.path}")
         print(f"[ConsultorRestriction] allowed_paths: {allowed_paths}")
 
-        # Permitir sempre paths públicos
-        if any(request.path.startswith(p) for p in public_prefixes):
-            return None
-
-        # (continua fluxo normal para outros usuários)
+        # user já foi obtido anteriormente, só verificar se não autenticado
         if not user or not user.is_authenticated:
             return None
 

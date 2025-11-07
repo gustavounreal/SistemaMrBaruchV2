@@ -1,9 +1,10 @@
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
 from django.shortcuts import redirect
 from core import views as core_views
+from core.views_media import serve_media
 from captadores import views as captadores_views
 
 def home_view(request):
@@ -41,5 +42,8 @@ urlpatterns = [
 
 # Servir arquivos de mídia em desenvolvimento
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # Usar view personalizada para evitar redirect 302
+    urlpatterns += [
+        re_path(r'^media/(?P<path>.*)$', serve_media, name='media'),
+    ]
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])

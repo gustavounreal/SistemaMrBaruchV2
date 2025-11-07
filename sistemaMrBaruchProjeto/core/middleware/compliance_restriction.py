@@ -19,6 +19,7 @@ class ComplianceRestrictionMiddleware(MiddlewareMixin):
             '/accounts/api/auth/',
             '/accounts/logout-session/',
             '/accounts/api/',
+            '/accounts/dashboard/',  # Dashboard principal (redireciona usuários)
             '/static/',
             '/media/',
         ]

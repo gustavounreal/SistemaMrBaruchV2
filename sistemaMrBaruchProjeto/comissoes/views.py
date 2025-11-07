@@ -5,28 +5,66 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import ComissaoLead
 from core.models import ConfiguracaoSistema
+from financeiro.models import Comissao
 
 @login_required
 def painel_comissoes(request):
     """Painel principal de comissões com visão geral"""
     
-    # Estatísticas gerais
-    total_comissoes = ComissaoLead.objects.aggregate(
+    # Estatísticas de comissões de leads (atendentes)
+    comissoes_atendentes = ComissaoLead.objects.aggregate(
         total=Sum('valor'),
         quantidade=Count('id'),
         pagas=Count('id', filter=Q(status='PAGO')),
         pendentes=Count('id', filter=Q(status__in=['DISPONIVEL', 'AUTORIZADO']))
     )
     
+    # Estatísticas de comissões de consultores e captadores (do financeiro)
+    comissoes_consultores = Comissao.objects.filter(tipo_comissao='consultor').aggregate(
+        quantidade=Count('id')
+    )
+    
+    comissoes_captadores = Comissao.objects.filter(tipo_comissao='captador').aggregate(
+        quantidade=Count('id')
+    )
+    
+    # Total geral combinado
+    total_valor_atendentes = comissoes_atendentes.get('total') or 0
+    total_valor_outros = Comissao.objects.aggregate(total=Sum('valor_comissao')).get('total') or 0
+    
+    total_comissoes = {
+        'total': total_valor_atendentes + total_valor_outros,
+        'quantidade': (comissoes_atendentes.get('quantidade') or 0) + 
+                      (comissoes_consultores.get('quantidade') or 0) + 
+                      (comissoes_captadores.get('quantidade') or 0),
+        'pagas': comissoes_atendentes.get('pagas') or 0,
+        'pendentes': comissoes_atendentes.get('pendentes') or 0,
+        'atendentes': comissoes_atendentes.get('quantidade') or 0,
+        'consultores': comissoes_consultores.get('quantidade') or 0,
+        'captadores': comissoes_captadores.get('quantidade') or 0,
+    }
+    
     # Comissões do mês atual
     hoje = timezone.now()
     primeiro_dia_mes = hoje.replace(day=1)
-    comissoes_mes = ComissaoLead.objects.filter(
+    comissoes_mes_atendentes = ComissaoLead.objects.filter(
         data_criacao__gte=primeiro_dia_mes
     ).aggregate(
         total=Sum('valor'),
         quantidade=Count('id')
     )
+    
+    comissoes_mes_outros = Comissao.objects.filter(
+        data_calculada__gte=primeiro_dia_mes
+    ).aggregate(
+        total=Sum('valor_comissao'),
+        quantidade=Count('id')
+    )
+    
+    comissoes_mes = {
+        'total': (comissoes_mes_atendentes.get('total') or 0) + (comissoes_mes_outros.get('total') or 0),
+        'quantidade': (comissoes_mes_atendentes.get('quantidade') or 0) + (comissoes_mes_outros.get('quantidade') or 0)
+    }
     
     # Obter valor configurado de comissão
     try:

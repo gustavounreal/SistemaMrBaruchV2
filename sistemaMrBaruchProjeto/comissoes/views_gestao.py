@@ -531,3 +531,179 @@ def relatorio_usuario(request, user_id, tipo):
     }
     
     return render(request, 'comissoes/relatorio_usuario.html', context)
+
+
+@login_required
+@user_passes_test(is_admin_or_financeiro)
+def painel_transferencias_comissoes(request):
+    """
+    Painel de transferências: consolida comissões pagas mês a mês por funcionário e tipo
+    """
+    from django.db.models.functions import TruncMonth
+    from django.contrib.auth import get_user_model
+    from accounts.models import DadosUsuario
+    
+    User = get_user_model()
+    
+    # Filtros
+    tipo_filtro = request.GET.get('tipo', 'todos')
+    mes_filtro = request.GET.get('mes', '')
+    busca = request.GET.get('busca', '')
+    
+    # Atendentes
+    atendentes_pagas = ComissaoLead.objects.filter(status='PAGO')
+    if mes_filtro:
+        atendentes_pagas = atendentes_pagas.filter(data_pagamento__startswith=mes_filtro)
+    atendentes_pagas = atendentes_pagas.annotate(mes=TruncMonth('data_pagamento'))
+    atendentes_group = atendentes_pagas.values('mes', 'atendente').annotate(
+        total_pago=Sum('valor')
+    )
+    
+    # Consultores
+    consultores_pagas = ComissaoConsultor.objects.filter(status='PAGO')
+    if mes_filtro:
+        consultores_pagas = consultores_pagas.filter(data_pagamento__startswith=mes_filtro)
+    consultores_pagas = consultores_pagas.annotate(mes=TruncMonth('data_pagamento'))
+    consultores_group = consultores_pagas.values('mes', 'consultor').annotate(
+        total_pago=Sum('valor')
+    )
+    
+    # Captadores
+    captadores_pagas = Comissao.objects.filter(status='paga')
+    if mes_filtro:
+        captadores_pagas = captadores_pagas.filter(data_pagamento__startswith=mes_filtro)
+    captadores_pagas = captadores_pagas.annotate(mes=TruncMonth('data_pagamento'))
+    captadores_group = captadores_pagas.values('mes', 'usuario').annotate(
+        total_pago=Sum('valor_comissao')
+    )
+    
+    # Monta lista consolidada
+    transferencias = []
+    total_valor = 0
+    
+    # Atendentes
+    for reg in atendentes_group:
+        if not reg['mes']:
+            continue
+        usuario = None
+        dados_usuario = None
+        try:
+            usuario = User.objects.get(id=reg['atendente'])
+            dados_usuario = DadosUsuario.objects.filter(usuario=usuario).first()
+        except Exception:
+            pass
+        
+        # Aplicar filtro de busca
+        if busca and usuario:
+            nome_completo = usuario.get_full_name() or usuario.username
+            if busca.lower() not in nome_completo.lower() and busca.lower() not in usuario.email.lower():
+                continue
+        
+        # Aplicar filtro de tipo
+        if tipo_filtro != 'todos' and tipo_filtro != 'atendente':
+            continue
+            
+        valor = reg['total_pago'] or 0
+        total_valor += valor
+        
+        transferencias.append({
+            'mes': reg['mes'].strftime('%m/%Y'),
+            'mes_order': reg['mes'],
+            'usuario': usuario,
+            'dados_usuario': dados_usuario or DadosUsuario(),
+            'tipo': 'atendente',
+            'tipo_display': 'Atendente',
+            'total_pago': valor,
+        })
+    
+    # Consultores
+    for reg in consultores_group:
+        if not reg['mes']:
+            continue
+        usuario = None
+        dados_usuario = None
+        try:
+            usuario = User.objects.get(id=reg['consultor'])
+            dados_usuario = DadosUsuario.objects.filter(usuario=usuario).first()
+        except Exception:
+            pass
+        
+        # Aplicar filtro de busca
+        if busca and usuario:
+            nome_completo = usuario.get_full_name() or usuario.username
+            if busca.lower() not in nome_completo.lower() and busca.lower() not in usuario.email.lower():
+                continue
+        
+        # Aplicar filtro de tipo
+        if tipo_filtro != 'todos' and tipo_filtro != 'consultor':
+            continue
+            
+        valor = reg['total_pago'] or 0
+        total_valor += valor
+        
+        transferencias.append({
+            'mes': reg['mes'].strftime('%m/%Y'),
+            'mes_order': reg['mes'],
+            'usuario': usuario,
+            'dados_usuario': dados_usuario or DadosUsuario(),
+            'tipo': 'consultor',
+            'tipo_display': 'Consultor',
+            'total_pago': valor,
+        })
+    
+    # Captadores
+    for reg in captadores_group:
+        if not reg['mes']:
+            continue
+        usuario = None
+        dados_usuario = None
+        try:
+            usuario = User.objects.get(id=reg['usuario'])
+            dados_usuario = DadosUsuario.objects.filter(usuario=usuario).first()
+        except Exception:
+            pass
+        
+        # Aplicar filtro de busca
+        if busca and usuario:
+            nome_completo = usuario.get_full_name() or usuario.username
+            if busca.lower() not in nome_completo.lower() and busca.lower() not in usuario.email.lower():
+                continue
+        
+        # Aplicar filtro de tipo
+        if tipo_filtro != 'todos' and tipo_filtro != 'captador':
+            continue
+            
+        valor = reg['total_pago'] or 0
+        total_valor += valor
+        
+        transferencias.append({
+            'mes': reg['mes'].strftime('%m/%Y'),
+            'mes_order': reg['mes'],
+            'usuario': usuario,
+            'dados_usuario': dados_usuario or DadosUsuario(),
+            'tipo': 'captador',
+            'tipo_display': 'Captador',
+            'total_pago': valor,
+        })
+    
+    # Ordena por mês (mais recente primeiro) e nome
+    transferencias.sort(key=lambda x: (x['mes_order'], x['usuario'].id if x['usuario'] else 0), reverse=True)
+    
+    # Contar por tipo
+    total_atendentes = len([t for t in transferencias if t['tipo'] == 'atendente'])
+    total_consultores = len([t for t in transferencias if t['tipo'] == 'consultor'])
+    total_captadores = len([t for t in transferencias if t['tipo'] == 'captador'])
+    
+    context = {
+        'transferencias': transferencias,
+        'total_transferencias': total_valor,
+        'quantidade_registros': len(transferencias),
+        'total_atendentes': total_atendentes,
+        'total_consultores': total_consultores,
+        'total_captadores': total_captadores,
+        'tipo_filtro': tipo_filtro,
+        'mes_filtro': mes_filtro,
+        'busca': busca,
+    }
+    
+    return render(request, 'comissoes/painel_transferencias.html', context)
