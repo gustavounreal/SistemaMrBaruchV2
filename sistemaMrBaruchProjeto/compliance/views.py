@@ -1209,6 +1209,10 @@ def gerar_contrato(request, venda_id):
         # Atualizar status da conferência
         conferencia.status = StatusPosVendaCompliance.EMITINDO_CONTRATO
         conferencia.save()
+
+        # Espelhar status na venda para que apareça no painel
+        venda.status_compliance_pos_venda = StatusPosVendaCompliance.EMITINDO_CONTRATO
+        venda.save(update_fields=['status_compliance_pos_venda'])
         
         messages.success(request, f'Contrato {contrato.numero_contrato} gerado com sucesso!')
         return redirect('compliance:gestao_pos_venda', venda_id=venda_id)
@@ -1248,6 +1252,10 @@ def enviar_contrato(request, venda_id):
         # Atualizar status da conferência
         contrato.conferencia.status = StatusPosVendaCompliance.AGUARDANDO_ASSINATURA
         contrato.conferencia.save()
+
+        # Espelhar na venda
+        venda.status_compliance_pos_venda = StatusPosVendaCompliance.AGUARDANDO_ASSINATURA
+        venda.save(update_fields=['status_compliance_pos_venda'])
         
         return redirect('compliance:gestao_pos_venda', venda_id=venda_id)
     
@@ -1273,6 +1281,14 @@ def upload_contrato_assinado(request, venda_id):
         
         contrato.arquivo_assinado = arquivo
         contrato.marcar_como_assinado(request.user, tipo_assinatura)
+
+        # Atualizar status pós-venda para CONTRATO_ASSINADO e refletir na conferência
+        contrato.conferencia.status = StatusPosVendaCompliance.CONTRATO_ASSINADO
+        contrato.conferencia.save(update_fields=['status'])
+        venda.status_compliance_pos_venda = StatusPosVendaCompliance.CONTRATO_ASSINADO
+        venda.contrato_assinado = True
+        venda.data_assinatura = timezone.now()
+        venda.save(update_fields=['status_compliance_pos_venda','contrato_assinado','data_assinatura'])
         
         messages.success(request, 'Contrato assinado recebido!')
         return redirect('compliance:gestao_pos_venda', venda_id=venda_id)
@@ -1296,6 +1312,10 @@ def validar_assinatura(request, venda_id):
         
         # Validar assinatura
         contrato.validar_assinatura(request.user)
+
+        # Marcar venda como concluída no fluxo pós-venda
+        venda.status_compliance_pos_venda = StatusPosVendaCompliance.CONCLUIDO
+        venda.save(update_fields=['status_compliance_pos_venda'])
         
         messages.success(request, 'Assinatura validada! Processo pós-venda concluído.')
         return redirect('compliance:gestao_pos_venda', venda_id=venda_id)

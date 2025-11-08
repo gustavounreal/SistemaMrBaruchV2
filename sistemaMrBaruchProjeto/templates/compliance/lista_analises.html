@@ -83,6 +83,26 @@
     .compliance-table thead th:nth-child(6) { width: 150px; }  /* Consultor */
     .compliance-table thead th:nth-child(7) { width: 160px; }  /* Ações */
     .compliance-table thead th:nth-child(8) { width: 140px; }  /* Data Criação */
+    
+    /* Permitir quebra de linha no badge de classificação */
+    .compliance-table tbody td:nth-child(5) .badge {
+        white-space: normal !important;
+        word-wrap: break-word;
+        line-height: 1.3;
+        padding: 0.25rem 0.3rem;
+        display: inline-block;
+        max-width: 100%;
+    }
+    
+    /* Permitir quebra de linha no badge de status */
+    .compliance-table tbody td:nth-child(4) .badge {
+        white-space: normal !important;
+        word-wrap: break-word;
+        line-height: 1.3;
+        padding: 0.25rem 0.3rem;
+        display: inline-block;
+        max-width: 100%;
+    }
 </style>
 {% endblock %}
 
@@ -187,7 +207,7 @@
                         <td>
                             {% if analise.consultor_atribuido %}
                                 <i class="bi bi-person-check"></i> 
-                                {{ analise.consultor_atribuido.username }}
+                                {{ analise.consultor_atribuido.first_name|default:analise.consultor_atribuido.username }}
                             {% else %}
                                 <span class="text-muted">Não atribuído</span>
                             {% endif %}

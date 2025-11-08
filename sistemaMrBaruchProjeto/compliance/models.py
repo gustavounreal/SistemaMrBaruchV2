@@ -452,6 +452,14 @@ class ConferenciaVendaCompliance(models.Model):
         self.status = StatusPosVendaCompliance.COLETANDO_DOCUMENTOS
         self.data_aprovacao_conferencia = timezone.now()
         self.save()
+
+        # Espelhar status na venda para que o painel pós-venda reflita imediatamente
+        try:
+            self.venda.status_compliance_pos_venda = StatusPosVendaCompliance.COLETANDO_DOCUMENTOS
+            self.venda.save(update_fields=['status_compliance_pos_venda'])
+        except Exception:
+            # Evitar quebra caso venda não esteja acessível por algum motivo inesperado
+            pass
         
         self.adicionar_historico(
             acao='CONFERENCIA_APROVADA',
@@ -465,6 +473,13 @@ class ConferenciaVendaCompliance(models.Model):
         self.motivo_reprovacao = motivo
         self.data_reprovacao = timezone.now()
         self.save()
+
+        # Atualizar status da venda para manter consistência no painel
+        try:
+            self.venda.status_compliance_pos_venda = StatusPosVendaCompliance.AGUARDANDO_CONFERENCIA
+            self.venda.save(update_fields=['status_compliance_pos_venda'])
+        except Exception:
+            pass
         
         self.adicionar_historico(
             acao='CONFERENCIA_REPROVADA',
