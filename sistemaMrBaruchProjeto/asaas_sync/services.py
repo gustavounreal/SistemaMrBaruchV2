@@ -24,7 +24,8 @@ class AsaasSyncService:
             'Content-Type': 'application/json',
             'access_token': self.api_token
         }
-        self.timeout = 30
+        self.timeout = 6000  
+        self.limite_por_pagina = 100000 
     
     def _fazer_requisicao(self, metodo, endpoint, params=None):
         """Faz requisição à API do Asaas"""
@@ -239,8 +240,13 @@ class AsaasSyncService:
         
         return stats
     
-    def sincronizar_todas_cobrancas(self):
-        """Sincroniza cobranças de todos os clientes"""
+    def sincronizar_todas_cobrancas(self, limite_clientes=None):
+        """
+        Sincroniza cobranças de todos os clientes
+        
+        Args:
+            limite_clientes: Limita quantos clientes processar (None = todos)
+        """
         logger.info("Iniciando sincronização de cobranças de todos os clientes")
         
         stats_total = {
@@ -252,38 +258,49 @@ class AsaasSyncService:
         }
         
         clientes = AsaasClienteSyncronizado.objects.all()
-        total_clientes = clientes.count()
         
+        # Limitar quantidade de clientes se especificado
+        if limite_clientes:
+            clientes = clientes[:limite_clientes]
+            logger.info(f"Limitando processamento a {limite_clientes} clientes")
+        
+        total_clientes = clientes.count()
         logger.info(f"Total de clientes a processar: {total_clientes}")
         
         for i, cliente in enumerate(clientes, 1):
             logger.info(f"Processando cliente {i}/{total_clientes}: {cliente.nome}")
             
-            stats_cliente = self.sincronizar_cobrancas_cliente(cliente)
-            
-            stats_total['total'] += stats_cliente['total']
-            stats_total['novas'] += stats_cliente['novas']
-            stats_total['atualizadas'] += stats_cliente['atualizadas']
-            stats_total['erros'] += stats_cliente['erros']
-            stats_total['clientes_processados'] += 1
-            
-            logger.info(f"Cliente {cliente.nome}: {stats_cliente['total']} cobranças ({stats_cliente['novas']} novas)")
+            try:
+                stats_cliente = self.sincronizar_cobrancas_cliente(cliente)
+                
+                stats_total['total'] += stats_cliente['total']
+                stats_total['novas'] += stats_cliente['novas']
+                stats_total['atualizadas'] += stats_cliente['atualizadas']
+                stats_total['erros'] += stats_cliente['erros']
+                stats_total['clientes_processados'] += 1
+                
+                logger.info(f"Cliente {cliente.nome}: {stats_cliente['total']} cobranças ({stats_cliente['novas']} novas)")
+            except Exception as e:
+                logger.error(f"Erro ao processar cliente {cliente.nome}: {e}")
+                stats_total['erros'] += 1
         
         return stats_total
     
-    def sincronizar_tudo(self, usuario=None):
+    def sincronizar_tudo(self, usuario=None, limite_clientes=50):
         """
         Sincroniza clientes e cobranças
         Cria log da sincronização
         
         Args:
             usuario: Usuário que iniciou a sincronização
+            limite_clientes: Quantos clientes processar cobranças (padrão: 50)
             
         Returns:
             AsaasSyncronizacaoLog
         """
         logger.info("="*60)
         logger.info("INICIANDO SINCRONIZAÇÃO COMPLETA DO ASAAS")
+        logger.info(f"Limite de clientes para cobranças: {limite_clientes}")
         logger.info("="*60)
         
         # Criar log
@@ -293,9 +310,9 @@ class AsaasSyncService:
         )
         
         try:
-            # 1. Sincronizar clientes
+            # 1. Sincronizar clientes (apenas primeira página)
             logger.info("\n📋 ETAPA 1: Sincronizando clientes...")
-            stats_clientes = self.sincronizar_clientes()
+            stats_clientes = self.sincronizar_clientes(limit=100)  # Limitar a 100 clientes
             
             log.total_clientes = stats_clientes['total']
             log.clientes_novos = stats_clientes['novos']
@@ -303,9 +320,9 @@ class AsaasSyncService:
             
             logger.info(f"✅ Clientes: {stats_clientes['total']} total, {stats_clientes['novos']} novos, {stats_clientes['atualizados']} atualizados")
             
-            # 2. Sincronizar cobranças
-            logger.info("\n💰 ETAPA 2: Sincronizando cobranças...")
-            stats_cobrancas = self.sincronizar_todas_cobrancas()
+            # 2. Sincronizar cobranças (com limite)
+            logger.info(f"\n💰 ETAPA 2: Sincronizando cobranças (primeiros {limite_clientes} clientes)...")
+            stats_cobrancas = self.sincronizar_todas_cobrancas(limite_clientes=limite_clientes)
             
             log.total_cobrancas = stats_cobrancas['total']
             log.cobrancas_novas = stats_cobrancas['novas']
