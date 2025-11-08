@@ -39,14 +39,36 @@ class AsaasSyncService:
                 timeout=self.timeout
             )
             
+            # Log detalhado para debug
+            logger.info(f"Requisição {metodo} para {url}")
+            logger.info(f"Status Code: {response.status_code}")
+            logger.info(f"Headers enviados: {self.headers}")
+            
             if response.status_code == 200:
-                return response.json()
+                try:
+                    return response.json()
+                except ValueError as json_error:
+                    logger.error(f"Resposta não é JSON válido. Conteúdo: {response.text[:500]}")
+                    return None
+            elif response.status_code == 401:
+                logger.error("❌ ERRO 401: Token de acesso inválido ou expirado")
+                logger.error(f"Token usado: {self.api_token[:10]}...")
+                return None
+            elif response.status_code == 403:
+                logger.error("❌ ERRO 403: Sem permissão para acessar este recurso")
+                return None
             else:
-                logger.error(f"Erro Asaas {response.status_code}: {response.text}")
+                logger.error(f"❌ Erro Asaas {response.status_code}: {response.text[:500]}")
                 return None
                 
+        except requests.exceptions.Timeout:
+            logger.error(f"❌ Timeout ao conectar com ASAAS (>{self.timeout}s)")
+            return None
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"❌ Erro de conexão com ASAAS: {str(e)}")
+            return None
         except Exception as e:
-            logger.error(f"Erro na requisição: {str(e)}")
+            logger.error(f"❌ Erro inesperado na requisição: {str(e)}")
             return None
     
     def sincronizar_clientes(self, limit=100, offset=0):
