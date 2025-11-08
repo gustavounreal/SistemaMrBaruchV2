@@ -17,7 +17,8 @@ class AsaasSyncService:
     """Serviço para sincronizar dados do Asaas"""
     
     def __init__(self):
-        self.base_url = getattr(settings, 'ASAAS_API_URL', 'https://sandbox.asaas.com/api/v3')
+        # PRODUÇÃO: Sempre usa a URL de produção do ASAAS
+        self.base_url = getattr(settings, 'ASAAS_API_URL', 'https://api.asaas.com/v3')
         self.api_token = getattr(settings, 'ASAAS_API_TOKEN', '')
         self.headers = {
             'Content-Type': 'application/json',
