@@ -252,6 +252,18 @@
                         <span class="info-label">Data de Vencimento:</span>
                         <span class="info-value">
                             <i class="fas fa-calendar"></i> {{ parcela.data_vencimento|date:"d/m/Y (l)" }}
+                            <button type="button" class="btn btn-sm btn-warning ms-2" data-bs-toggle="modal" data-bs-target="#modalEditarData" title="Editar Data de Vencimento">
+                                <i class="fas fa-pencil-alt"></i> Editar
+                            </button>
+                            {% if parcela.id_asaas %}
+                            <a href="{% url 'financeiro:imprimir_boleto_parcela' parcela.id %}" class="btn btn-sm btn-success ms-2" target="_blank" title="Abrir Boleto ASAAS">
+                                <i class="fas fa-file-invoice"></i> Ver Boleto ASAAS
+                            </a>
+                            {% else %}
+                            <span class="btn btn-sm btn-secondary ms-2 disabled" title="Boleto ainda não foi criado no ASAAS">
+                                <i class="fas fa-file-invoice"></i> Boleto Indisponível
+                            </span>
+                            {% endif %}
                         </span>
                     </div>
                     
@@ -274,6 +286,24 @@
                         </span>
                     </div>
                     {% endif %}
+                    
+                    <div class="info-row">
+                        <span class="info-label">Sincronização ASAAS:</span>
+                        <span class="info-value">
+                            {% if parcela.id_asaas %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle"></i> Sincronizado
+                                </span>
+                                <small class="text-muted ms-2" style="font-size: 0.8rem;">
+                                    ID: {{ parcela.id_asaas }}
+                                </small>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-exclamation-triangle"></i> Não Sincronizado
+                                </span>
+                            {% endif %}
+                        </span>
+                    </div>
                 </div>
                 
                 <!-- Informações da Venda -->
@@ -425,6 +455,62 @@
             </div>
         </div>
     </main>
+    
+    <!-- Modal para Editar Data de Vencimento -->
+    <div class="modal fade" id="modalEditarData" tabindex="-1" aria-labelledby="modalEditarDataLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalEditarDataLabel">
+                        <i class="fas fa-calendar-edit"></i> Editar Data de Vencimento
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" action="{% url 'financeiro:editar_data_parcela' parcela.id %}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> 
+                            <strong>Data atual:</strong> {{ parcela.data_vencimento|date:"d/m/Y" }}
+                        </div>
+                        
+                        {% if parcela.id_asaas %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-sync-alt"></i> 
+                            <strong>Sincronização ASAAS:</strong> Esta alteração será automaticamente sincronizada com o sistema ASAAS.
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            <strong>Atenção:</strong> Esta parcela ainda não está sincronizada com o ASAAS.
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="nova_data_vencimento" class="form-label">Nova Data de Vencimento:</label>
+                            <input type="date" 
+                                   class="form-control form-control-lg" 
+                                   id="nova_data_vencimento" 
+                                   name="nova_data_vencimento" 
+                                   value="{{ parcela.data_vencimento|date:'Y-m-d' }}"
+                                   required>
+                            <small class="form-text text-muted">
+                                O status da parcela será atualizado automaticamente baseado na nova data.
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salvar Alteração
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

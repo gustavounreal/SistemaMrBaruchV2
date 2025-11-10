@@ -32,16 +32,16 @@ Links baseados nas rotas permitidas
             </a>
         </div>
         
-        <!-- SEÇÃO: Relatórios -->
+        <!-- SEÇÃO: Relatórios 
         <div class="menu-section">
             <div class="menu-section-title">Relatórios</div>
             <a href="{% url 'compliance:relatorio_auditoria' %}" class="menu-item">
                 <i class="fas fa-chart-line"></i>
                 <span class="menu-item-text">Auditoria de Edições</span>
             </a>
-        </div>
+        </div>-->
         
-        <!-- NOVA SEÇÃO: Jurídico Integrado -->
+        <!--Jurídico Integrado -->
         <div class="menu-section">
             <div class="menu-section-title">Jurídico</div>
             <a href="#juridico-submenu" class="menu-item menu-item-toggle" data-bs-toggle="collapse" aria-expanded="false">
@@ -50,14 +50,14 @@ Links baseados nas rotas permitidas
                 <i class="fas fa-chevron-down toggle-icon"></i>
             </a>
             <div id="juridico-submenu" class="collapse submenu">
-               <!-- <a href="{% url 'juridico:lista_contratos' %}" class="submenu-item">
-                    <i class="fas fa-file-contract"></i>
-                    <span class="submenu-item-text">Lista de Contratos</span>
-                </a>
                 <a href="{% url 'juridico:dashboard' %}" class="submenu-item">
                     <i class="fas fa-chart-line"></i>
                     <span class="submenu-item-text">Dashboard Jurídico</span>
-                </a>-->
+                </a>
+                <a href="{% url 'juridico:lista_contratos' %}" class="submenu-item">
+                    <i class="fas fa-file-contract"></i>
+                    <span class="submenu-item-text">Lista de Contratos</span>
+                </a>
                 <a href="{% url 'juridico:painel_contratos_enviados' %}" class="submenu-item">
                     <i class="fas fa-paper-plane"></i>
                     <span class="submenu-item-text">Contratos Enviados</span>

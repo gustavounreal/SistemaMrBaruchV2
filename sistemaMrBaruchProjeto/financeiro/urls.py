@@ -23,6 +23,8 @@ urlpatterns = [
     path('parcelas/', views.lista_parcelas, name='lista_parcelas'),
     path('parcelas/<int:parcela_id>/detalhes/', views.detalhes_parcela, name='detalhes_parcela'),
     path('parcelas/<int:parcela_id>/marcar-paga/', views.marcar_parcela_paga, name='marcar_parcela_paga'),
+    path('parcelas/<int:parcela_id>/editar-data/', views.editar_data_parcela, name='editar_data_parcela'),
+    path('parcelas/<int:parcela_id>/boleto/', views.imprimir_boleto_parcela, name='imprimir_boleto_parcela'),
     
     # Relatórios
     path('relatorios/inadimplencia/', views.relatorio_inadimplencia, name='relatorio_inadimplencia'),

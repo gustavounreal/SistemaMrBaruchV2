@@ -14,6 +14,7 @@ urlpatterns = [
     path('contratos/<int:contrato_id>/marcar-assinado/', views.marcar_contrato_assinado, name='marcar_contrato_assinado'),
     path('contratos/<int:contrato_id>/reenviar-boletos/', views.reenviar_boletos_asaas, name='reenviar_boletos_asaas'),
     path('contratos/<int:contrato_id>/download/', views.download_contrato, name='download_contrato'),
+    path('contratos/<int:contrato_id>/boletos/', views.baixar_todos_boletos, name='baixar_todos_boletos'),
     
     # Distratos
     path('distratos/', views.painel_distratos, name='painel_distratos'),

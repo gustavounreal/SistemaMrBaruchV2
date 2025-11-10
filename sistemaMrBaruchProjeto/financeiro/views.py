@@ -395,6 +395,7 @@ def lista_parcelas(request):
     from datetime import datetime
     
     status_filtro = request.GET.get('status', 'todas')
+    asaas_filtro = request.GET.get('asaas', 'todos')
     busca = request.GET.get('busca', '')
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
@@ -404,6 +405,12 @@ def lista_parcelas(request):
     # Filtro de status
     if status_filtro != 'todas':
         parcelas = parcelas.filter(status=status_filtro)
+    
+    # Filtro de ASAAS
+    if asaas_filtro == 'criado':
+        parcelas = parcelas.exclude(id_asaas__isnull=True).exclude(id_asaas='')
+    elif asaas_filtro == 'pendente':
+        parcelas = parcelas.filter(Q(id_asaas__isnull=True) | Q(id_asaas=''))
     
     # Filtro de busca por cliente
     if busca:
@@ -452,6 +459,7 @@ def lista_parcelas(request):
     context = {
         'parcelas': parcelas_paginadas,
         'status_filtro': status_filtro,
+        'asaas_filtro': asaas_filtro,
         'busca': busca,
         'data_inicio': data_inicio,
         'data_fim': data_fim,
@@ -518,6 +526,110 @@ def marcar_parcela_paga(request, parcela_id):
         return redirect('financeiro:detalhes_parcela', parcela_id=parcela.id)
     
     return redirect('financeiro:lista_parcelas')
+
+
+@login_required
+def editar_data_parcela(request, parcela_id):
+    """Edita a data de vencimento de uma parcela e sincroniza com ASAAS"""
+    if request.method == 'POST':
+        parcela = get_object_or_404(Parcela, id=parcela_id)
+        nova_data = request.POST.get('nova_data_vencimento')
+        
+        if nova_data:
+            try:
+                # Converte a string para date
+                nova_data_obj = datetime.strptime(nova_data, '%Y-%m-%d').date()
+                data_antiga = parcela.data_vencimento
+                
+                # Se a parcela tem id_asaas, atualiza também no ASAAS
+                if parcela.id_asaas:
+                    try:
+                        # Prepara dados para atualização no ASAAS
+                        dados_atualizacao = {
+                            'dueDate': nova_data_obj.strftime('%Y-%m-%d')
+                        }
+                        
+                        # Atualiza no ASAAS
+                        resultado_asaas = asaas_service.atualizar_cobranca(
+                            parcela.id_asaas, 
+                            dados_atualizacao
+                        )
+                        
+                        if resultado_asaas and 'errors' not in resultado_asaas:
+                            logger.info(f"Data da cobrança {parcela.id_asaas} atualizada no ASAAS")
+                            messages.success(request, 'Data atualizada no ASAAS com sucesso!')
+                        else:
+                            erro_msg = resultado_asaas.get('errors', [{}])[0].get('description', 'Erro desconhecido') if resultado_asaas else 'Sem resposta do ASAAS'
+                            logger.error(f"Erro ao atualizar data no ASAAS: {erro_msg}")
+                            messages.warning(request, f'Data será atualizada apenas no sistema. Erro ASAAS: {erro_msg}')
+                            
+                    except Exception as e:
+                        logger.error(f"Exceção ao atualizar data no ASAAS: {str(e)}")
+                        messages.warning(request, f'Data será atualizada apenas no sistema. Erro na comunicação com ASAAS.')
+                
+                # Atualiza a data no sistema local
+                parcela.data_vencimento = nova_data_obj
+                
+                # Atualiza o status baseado na nova data
+                hoje = timezone.now().date()
+                if parcela.status != 'paga':
+                    if nova_data_obj < hoje:
+                        parcela.status = 'vencida'
+                    else:
+                        parcela.status = 'aberta'
+                
+                parcela.save()
+                
+                messages.success(
+                    request, 
+                    f'Data de vencimento atualizada de {data_antiga.strftime("%d/%m/%Y")} para {nova_data_obj.strftime("%d/%m/%Y")}'
+                )
+            except ValueError:
+                messages.error(request, 'Data inválida!')
+        else:
+            messages.error(request, 'Data não informada!')
+        
+        return redirect('financeiro:detalhes_parcela', parcela_id=parcela.id)
+    
+    return redirect('financeiro:lista_parcelas')
+
+
+@login_required
+def imprimir_boleto_parcela(request, parcela_id):
+    """Redireciona para o boleto real do ASAAS ou busca a URL se não estiver salva"""
+    parcela = get_object_or_404(Parcela, id=parcela_id)
+    
+    # Se já temos a URL do boleto salva, redireciona direto
+    if parcela.url_boleto:
+        return redirect(parcela.url_boleto)
+    
+    # Se não temos a URL mas temos o ID do ASAAS, busca na API
+    if parcela.id_asaas:
+        try:
+            dados_asaas = asaas_service.obter_cobranca(parcela.id_asaas)
+            
+            if dados_asaas and 'bankSlipUrl' in dados_asaas:
+                # Salva a URL para uso futuro
+                parcela.url_boleto = dados_asaas['bankSlipUrl']
+                
+                # Salva também o código de barras se disponível
+                if 'identificationField' in dados_asaas:
+                    parcela.codigo_barras = dados_asaas['identificationField']
+                
+                parcela.save()
+                
+                logger.info(f"URL do boleto obtida e salva para parcela {parcela_id}")
+                return redirect(parcela.url_boleto)
+            else:
+                logger.error(f"Boleto não encontrado no ASAAS para parcela {parcela_id}")
+                messages.error(request, "Boleto não encontrado no ASAAS.")
+        except Exception as e:
+            logger.error(f"Erro ao buscar boleto no ASAAS para parcela {parcela_id}: {str(e)}")
+            messages.error(request, f"Erro ao buscar boleto no ASAAS: {str(e)}")
+    else:
+        messages.error(request, "Esta parcela ainda não foi sincronizada com o ASAAS.")
+    
+    return redirect('financeiro:detalhes_parcela', parcela_id=parcela.id)
 
 
 @login_required

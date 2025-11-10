@@ -207,6 +207,136 @@ def detalhes_contrato(request, contrato_id):
 
 @login_required
 @user_passes_test(is_compliance_or_juridico)
+def baixar_todos_boletos(request, contrato_id):
+    """
+    Baixa todos os boletos do ASAAS e retorna como um arquivo ZIP
+    """
+    from core.asaas_service import asaas_service
+    from django.http import FileResponse
+    import logging
+    import requests
+    import zipfile
+    import tempfile
+    import os
+    from datetime import datetime
+    
+    logger = logging.getLogger(__name__)
+    logger.info(f"Iniciando download de boletos para contrato {contrato_id}")
+    
+    contrato = get_object_or_404(Contrato, id=contrato_id)
+    parcelas = Parcela.objects.filter(
+        venda=contrato.venda
+    ).exclude(
+        id_asaas__isnull=True
+    ).exclude(
+        id_asaas=''
+    ).order_by('numero_parcela')
+    
+    logger.info(f"Encontradas {parcelas.count()} parcelas com ASAAS")
+    
+    # Cria arquivo ZIP temporário
+    temp_zip = tempfile.NamedTemporaryFile(mode='w+b', suffix='.zip', delete=False)
+    temp_zip_path = temp_zip.name
+    temp_zip.close()
+    
+    try:
+        # Cria o ZIP
+        with zipfile.ZipFile(temp_zip_path, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            contador = 0
+            for parcela in parcelas:
+                # Se já tem URL salva, usa direto
+                url_boleto = parcela.url_boleto
+                
+                # Se não tem URL, busca na API do ASAAS
+                if not url_boleto:
+                    try:
+                        dados_asaas = asaas_service.obter_cobranca(parcela.id_asaas)
+                        if dados_asaas and 'bankSlipUrl' in dados_asaas:
+                            url_boleto = dados_asaas['bankSlipUrl']
+                            # Salva a URL para uso futuro
+                            parcela.url_boleto = url_boleto
+                            if 'identificationField' in dados_asaas:
+                                parcela.codigo_barras = dados_asaas['identificationField']
+                            parcela.save()
+                            logger.info(f"URL do boleto obtida do ASAAS para parcela {parcela.numero_parcela}")
+                    except Exception as e:
+                        logger.error(f"Erro ao buscar boleto da parcela {parcela.id}: {str(e)}")
+                        continue
+                
+                # Baixa o PDF do boleto
+                if url_boleto:
+                    try:
+                        logger.info(f"Baixando boleto da parcela {parcela.numero_parcela}")
+                        response = requests.get(url_boleto, timeout=30)
+                        if response.status_code == 200 and len(response.content) > 0:
+                            # Nome do arquivo
+                            vencimento = parcela.data_vencimento.strftime('%d%m%Y')
+                            nome_arquivo = f"Boleto_Parcela_{parcela.numero_parcela}_Venc_{vencimento}.pdf"
+                            zip_file.writestr(nome_arquivo, response.content)
+                            contador += 1
+                            logger.info(f"Boleto {contador} adicionado ao ZIP: {nome_arquivo}")
+                        else:
+                            logger.error(f"Erro ao baixar boleto da parcela {parcela.numero_parcela}")
+                    except Exception as e:
+                        logger.error(f"Erro ao baixar boleto da parcela {parcela.id}: {str(e)}")
+        
+        logger.info(f"Total de {contador} boletos adicionados ao ZIP")
+        
+        if contador == 0:
+            os.unlink(temp_zip_path)
+            logger.warning("Nenhum boleto foi baixado")
+            messages.error(request, "Nenhum boleto disponível para download.")
+            return redirect('juridico:detalhes_contrato', contrato_id=contrato_id)
+        
+        # Nome do arquivo ZIP
+        import re
+        cliente_nome = contrato.venda.cliente.lead.nome_completo
+        # Remove caracteres especiais e mantém apenas letras, números e espaços
+        cliente_nome = re.sub(r'[^a-zA-Z0-9\s]', '', cliente_nome)
+        # Substitui espaços múltiplos por um único espaço
+        cliente_nome = re.sub(r'\s+', ' ', cliente_nome)
+        # Remove espaços no início e fim
+        cliente_nome = cliente_nome.strip()
+        # Substitui espaços por underscore
+        cliente_nome = cliente_nome.replace(' ', '_')
+        # Remove underscores múltiplos
+        cliente_nome = re.sub(r'_+', '_', cliente_nome)
+        # Remove underscores no início e fim
+        cliente_nome = cliente_nome.strip('_')
+        
+        data_hoje = datetime.now().strftime('%d%m%Y')
+        nome_zip = f"Boletos_Contrato_{contrato.id}_{cliente_nome}_{data_hoje}.zip"
+        
+        logger.info(f"Enviando ZIP: {nome_zip}")
+        
+        # Abre o arquivo para leitura e retorna
+        zip_file = open(temp_zip_path, 'rb')
+        response = FileResponse(zip_file, content_type='application/zip')
+        # Define apenas o filename simples sem duplicação
+        response['Content-Disposition'] = f'attachment; filename="{nome_zip}"'
+        
+        # Agenda a exclusão do arquivo após o envio
+        def cleanup():
+            try:
+                zip_file.close()
+                os.unlink(temp_zip_path)
+            except:
+                pass
+        
+        response.close = cleanup
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Erro geral ao gerar ZIP: {str(e)}")
+        if os.path.exists(temp_zip_path):
+            os.unlink(temp_zip_path)
+        messages.error(request, "Erro ao gerar arquivo ZIP dos boletos.")
+        return redirect('juridico:detalhes_contrato', contrato_id=contrato_id)
+
+
+@login_required
+@user_passes_test(is_compliance_or_juridico)
 def gerar_contrato(request, venda_id):
     """Gera PDF do contrato para uma venda específica"""
     print("[DEBUG] entrar em gerar_contrato", "venda_id=", venda_id, "method=", request.method, "user=", getattr(request.user, 'username', None))
@@ -454,8 +584,8 @@ def gerar_contrato(request, venda_id):
         story.append(Paragraph(
             "• Fornecer <b>documentação completa</b> (RG, CPF, comprovantes);<br/><br/>"
             "• Assinar <b>requerimento específico</b> para a execução dos trabalhos;<br/><br/>"
-            "• <b>Abster-se de solicitar crédito</b> durante a execução do serviço;<br/><br/>"
-            "• <b>Não pode solicitar crédito e não pode pagar os boletos em atraso</b> para não interferir na pontuação do score.<br/><br/>",
+            "• <b>Abster-se de solicitar crédito</b> durante a execução do serviço;<br/><br/>",
+           # "• <b>Não pode solicitar crédito e não pode pagar os boletos em atraso</b> para não interferir na pontuação do score.<br/><br/>",
             paragrafos_com_indentacao
         ))
         

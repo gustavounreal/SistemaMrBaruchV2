@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boleto - Parcela #{{ parcela.id }}</title>
+    
+    <style>
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            
+            .boleto-container {
+                page-break-after: always;
+            }
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .boleto-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            color: #10b981;
+            font-size: 2rem;
+        }
+        
+        .header p {
+            margin: 5px 0;
+            color: #666;
+        }
+        
+        .info-section {
+            margin-bottom: 25px;
+        }
+        
+        .info-section h3 {
+            background: #10b981;
+            color: white;
+            padding: 10px;
+            margin: 0 0 15px 0;
+            border-radius: 5px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .info-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #666;
+            font-size: 0.9rem;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            color: #333;
+            font-size: 1.1rem;
+        }
+        
+        .valor-destaque {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-radius: 10px;
+            margin: 30px 0;
+        }
+        
+        .valor-destaque .label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .valor-destaque .valor {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .codigo-barras {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .codigo-barras-numeros {
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            color: #333;
+            margin-top: 10px;
+        }
+        
+        .instrucoes {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .instrucoes h4 {
+            margin-top: 0;
+            color: #856404;
+        }
+        
+        .instrucoes ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .instrucoes li {
+            margin: 5px 0;
+            color: #856404;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
+            color: #666;
+        }
+        
+        .btn-print {
+            background: #10b981;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: block;
+            margin: 30px auto;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-print:hover {
+            background: #059669;
+        }
+        
+        .btn-voltar {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 10px 5px;
+        }
+        
+        .btn-voltar:hover {
+            background: #5a6268;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .status-vencida {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-aberta {
+            background: #cfe2ff;
+            color: #084298;
+        }
+        
+        .status-paga {
+            background: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <!-- Botões de Ação (não imprimem) -->
+    <div class="no-print" style="text-align: center; margin-bottom: 20px;">
+        <button onclick="window.print()" class="btn-print">
+            🖨️ Imprimir Boleto
+        </button>
+        <a href="{% url 'financeiro:detalhes_parcela' parcela.id %}" class="btn-voltar">
+            ← Voltar aos Detalhes
+        </a>
+        <a href="{% url 'financeiro:lista_parcelas' %}" class="btn-voltar">
+            📋 Lista de Parcelas
+        </a>
+    </div>
+    
+    <div class="boleto-container">
+        <!-- Cabeçalho -->
+        <div class="header">
+            <h1>{{ empresa.nome }}</h1>
+            <p>CNPJ: {{ empresa.cnpj }}</p>
+            <p>{{ empresa.endereco }} | Tel: {{ empresa.telefone }}</p>
+        </div>
+        
+        <!-- Informações do Cliente -->
+        <div class="info-section">
+            <h3>📋 Dados do Cliente</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Nome Completo:</span>
+                    <span class="info-value">{{ lead.nome_completo }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">CPF/CNPJ:</span>
+                    <span class="info-value">{{ lead.cpf_cnpj|default:"Não informado" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Telefone:</span>
+                    <span class="info-value">{{ lead.telefone|default:"Não informado" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">{{ lead.email|default:"Não informado" }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Informações da Venda -->
+        <div class="info-section">
+            <h3>💼 Dados da Venda</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Número da Venda:</span>
+                    <span class="info-value">#{{ venda.id }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Serviço Contratado:</span>
+                    <span class="info-value">{{ venda.servico.nome }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Data da Venda:</span>
+                    <span class="info-value">{{ venda.data_venda|date:"d/m/Y" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Consultor:</span>
+                    <span class="info-value">{{ venda.consultor.get_full_name|default:venda.consultor.username }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Informações da Parcela -->
+        <div class="info-section">
+            <h3>🧾 Dados da Parcela</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Número da Parcela:</span>
+                    <span class="info-value">{{ parcela.numero_parcela }} de {{ venda.quantidade_parcelas }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Status:</span>
+                    <span class="info-value">
+                        {% if parcela.status == 'paga' %}
+                            <span class="status-badge status-paga">✓ Paga</span>
+                        {% elif parcela.status == 'vencida' %}
+                            <span class="status-badge status-vencida">⚠ Vencida</span>
+                        {% else %}
+                            <span class="status-badge status-aberta">⏳ Em Aberto</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Data de Vencimento:</span>
+                    <span class="info-value">{{ parcela.data_vencimento|date:"d/m/Y" }}</span>
+                </div>
+                {% if parcela.data_pagamento %}
+                <div class="info-item">
+                    <span class="info-label">Data de Pagamento:</span>
+                    <span class="info-value">{{ parcela.data_pagamento|date:"d/m/Y" }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Valor em Destaque -->
+        <div class="valor-destaque">
+            <div class="label">VALOR A PAGAR</div>
+            <div class="valor">R$ {{ parcela.valor|floatformat:2 }}</div>
+            <div class="label">Vencimento: {{ parcela.data_vencimento|date:"d/m/Y" }}</div>
+        </div>
+        
+        <!-- Código de Barras -->
+        <div class="codigo-barras">
+            <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
+                CÓDIGO DE BARRAS
+            </div>
+            
+            {% if dados_asaas and dados_asaas.identificationField %}
+                <!-- Código de barras real do ASAAS -->
+                <div style="height: 60px; background: repeating-linear-gradient(90deg, #000 0px, #000 2px, #fff 2px, #fff 4px); border-radius: 5px;"></div>
+                <div class="codigo-barras-numeros">
+                    {{ dados_asaas.identificationField }}
+                </div>
+                
+                {% if dados_asaas.bankSlipUrl %}
+                <div class="no-print" style="margin-top: 15px; text-align: center;">
+                    <a href="{{ dados_asaas.bankSlipUrl }}" target="_blank" class="btn-voltar" style="background: #0d6efd;">
+                        📄 Visualizar Boleto Oficial ASAAS
+                    </a>
+                </div>
+                {% endif %}
+            {% else %}
+                <!-- Código de barras simulado -->
+                <div style="height: 60px; background: repeating-linear-gradient(90deg, #000 0px, #000 2px, #fff 2px, #fff 4px); border-radius: 5px;"></div>
+                <div class="codigo-barras-numeros">
+                    {{ parcela.id|stringformat:"05d" }}.{{ venda.id|stringformat:"05d" }}.{{ parcela.numero_parcela|stringformat:"03d" }}.{{ parcela.valor|floatformat:2|cut:"." }}
+                </div>
+                <div class="no-print" style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px; text-align: center; color: #856404;">
+                    ⚠️ Este boleto ainda não foi sincronizado com o sistema ASAAS. Entre em contato com o financeiro.
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Informações adicionais do ASAAS -->
+        {% if dados_asaas %}
+        <div class="info-section no-print">
+            <h3>🔗 Dados ASAAS</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">ID ASAAS:</span>
+                    <span class="info-value" style="font-family: monospace;">{{ dados_asaas.id }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Status ASAAS:</span>
+                    <span class="info-value">{{ dados_asaas.status|upper }}</span>
+                </div>
+                {% if dados_asaas.confirmedDate %}
+                <div class="info-item">
+                    <span class="info-label">Data de Confirmação:</span>
+                    <span class="info-value">{{ dados_asaas.confirmedDate }}</span>
+                </div>
+                {% endif %}
+                {% if dados_asaas.nossoNumero %}
+                <div class="info-item">
+                    <span class="info-label">Nosso Número:</span>
+                    <span class="info-value">{{ dados_asaas.nossoNumero }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        
+        <!-- Instruções de Pagamento -->
+        <div class="instrucoes">
+            <h4>📌 Instruções de Pagamento</h4>
+            <ul>
+                <li>Este boleto pode ser pago em qualquer banco ou casa lotérica até a data de vencimento</li>
+                <li>Após o vencimento, entre em contato com o financeiro para renegociação</li>
+                <li>Em caso de dúvidas, entre em contato: {{ empresa.telefone }}</li>
+                <li>Guarde este comprovante para controle financeiro</li>
+            </ul>
+        </div>
+        
+        <!-- Observações -->
+        {% if parcela.status == 'vencida' %}
+        <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; margin: 20px 0;">
+            <h4 style="color: #721c24; margin-top: 0;">⚠️ ATENÇÃO: Parcela Vencida</h4>
+            <p style="color: #721c24; margin: 0;">
+                Esta parcela encontra-se vencida há {{ parcela.dias_atraso }} dia(s). 
+                Para regularizar sua situação, entre em contato com nosso setor financeiro.
+            </p>
+        </div>
+        {% endif %}
+        
+        <!-- Rodapé -->
+        <div class="footer">
+            <p><strong>{{ empresa.nome }}</strong></p>
+            <p>CNPJ: {{ empresa.cnpj }} | {{ empresa.endereco }}</p>
+            <p>Tel: {{ empresa.telefone }}</p>
+            <p style="margin-top: 15px; font-size: 0.9rem;">
+                Documento gerado em {{ hoje|date:"d/m/Y" }} às {{ hoje|date:"H:i" }}
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // Imprimir automaticamente ao carregar (opcional)
+        // window.onload = function() {
+        //     window.print();
+        // }
+    </script>
+</body>
+</html>
