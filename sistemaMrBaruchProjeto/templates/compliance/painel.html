@@ -271,6 +271,72 @@
         </div>
     </div>
 
+    <!-- Lista Completa de Análises -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Todas as Análises</h5>
+            <a href="{% url 'compliance:lista_analises' %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-arrow-right"></i> Ver Lista Completa
+            </a>
+        </div>
+        <div class="card-body">
+            {% if todas_analises %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Lead</th>
+                            <th>Status</th>
+                            <th>Classificação</th>
+                            <th>Consultor</th>
+                            <th>Data</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for analise in todas_analises %}
+                        <tr>
+                            <td><strong>#{{ analise.id }}</strong></td>
+                            <td>{{ analise.lead.nome_completo|truncatechars:30 }}</td>
+                            <td>
+                                <span class="badge badge-{{ analise.status }}">
+                                    {{ analise.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if analise.classificacao %}
+                                    <span class="badge badge-{{ analise.classificacao }}">
+                                        {{ analise.get_classificacao_display }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if analise.consultor_atribuido %}
+                                    {{ analise.consultor_atribuido.first_name|default:analise.consultor_atribuido.username }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ analise.data_criacao|date:"d/m/Y" }}</td>
+                            <td>
+                                <a href="{% url 'compliance:detalhes_lead' analise.lead.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Ver
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted text-center">Nenhuma análise encontrada.</p>
+            {% endif %}
+        </div>
+    </div>
+
     <!-- Leads em Análise (pelo usuário) -->
     {% if leads_em_analise %}
     <div class="card shadow-sm mb-4">
@@ -311,38 +377,21 @@
         </div>
     </div>
     {% endif %}
-
-    <!-- Histórico Recente -->
-    <div class="card shadow-sm">
-        <div class="card-header bg-white">
-            <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Histórico Recente</h5>
-        </div>
-        <div class="card-body">
-            {% if historico_recente %}
-            <div class="list-group list-group-flush">
-                {% for item in historico_recente %}
-                <div class="list-group-item">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>{{ item.analise.lead.nome_completo }}</strong> - {{ item.acao }}
-                            <br>
-                            <small class="text-muted">
-                                por {{ item.usuario.get_full_name|default:item.usuario.username }} • {{ item.data|date:"d/m/Y H:i" }}
-                            </small>
-                            <br>
-                            <small>{{ item.descricao }}</small>
-                        </div>
-                        <a href="{% url 'compliance:detalhes_lead' item.analise.lead.id %}" class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-eye"></i>
-                        </a>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="text-muted text-center">Nenhum histórico recente.</p>
-            {% endif %}
-        </div>
-    </div>
 </div>
+
+<style>
+    /* Badges de status */
+    .badge-AGUARDANDO { background-color: #ffc107; color: #000; }
+    .badge-EM_ANALISE { background-color: #17a2b8; color: #fff; }
+    .badge-APROVADO { background-color: #28a745; color: #fff; }
+    .badge-REPROVADO { background-color: #dc3545; color: #fff; }
+    .badge-ATRIBUIDO { background-color: #fd7e14; color: #fff; }
+    
+    /* Badges de classificação */
+    .badge-INADIMPLENTE_BAIXO { background-color: #90ee90; color: #000; }
+    .badge-INADIMPLENTE_MEDIO { background-color: #ffd700; color: #000; }
+    .badge-INADIMPLENTE_ALTO { background-color: #ff6347; color: #fff; }
+    .badge-NEGATIVADO { background-color: #8b0000; color: #fff; }
+    .badge-LIMPO { background-color: #32cd32; color: #fff; }
+</style>
 {% endblock %}

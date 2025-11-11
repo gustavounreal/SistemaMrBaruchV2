@@ -54,13 +54,17 @@ def painel_compliance(request):
     stats = ComplianceStatsService.get_dashboard_stats()
     leads_aguardando = ComplianceStatsService.get_leads_aguardando(limit=10)
     leads_em_analise = ComplianceStatsService.get_leads_em_analise_by_user(user, limit=10)
-    historico_recente = ComplianceStatsService.get_historico_recente(limit=15)
+    
+    # Buscar todas as análises recentes (últimas 20)
+    todas_analises = AnaliseCompliance.objects.select_related(
+        'lead', 'consultor_atribuido'
+    ).order_by('-data_criacao')[:20]
     
     context = {
         **stats,  # Desempacota todas as estatísticas
         'leads_aguardando': leads_aguardando,
         'leads_em_analise': leads_em_analise,
-        'historico_recente': historico_recente,
+        'todas_analises': todas_analises,
     }
     
     return render(request, 'compliance/painel.html', context)
@@ -331,6 +335,47 @@ def desreprovar_lead(request, analise_id):
     
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+@login_required
+@user_passes_test(is_compliance)
+def api_historico_recente(request):
+    """API para retornar histórico recente para a sidebar"""
+    try:
+        historico = HistoricoAnaliseCompliance.objects.select_related(
+            'analise__lead', 'usuario'
+        ).order_by('-data')[:10]
+        
+        # Mapa de cores para classificações
+        cores_classificacao = {
+            'INADIMPLENTE_BAIXO': 'success',
+            'INADIMPLENTE_MEDIO': 'warning',
+            'INADIMPLENTE_ALTO': 'danger',
+            'NEGATIVADO': 'dark',
+            'LIMPO': 'info',
+        }
+        
+        dados = []
+        for item in historico:
+            dados.append({
+                'lead_nome': item.analise.lead.nome_completo,
+                'acao': item.acao,
+                'usuario': item.usuario.get_full_name() or item.usuario.username,
+                'data': item.data.strftime('%d/%m %H:%M'),
+                'classificacao': item.analise.get_classificacao_display() if item.analise.classificacao else None,
+                'classificacao_cor': cores_classificacao.get(item.analise.classificacao, 'secondary') if item.analise.classificacao else None,
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'historico': dados
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=500)
 
 
 @login_required

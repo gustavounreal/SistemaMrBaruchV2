@@ -19,6 +19,7 @@ urlpatterns = [
     path('api/atribuir/<int:analise_id>/', views.atribuir_consultor, name='atribuir_consultor'),
     path('api/desatribuir/<int:analise_id>/', views.desatribuir_consultor, name='desatribuir_consultor'),
     path('api/desreprovar/<int:analise_id>/', views.desreprovar_lead, name='desreprovar_lead'),
+    path('api/historico-recente/', views.api_historico_recente, name='api_historico_recente'),
     
     # Documentos de Levantamento
     path('api/documento-levantamento/<int:analise_id>/upload/', views.upload_documento_levantamento, name='upload_documento_levantamento'),
