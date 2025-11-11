@@ -380,18 +380,75 @@
 </div>
 
 <style>
-    /* Badges de status */
-    .badge-AGUARDANDO { background-color: #ffc107; color: #000; }
-    .badge-EM_ANALISE { background-color: #17a2b8; color: #fff; }
-    .badge-APROVADO { background-color: #28a745; color: #fff; }
-    .badge-REPROVADO { background-color: #dc3545; color: #fff; }
-    .badge-ATRIBUIDO { background-color: #fd7e14; color: #fff; }
+    /* Badges de status - cores mais vibrantes e com melhor contraste */
+    .badge-AGUARDANDO { 
+        background-color: #ffc107 !important; 
+        color: #000 !important;
+        font-weight: 600 !important;
+        border: 1px solid #f0a500 !important;
+    }
+    .badge-EM_ANALISE { 
+        background-color: #17a2b8 !important; 
+        color: #fff !important;
+        font-weight: 600 !important;
+        border: 1px solid #138496 !important;
+    }
+    .badge-APROVADO { 
+        background-color: #28a745 !important; 
+        color: #fff !important;
+        font-weight: 600 !important;
+        border: 1px solid #1e7e34 !important;
+    }
+    .badge-REPROVADO { 
+        background-color: #dc3545 !important; 
+        color: #fff !important;
+        font-weight: 600 !important;
+        border: 1px solid #bd2130 !important;
+    }
+    .badge-ATRIBUIDO { 
+        background-color: #fd7e14 !important; 
+        color: #fff !important;
+        font-weight: 600 !important;
+        border: 1px solid #e8590c !important;
+    }
     
-    /* Badges de classificação */
-    .badge-INADIMPLENTE_BAIXO { background-color: #90ee90; color: #000; }
-    .badge-INADIMPLENTE_MEDIO { background-color: #ffd700; color: #000; }
-    .badge-INADIMPLENTE_ALTO { background-color: #ff6347; color: #fff; }
-    .badge-NEGATIVADO { background-color: #8b0000; color: #fff; }
-    .badge-LIMPO { background-color: #32cd32; color: #fff; }
+    /* Badges de classificação - cores mais vibrantes */
+    .badge-INADIMPLENTE_BAIXO { 
+        background-color: #28a745 !important; 
+        color: #fff !important;
+        font-weight: 600 !important;
+        border: 1px solid #1e7e34 !important;
+    }
+    .badge-INADIMPLENTE_MEDIO { 
+        background-color: #ffc107 !important; 
+        color: #000 !important;
+        font-weight: 600 !important;
+        border: 1px solid #f0a500 !important;
+    }
+    .badge-INADIMPLENTE_ALTO { 
+        background-color: #ff6347 !important; 
+        color: #fff !important;
+        font-weight: 600 !important;
+        border: 1px solid #e04527 !important;
+    }
+    .badge-NEGATIVADO { 
+        background-color: #dc3545 !important; 
+        color: #fff !important;
+        font-weight: 600 !important;
+        border: 1px solid #bd2130 !important;
+    }
+    .badge-LIMPO { 
+        background-color: #17a2b8 !important; 
+        color: #fff !important;
+        font-weight: 600 !important;
+        border: 1px solid #138496 !important;
+    }
+    
+    /* Adicionar sombra para destacar os badges */
+    [class^="badge-"] {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        padding: 0.35rem 0.65rem !important;
+        font-size: 0.85rem !important;
+    }
 </style>
 {% endblock %}
