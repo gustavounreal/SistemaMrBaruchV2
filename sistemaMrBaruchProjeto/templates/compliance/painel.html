@@ -360,7 +360,13 @@
                         <tr>
                             <td>{{ analise.lead.nome_completo }}</td>
                             <td>
-                                <span class="badge bg-secondary">{{ analise.get_classificacao_display }}</span>
+                                {% if analise.classificacao %}
+                                    <span class="status-badge classificacao-{{ analise.classificacao }}">
+                                        {{ analise.get_classificacao_display }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
                             </td>
                             <td>R$ {{ analise.valor_divida_total|default:0|floatformat:2 }}</td>
                             <td>{{ analise.data_analise|date:"d/m/Y H:i" }}</td>
