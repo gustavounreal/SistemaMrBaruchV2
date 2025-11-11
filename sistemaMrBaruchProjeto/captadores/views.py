@@ -135,6 +135,7 @@ def area_captador(request):
     
     context = {
         'captador': captador,
+        'dados_usuario': dados_usuario,
         'total_vendas': total_vendas,
         'valor_total_indicacoes': valor_total_indicacoes,
         'comissao_total': comissao_total,
@@ -257,16 +258,30 @@ def atualizar_dados_captador(request):
     """
     View para o captador atualizar suas próprias informações
     """
+    print("🔵 FUNÇÃO atualizar_dados_captador CHAMADA!")
+    print(f"🔵 Method: {request.method}")
+    print(f"🔵 User: {request.user}")
+    print(f"🔵 POST keys: {request.POST.keys()}")
+    
     try:
         captador = request.user
         
+        print("=== DEBUG ATUALIZAR DADOS ===")
+        print(f"User ID: {captador.id}")
+        print(f"POST data: {request.POST}")
+        
         # Garantir que DadosUsuario existe
         dados_usuario, created = DadosUsuario.objects.get_or_create(user=captador)
+        print(f"DadosUsuario criado: {created}")
         
         # Atualizar campos do User
         captador.nome_completo = request.POST.get('nome_completo', '').strip()
         captador.rg = request.POST.get('rg', '').strip()
         captador.cpf = request.POST.get('cpf', '').strip()
+        
+        print(f"Nome completo: {captador.nome_completo}")
+        print(f"RG: {captador.rg}")
+        print(f"CPF: {captador.cpf}")
         
         # Atualizar endereço detalhado
         captador.cep = request.POST.get('cep', '').strip()
@@ -312,9 +327,16 @@ def atualizar_dados_captador(request):
                 'conta': conta
             }
         
+        print(f"WhatsApp: {dados_usuario.whatsapp_pessoal}")
+        print(f"Contato recado: {dados_usuario.contato_recado}")
+        print(f"Chave PIX: {captador.chave_pix}")
+        
         # Salvar
         captador.save()
         dados_usuario.save()
+        
+        print("✅ Dados salvos com sucesso!")
+        print(f"Captador após save - Nome: {captador.nome_completo}, CPF: {captador.cpf}")
         
         messages.success(request, 'Seus dados foram atualizados com sucesso!')
         

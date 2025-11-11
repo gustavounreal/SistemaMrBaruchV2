@@ -40,7 +40,8 @@ class ConsultorRestrictionMiddleware(MiddlewareMixin):
             is_captador = False
             
         if is_captador:
-            if request.path.startswith('/captadores/area/') or request.path == '/captadores/' or request.path == '/captadores/area':
+            # Permitir todas as URLs que começam com /captadores/
+            if request.path.startswith('/captadores/'):
                 return None
             # Para chamadas AJAX/JSON, devolve 403 em vez de redirecionar
             is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
