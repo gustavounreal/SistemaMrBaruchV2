@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Q, Sum, Count, Case, When, DecimalField
 from django.utils import timezone
+from django.conf import settings
 from .models import AsaasClienteSyncronizado, AsaasCobrancaSyncronizada, AsaasSyncronizacaoLog
 from .services import AsaasSyncService
 import logging
@@ -376,19 +377,18 @@ def atualizar_cliente(request, cliente_id):
 
 @login_required
 def sincronizar_alternativo(request):
-    """Sincroniza dados de uma conta Asaas alternativa usando token temporário"""
+    """Sincroniza dados de uma conta Asaas alternativa usando token configurado no backend"""
     
     if request.method == 'POST':
         try:
-            import json
-            data = json.loads(request.body)
-            token_alternativo = data.get('token', '')
+            # Buscar token alternativo das configurações (mais seguro que no frontend)
+            token_alternativo = getattr(settings, 'ASAAS_ALTERNATIVO_TOKEN', None)
             
             if not token_alternativo:
                 return JsonResponse({
                     'success': False,
-                    'message': 'Token não fornecido'
-                }, status=400)
+                    'message': '❌ Token alternativo não configurado.\n\nConfigure ASAAS_ALTERNATIVO_TOKEN nas variáveis de ambiente ou settings.py'
+                }, status=500)
             
             logger.info(f"Sincronização alternativa iniciada por {request.user.username}")
             logger.info(f"Token alternativo: {token_alternativo[:20]}...")

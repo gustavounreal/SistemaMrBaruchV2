@@ -374,19 +374,13 @@ function sincronizarAsaasAlternativo() {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sincronizando...';
     
-    // Token alternativo para sincronização (AMBIENTE DE PRODUÇÃO)
-    // URL: https://api.asaas.com/v3
-    const tokenAlternativo = '$aact_prod_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OjM5MzQxOTNmLTFjNTAtNDcwNS1hNDQyLTYzYmM0YjBmODU1MTo6JGFhY2hfYWU4YWUxMmEtOTU2Zi00OTJhLTkxYmEtNjE4ZTlhNGFhNjQ3';
-    
+    // Token armazenado de forma segura no backend
     fetch('{% url "asaas_sync:sincronizar_alternativo" %}', {
         method: 'POST',
         headers: {
             'X-CSRFToken': '{{ csrf_token }}',
             'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            token: tokenAlternativo
-        })
+        }
     })
     .then(response => response.json())
     .then(data => {
