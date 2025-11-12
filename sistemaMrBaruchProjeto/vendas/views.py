@@ -18,7 +18,7 @@ from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 import json
 
-from .models import PreVenda, Venda, DocumentoVenda, Servico, Parcela, MotivoRecusa
+from .models import PreVenda, Venda, DocumentoVenda, Servico, Parcela, MotivoRecusa, EntradaVenda
 from django.http import HttpResponse
 from django.utils.encoding import smart_str
 import io
@@ -731,7 +731,33 @@ def iniciar_pre_venda(request, lead_id):
                 pre_venda.observacoes_levantamento = request.POST.get('observacoes_levantamento', '')
                 # Novos campos financeiros
                 pre_venda.valor_total = desformatar_valor(request.POST.get('valor_total', '0'))
-                pre_venda.valor_entrada = desformatar_valor(request.POST.get('valor_entrada', '0'))
+                
+                # 🐛 DEBUG: Verificar dados recebidos do POST
+                print("\n" + "="*60)
+                print("🔍 DEBUG iniciar_pre_venda - Dados recebidos do POST:")
+                print("="*60)
+                print(f"valor_entrada_1 (raw): '{request.POST.get('valor_entrada_1', 'VAZIO')}'")
+                print(f"data_vencimento_entrada_1: '{request.POST.get('data_vencimento_entrada_1', 'VAZIO')}'")
+                print(f"forma_pagamento_entrada_1: '{request.POST.get('forma_pagamento_entrada_1', 'VAZIO')}'")
+                print(f"---")
+                print(f"valor_entrada_2 (raw): '{request.POST.get('valor_entrada_2', 'VAZIO')}'")
+                print(f"data_vencimento_entrada_2: '{request.POST.get('data_vencimento_entrada_2', 'VAZIO')}'")
+                print(f"forma_pagamento_entrada_2: '{request.POST.get('forma_pagamento_entrada_2', 'VAZIO')}'")
+                print("="*60 + "\n")
+                
+                # Processar múltiplas entradas
+                valor_entrada_1 = desformatar_valor(request.POST.get('valor_entrada_1', '0'))
+                valor_entrada_2 = desformatar_valor(request.POST.get('valor_entrada_2', '0'))
+                
+                print(f"💰 Valores desformatados:")
+                print(f"   Entrada 1: R$ {valor_entrada_1}")
+                print(f"   Entrada 2: R$ {valor_entrada_2}")
+                
+                total_entradas = valor_entrada_1 + valor_entrada_2
+                
+                # Salvar soma das entradas no campo valor_entrada (para compatibilidade)
+                pre_venda.valor_entrada = total_entradas
+                
                 pre_venda.quantidade_parcelas = int(request.POST.get('quantidade_parcelas', 1))
                 pre_venda.valor_parcela = desformatar_valor(request.POST.get('valor_parcela', '0'))
                 
@@ -744,6 +770,58 @@ def iniciar_pre_venda(request, lead_id):
                     
                 pre_venda.status = 'AGUARDANDO_ACEITE'
                 pre_venda.save()
+                
+                # Limpar entradas antigas e criar novas
+                from vendas.models import EntradaPreVenda
+                pre_venda.entradas.all().delete()
+                
+                print(f"\n📝 Processando criação de entradas:")
+                
+                # Criar entrada 1 se tiver valor
+                if valor_entrada_1 > 0:
+                    data_vencimento_1 = request.POST.get('data_vencimento_entrada_1')
+                    forma_pagamento_1 = request.POST.get('forma_pagamento_entrada_1', 'PIX')
+                    
+                    print(f"   ➡️ Entrada 1: Valor > 0, verificando data de vencimento...")
+                    print(f"      Data vencimento: {data_vencimento_1}")
+                    
+                    if data_vencimento_1:
+                        EntradaPreVenda.objects.create(
+                            pre_venda=pre_venda,
+                            numero_entrada=1,
+                            valor=valor_entrada_1,
+                            data_vencimento=data_vencimento_1,
+                            forma_pagamento=forma_pagamento_1
+                        )
+                        print(f"      ✅ Entrada 1 criada: R$ {valor_entrada_1} - Venc: {data_vencimento_1}")
+                    else:
+                        print(f"      ❌ Entrada 1 NÃO criada: data de vencimento não fornecida!")
+                else:
+                    print(f"   ⏭️ Entrada 1: Valor = 0, pulando...")
+                
+                # Criar entrada 2 se tiver valor
+                if valor_entrada_2 > 0:
+                    data_vencimento_2 = request.POST.get('data_vencimento_entrada_2')
+                    forma_pagamento_2 = request.POST.get('forma_pagamento_entrada_2', 'PIX')
+                    
+                    print(f"   ➡️ Entrada 2: Valor > 0, verificando data de vencimento...")
+                    print(f"      Data vencimento: {data_vencimento_2}")
+                    
+                    if data_vencimento_2:
+                        EntradaPreVenda.objects.create(
+                            pre_venda=pre_venda,
+                            numero_entrada=2,
+                            valor=valor_entrada_2,
+                            data_vencimento=data_vencimento_2,
+                            forma_pagamento=forma_pagamento_2
+                        )
+                        print(f"      ✅ Entrada 2 criada: R$ {valor_entrada_2} - Venc: {data_vencimento_2}")
+                    else:
+                        print(f"      ❌ Entrada 2 NÃO criada: data de vencimento não fornecida!")
+                else:
+                    print(f"   ⏭️ Entrada 2: Valor = 0, pulando...")
+                
+                print(f"\n{'='*60}\n")
                 
                 # Atualiza status do lead
                 lead.status = 'EM_NEGOCIACAO'
@@ -778,6 +856,13 @@ def registrar_aceite(request, pre_venda_id):
     Segunda etapa: Registra se o cliente aceitou ou recusou a proposta
     """
     pre_venda = get_object_or_404(PreVenda, id=pre_venda_id)
+    
+    # 🐛 DEBUG: Verificar entradas
+    entradas = pre_venda.entradas.all()
+    print(f"\n🔍 DEBUG registrar_aceite - PreVenda ID: {pre_venda_id}")
+    print(f"📊 Total de entradas encontradas: {entradas.count()}")
+    for entrada in entradas:
+        print(f"   - Entrada {entrada.numero_entrada}: R$ {entrada.valor} | Vencimento: {entrada.data_vencimento} | Forma: {entrada.forma_pagamento}")
     
     if pre_venda.status != 'AGUARDANDO_ACEITE':
         messages.warning(request, 'Esta pré-venda já teve seu aceite processado.')
@@ -885,51 +970,50 @@ def cadastro_venda_direta(request):
                 
                 # Valores
                 valor_total = Decimal(request.POST.get('valor_total', '0'))
-                valor_entrada = Decimal(request.POST.get('valor_entrada', '0'))
-                quantidade_parcelas = int(request.POST.get('quantidade_parcelas', 0))
-                valor_parcela = Decimal(request.POST.get('valor_parcela', '0')) if quantidade_parcelas > 0 else Decimal('0')
+                
+                # Processar múltiplas entradas
+                valor_entrada_1 = Decimal(request.POST.get('valor_entrada_1', '0'))
+                data_vencimento_entrada_1 = request.POST.get('data_vencimento_entrada_1')
+                forma_pagamento_entrada_1 = request.POST.get('forma_pagamento_entrada_1', 'PIX')
+                
+                valor_entrada_2 = Decimal(request.POST.get('valor_entrada_2', '0'))
+                data_vencimento_entrada_2 = request.POST.get('data_vencimento_entrada_2')
+                forma_pagamento_entrada_2 = request.POST.get('forma_pagamento_entrada_2', 'PIX')
+                
+                # Calcular soma das entradas
+                valor_entrada_total = valor_entrada_1 + valor_entrada_2
+                
+                quantidade_parcelas = int(request.POST.get('numero_parcelas', 0))
+                
+                # Calcular valor das parcelas
+                valor_restante = valor_total - valor_entrada_total
+                if quantidade_parcelas > 0 and valor_restante > 0:
+                    valor_parcela = (valor_restante / quantidade_parcelas).quantize(Decimal('0.01'))
+                else:
+                    valor_parcela = Decimal('0')
                 
                 # ===== Validações/ajustes server-side =====
-                # Garante que entrada não seja maior que o total
-                if valor_entrada > valor_total:
-                    messages.warning(request, 'Valor de entrada maior que o valor total. Ajustando entrada para o valor total.')
-                    valor_entrada = valor_total
+                # Garante que entrada total não seja maior que o total
+                if valor_entrada_total > valor_total:
+                    messages.warning(request, 'Valor total das entradas maior que o valor total. Ajustando.')
+                    valor_entrada_total = valor_total
+                    valor_entrada_1 = valor_total
+                    valor_entrada_2 = Decimal('0')
                     quantidade_parcelas = 0
                     valor_parcela = Decimal('0')
 
-                # Garante que o valor da parcela individual não seja maior que o total
-                if quantidade_parcelas > 0 and valor_parcela > valor_total:
-                    messages.warning(request, 'Valor da parcela informado é maior que o valor total. Ajustando para dividir o restante em 1 parcela.')
-                    quantidade_parcelas = 1
-                    valor_parcela = max(Decimal('0'), valor_total - valor_entrada)
-
-                # Ajusta distribuição das parcelas caso a soma difira do restante
-                valor_restante = valor_total - valor_entrada
+                # Ajusta distribuição das parcelas
                 valor_total_parcelas = quantidade_parcelas * valor_parcela if quantidade_parcelas > 0 else Decimal('0')
 
-                if quantidade_parcelas > 0 and abs(valor_total_parcelas - valor_restante) > Decimal('0.01'):
-                    # Recalcula o valor da parcela para dividir o restante de forma uniforme
-                    try:
-                        novo_valor_parcela = (valor_restante / quantidade_parcelas).quantize(Decimal('0.01'))
-                        valor_parcela = novo_valor_parcela
-                        messages.info(request, 'Valores de parcela ajustados automaticamente para distribuir o saldo restante.')
-                        valor_total_parcelas = quantidade_parcelas * valor_parcela
-                    except Exception:
-                        # Em caso de erro, zera parcelas
-                        quantidade_parcelas = 0
-                        valor_parcela = Decimal('0')
-                        valor_total_parcelas = Decimal('0')
-
                 # Por fim, se ainda houver diferença relevante, rejeitar
-                if abs(valor_total - (valor_entrada + valor_total_parcelas)) > Decimal('0.01'):
-                    raise ValueError(f"Soma incorreta após ajustes: Entrada R$ {valor_entrada:.2f} + Parcelas R$ {valor_total_parcelas:.2f} ≠ Total R$ {valor_total:.2f}")
+                if abs(valor_total - (valor_entrada_total + valor_total_parcelas)) > Decimal('0.10'):
+                    raise ValueError(f"Soma incorreta: Entradas R$ {valor_entrada_total:.2f} + Parcelas R$ {valor_total_parcelas:.2f} ≠ Total R$ {valor_total:.2f}")
                 
-                # Pagamento
-                forma_entrada = request.POST.get('forma_pagamento_entrada', 'PIX')
+                # Pagamento das parcelas
                 forma_parcelas = request.POST.get('forma_pagamento_parcelas', 'BOLETO')
                 frequencia = request.POST.get('frequencia_pagamento', 'MENSAL')
                 
-                data_vencimento_primeira_str = request.POST.get('data_vencimento_primeira')
+                data_vencimento_primeira_str = request.POST.get('data_vencimento_primeira_parcela')
                 if data_vencimento_primeira_str:
                     from datetime import datetime
                     data_vencimento_primeira = datetime.strptime(data_vencimento_primeira_str, '%Y-%m-%d').date()
@@ -958,11 +1042,11 @@ def cadastro_venda_direta(request):
                     captador=captador_user,
                     consultor=request.user,
                     valor_total=valor_total,
-                    valor_entrada=valor_entrada,
-                    sem_entrada=(valor_entrada == 0),
+                    valor_entrada=valor_entrada_total,  # Soma das entradas
+                    sem_entrada=(valor_entrada_total == 0),
                     quantidade_parcelas=quantidade_parcelas,
                     valor_parcela=valor_parcela,
-                    forma_entrada=forma_entrada,
+                    forma_entrada=forma_pagamento_entrada_1,  # Forma da primeira entrada
                     forma_pagamento=forma_parcelas,
                     frequencia_pagamento=frequencia,
                     data_vencimento_primeira=data_vencimento_primeira,
@@ -979,6 +1063,60 @@ def cadastro_venda_direta(request):
                     )
                 except:
                     pass  # Não bloquear se LogService falhar
+                
+                # ==========================================
+                # ETAPA 2.1: CRIAR ENTRADAS
+                # ==========================================
+                
+                entradas_criadas = []
+                
+                # Criar entrada 1 se tiver valor
+                if valor_entrada_1 > 0 and data_vencimento_entrada_1:
+                    from datetime import datetime
+                    data_venc_1 = datetime.strptime(data_vencimento_entrada_1, '%Y-%m-%d').date()
+                    
+                    entrada1 = EntradaVenda.objects.create(
+                        venda=venda,
+                        numero_entrada=1,
+                        valor=valor_entrada_1,
+                        data_vencimento=data_venc_1,
+                        forma_pagamento=forma_pagamento_entrada_1,
+                        status='PENDENTE'
+                    )
+                    entradas_criadas.append(entrada1)
+                    
+                    try:
+                        LogService.log_info(
+                            'ENTRADA_CRIADA',
+                            f'Entrada 1 criada - Venda #{venda.id} - R$ {valor_entrada_1:.2f}',
+                            usuario=request.user
+                        )
+                    except:
+                        pass
+                
+                # Criar entrada 2 se tiver valor
+                if valor_entrada_2 > 0 and data_vencimento_entrada_2:
+                    from datetime import datetime
+                    data_venc_2 = datetime.strptime(data_vencimento_entrada_2, '%Y-%m-%d').date()
+                    
+                    entrada2 = EntradaVenda.objects.create(
+                        venda=venda,
+                        numero_entrada=2,
+                        valor=valor_entrada_2,
+                        data_vencimento=data_venc_2,
+                        forma_pagamento=forma_pagamento_entrada_2,
+                        status='PENDENTE'
+                    )
+                    entradas_criadas.append(entrada2)
+                    
+                    try:
+                        LogService.log_info(
+                            'ENTRADA_CRIADA',
+                            f'Entrada 2 criada - Venda #{venda.id} - R$ {valor_entrada_2:.2f}',
+                            usuario=request.user
+                        )
+                    except:
+                        pass
                 
                 # ==========================================
                 # ETAPA 3: UPLOAD DE DOCUMENTOS
@@ -1002,7 +1140,7 @@ def cadastro_venda_direta(request):
                 
                 asaas = AsaasService()
                 asaas_customer = None
-                entrada_paga = False
+                entradas_pagas = []
                 
                 try:
                     # 4.1. Criar/atualizar cliente no ASAAS
@@ -1018,20 +1156,57 @@ def cadastro_venda_direta(request):
                         'id_cliente': str(cliente.id),
                     })
                     
-                    # 4.2. Gerar cobrança da ENTRADA
-                    if valor_entrada > 0:
-                        cobranca_entrada = asaas.criar_cobranca({
-                            'customer': asaas_customer['id'],
-                            'billingType': forma_entrada,
-                            'value': float(valor_entrada),
-                            'dueDate': timezone.now().date().isoformat(),
-                            'description': f'Entrada - Venda #{venda.id} - {servico.nome}',
-                            'externalReference': f'venda_{venda.id}_entrada',
-                        })
-                        
-                        # Verificar se já foi pago
-                        if cobranca_entrada.get('status') == 'RECEIVED':
-                            entrada_paga = True
+                    # 4.2. Gerar cobranças para cada ENTRADA
+                    for entrada in entradas_criadas:
+                        try:
+                            cobranca_entrada = asaas.criar_cobranca({
+                                'customer': asaas_customer['id'],
+                                'billingType': entrada.forma_pagamento,
+                                'value': float(entrada.valor),
+                                'dueDate': entrada.data_vencimento.isoformat(),
+                                'description': f'Entrada {entrada.numero_entrada} - Venda #{venda.id} - {servico.nome}',
+                                'externalReference': f'venda_{venda.id}_entrada_{entrada.numero_entrada}',
+                            })
+                            
+                            # Salvar dados da cobrança ASAAS
+                            entrada.asaas_payment_id = cobranca_entrada.get('id')
+                            
+                            # Se for PIX, salvar código e QR Code
+                            if entrada.forma_pagamento == 'PIX':
+                                entrada.pix_code = cobranca_entrada.get('pixCode')
+                                entrada.pix_qr_code_url = cobranca_entrada.get('pixQrCodeUrl')
+                            # Se for BOLETO, salvar dados do boleto
+                            elif entrada.forma_pagamento == 'BOLETO':
+                                entrada.url_boleto = cobranca_entrada.get('bankSlipUrl')
+                                entrada.codigo_barras = cobranca_entrada.get('barCode')
+                            
+                            # Verificar se já foi pago
+                            if cobranca_entrada.get('status') == 'RECEIVED':
+                                entrada.status = 'PAGO'
+                                entrada.data_pagamento = timezone.now()
+                                entradas_pagas.append(entrada.numero_entrada)
+                            
+                            entrada.save()
+                            
+                            try:
+                                LogService.log_info(
+                                    'ASAAS_COBRANCA_CRIADA',
+                                    f'Cobrança ASAAS criada para entrada {entrada.numero_entrada} - Venda #{venda.id}',
+                                    usuario=request.user
+                                )
+                            except:
+                                pass
+                                
+                        except Exception as e:
+                            try:
+                                LogService.log_error(
+                                    'ASAAS_ERRO_ENTRADA',
+                                    f'Erro ao criar cobrança ASAAS para entrada {entrada.numero_entrada}: {str(e)}',
+                                    usuario=request.user
+                                )
+                            except:
+                                pass
+                            messages.warning(request, f'Erro ao gerar cobrança para entrada {entrada.numero_entrada}: {str(e)}')
                     
                     # 4.3. Gerar PARCELAS no sistema (NÃO enviar ao ASAAS ainda)
                     # As parcelas serão enviadas ao ASAAS apenas quando o contrato for assinado
@@ -1106,12 +1281,12 @@ def cadastro_venda_direta(request):
                             pass
                 
                 # 5.2. Comissões da ENTRADA (Captador + Consultor)
-                if valor_entrada > 0:
+                if valor_entrada_total > 0:
                     try:
                         comissoes_entrada = CommissionService.criar_comissao_entrada_venda(venda)
                         
-                        # Se entrada já paga, marcar comissões como pagas
-                        if entrada_paga:
+                        # Se alguma entrada já paga, marcar comissões como pagas
+                        if len(entradas_pagas) > 0:
                             for key in ['captador', 'consultor']:
                                 if key in comissoes_entrada and comissoes_entrada[key]:
                                     comissoes_entrada[key].status = 'paga'
@@ -1157,8 +1332,9 @@ def cadastro_venda_direta(request):
                 
                 msg_sucesso = f'✅ Venda #{venda.id} cadastrada com sucesso!'
                 
-                if valor_entrada > 0:
-                    msg_sucesso += f' | 💰 Entrada: R$ {valor_entrada:.2f}'
+                # Exibir informações das entradas
+                if len(entradas_criadas) > 0:
+                    msg_sucesso += f' | 💰 {len(entradas_criadas)} Entrada(s): R$ {valor_entrada_total:.2f}'
                 
                 if quantidade_parcelas > 0:
                     msg_sucesso += f' | 📅 {quantidade_parcelas}x de R$ {valor_parcela:.2f}'
@@ -1338,7 +1514,19 @@ def cadastro_venda(request, pre_venda_id):
                 
                 # ==== Extrai valores do POST ANTES de usar em qualquer lugar ====
                 quantidade_parcelas = int(request.POST.get('quantidade_parcelas', 1))
-                valor_entrada = desformatar_valor(request.POST.get('valor_entrada', '0'))
+                
+                # Processar múltiplas entradas
+                valor_entrada_1 = desformatar_valor(request.POST.get('valor_entrada_1', '0'))
+                data_vencimento_entrada_1 = request.POST.get('data_vencimento_entrada_1')
+                forma_pagamento_entrada_1 = request.POST.get('forma_pagamento_entrada_1', 'PIX')
+                
+                valor_entrada_2 = desformatar_valor(request.POST.get('valor_entrada_2', '0'))
+                data_vencimento_entrada_2 = request.POST.get('data_vencimento_entrada_2')
+                forma_pagamento_entrada_2 = request.POST.get('forma_pagamento_entrada_2', 'PIX')
+                
+                # Calcular soma das entradas
+                valor_entrada = valor_entrada_1 + valor_entrada_2
+                
                 valor_total = desformatar_valor(request.POST.get('valor_total'))
                 valor_parcela = desformatar_valor(request.POST.get('valor_parcela', '0'))
                 
@@ -1502,7 +1690,7 @@ def cadastro_venda(request, pre_venda_id):
                     quantidade_parcelas=quantidade_parcelas,
                     valor_parcela=valor_parcela,
                     frequencia_pagamento=frequencia,
-                    forma_entrada=request.POST.get('forma_entrada', 'PIX'),
+                    forma_entrada=forma_pagamento_entrada_1,  # Forma da primeira entrada
                     forma_pagamento=request.POST.get('forma_pagamento', 'BOLETO'),
                     data_vencimento_primeira=data_vencimento_primeira,
                     data_inicio_servico=data_inicio_servico if data_inicio_servico else None,
@@ -1515,6 +1703,46 @@ def cadastro_venda(request, pre_venda_id):
                     retirada_travas=request.POST.get('retirada_travas') == 'on',
                     recuperacao_score=request.POST.get('recuperacao_score') == 'on',
                 )
+                
+                print(f"✅ Venda criada com sucesso: ID #{venda.id}")
+                
+                # ==========================================
+                # CRIAR ENTRADAS
+                # ==========================================
+                
+                entradas_criadas = []
+                
+                # Criar entrada 1 se tiver valor
+                if valor_entrada_1 > 0 and data_vencimento_entrada_1:
+                    from datetime import datetime
+                    data_venc_1 = datetime.strptime(data_vencimento_entrada_1, '%Y-%m-%d').date()
+                    
+                    entrada1 = EntradaVenda.objects.create(
+                        venda=venda,
+                        numero_entrada=1,
+                        valor=valor_entrada_1,
+                        data_vencimento=data_venc_1,
+                        forma_pagamento=forma_pagamento_entrada_1,
+                        status='PENDENTE'
+                    )
+                    entradas_criadas.append(entrada1)
+                    print(f"✅ Entrada 1 criada: R$ {valor_entrada_1:.2f} - Vencimento: {data_venc_1}")
+                
+                # Criar entrada 2 se tiver valor
+                if valor_entrada_2 > 0 and data_vencimento_entrada_2:
+                    from datetime import datetime
+                    data_venc_2 = datetime.strptime(data_vencimento_entrada_2, '%Y-%m-%d').date()
+                    
+                    entrada2 = EntradaVenda.objects.create(
+                        venda=venda,
+                        numero_entrada=2,
+                        valor=valor_entrada_2,
+                        data_vencimento=data_venc_2,
+                        forma_pagamento=forma_pagamento_entrada_2,
+                        status='PENDENTE'
+                    )
+                    entradas_criadas.append(entrada2)
+                    print(f"✅ Entrada 2 criada: R$ {valor_entrada_2:.2f} - Vencimento: {data_venc_2}")
                 
                 # Upload de documentos
                 documentos = request.FILES.getlist('documentos')
@@ -1529,9 +1757,11 @@ def cadastro_venda(request, pre_venda_id):
                         usuario_upload=request.user,
                     )
                 
-                # Gera cobrança PIX no ASAAS se entrada > 0
+                # ==========================================
+                # INTEGRAÇÃO ASAAS - Gerar cobranças para cada entrada
+                # ==========================================
                 pix_entrada = None
-                if venda.valor_entrada > 0:
+                if len(entradas_criadas) > 0:
                     try:
                         asaas = AsaasService()
                         
@@ -1570,81 +1800,93 @@ def cadastro_venda(request, pre_venda_id):
                             else:
                                 raise ValueError(f"Falha ao criar cliente no ASAAS: {customer_data}")
                         
-                        # Verifica se temos customer_id válido antes de criar cobrança
+                        # Verifica se temos customer_id válido antes de criar cobranças
                         if cliente_asaas.asaas_customer_id:
-                            print(f"🔄 Gerando PIX de entrada: R$ {venda.valor_entrada}")
-                            # Gera cobrança PIX para entrada (criar_cobranca espera chaves específicas)
-                            payment_data = {
-                                'customer_id': cliente_asaas.asaas_customer_id,
-                                'billing_type': 'PIX',
-                                'value': float(venda.valor_entrada),
-                                'due_date': timezone.now().date().isoformat(),
-                                'description': f'Entrada - Venda #{venda.id} - {lead.nome_completo}',
-                                'external_reference': f'venda_{venda.id}_entrada',
-                            }
-                            cobranca = asaas.criar_cobranca(payment_data)
+                            print(f"🔄 Gerando cobranças para {len(entradas_criadas)} entrada(s)...")
                             
-                            print(f"📋 Resposta ASAAS: {cobranca}")
-                            
-                            # Verifica se cobrança foi criada com sucesso
-                            if cobranca and 'id' in cobranca:
-                                # Obtém os dados do PIX
-                                pix_code = cobranca.get('pixCopiaECola', '')
-                                pix_qr_url = cobranca.get('encodedImage', '')
-                                
-                                print(f"🔍 Verificando dados do PIX na resposta inicial...")
-                                print(f"   pixCopiaECola presente: {'pixCopiaECola' in cobranca}")
-                                print(f"   encodedImage presente: {'encodedImage' in cobranca}")
-                                
-                                # Se não vier no response inicial, busca explicitamente o QR Code
-                                if not pix_code:
-                                    print("🔄 PIX Code não veio na resposta inicial. Buscando QR Code PIX...")
-                                    qr_data = asaas.obter_qr_code_pix(cobranca['id'])
-                                    print(f"📋 Resposta QR Code: {qr_data}")
+                            # Criar cobrança ASAAS para cada entrada
+                            entradas_com_sucesso = 0
+                            for entrada in entradas_criadas:
+                                try:
+                                    print(f"\n   📌 Processando Entrada {entrada.numero_entrada}:")
+                                    print(f"      Valor: R$ {entrada.valor}")
+                                    print(f"      Vencimento: {entrada.data_vencimento}")
+                                    print(f"      Forma: {entrada.forma_pagamento}")
                                     
-                                    if qr_data:
-                                        pix_code = qr_data.get('payload', '')
-                                        pix_qr_url = qr_data.get('encodedImage', '')
-                                        print(f"   ✅ Payload obtido: {len(pix_code)} caracteres")
-                                        print(f"   ✅ EncodedImage obtido: {len(pix_qr_url)} caracteres")
+                                    # Gera cobrança (PIX ou Boleto)
+                                    payment_data = {
+                                        'customer_id': cliente_asaas.asaas_customer_id,
+                                        'billing_type': entrada.forma_pagamento.upper(),
+                                        'value': float(entrada.valor),
+                                        'due_date': entrada.data_vencimento.strftime('%Y-%m-%d'),
+                                        'description': f'Entrada {entrada.numero_entrada} - Venda #{venda.id} - {lead.nome_completo}',
+                                        'external_reference': f'venda_{venda.id}_entrada_{entrada.numero_entrada}',
+                                    }
+                                    cobranca = asaas.criar_cobranca(payment_data)
+                                    
+                                    print(f"      📋 Resposta ASAAS: {cobranca}")
+                                    
+                                    # Verifica se cobrança foi criada com sucesso
+                                    if cobranca and 'id' in cobranca:
+                                        entrada.asaas_payment_id = cobranca['id']
+                                        
+                                        # Se for PIX, obtém código e QR Code
+                                        if entrada.forma_pagamento.upper() == 'PIX':
+                                            pix_code = cobranca.get('pixCopiaECola', '')
+                                            pix_qr_url = cobranca.get('encodedImage', '')
+                                            
+                                            # Se não vier no response inicial, busca explicitamente
+                                            if not pix_code:
+                                                print("      🔄 Buscando QR Code PIX...")
+                                                qr_data = asaas.obter_qr_code_pix(cobranca['id'])
+                                                if qr_data:
+                                                    pix_code = qr_data.get('payload', '')
+                                                    pix_qr_url = qr_data.get('encodedImage', '')
+                                                    print(f"      ✅ PIX obtido: {len(pix_code)} caracteres")
+                                            
+                                            # Fallback
+                                            if not pix_code:
+                                                pix_code = cobranca.get('invoiceUrl', f'PIX não disponível - Payment ID: {cobranca["id"]}')
+                                            if not pix_qr_url:
+                                                pix_qr_url = cobranca.get('invoiceUrl', '')
+                                            
+                                            entrada.pix_code = pix_code
+                                            entrada.pix_qr_code_url = pix_qr_url
+                                        
+                                        # Se for Boleto, obtém URL
+                                        elif entrada.forma_pagamento.upper() == 'BOLETO':
+                                            entrada.pix_qr_code_url = cobranca.get('bankSlipUrl', cobranca.get('invoiceUrl', ''))
+                                        
+                                        entrada.save()
+                                        entradas_com_sucesso += 1
+                                        print(f"      ✅ Entrada {entrada.numero_entrada} sincronizada com ASAAS: {entrada.asaas_payment_id}")
+                                        
                                     else:
-                                        print("   ⚠️ Falha ao obter QR Code do ASAAS")
-                                
-                                # Fallback para invoiceUrl se ainda não tiver PIX Code
-                                if not pix_code:
-                                    pix_code = cobranca.get('invoiceUrl', f'PIX não disponível - Payment ID: {cobranca["id"]}')
-                                    print(f"   ⚠️ Usando fallback: invoiceUrl")
-                                
-                                if not pix_qr_url:
-                                    pix_qr_url = cobranca.get('invoiceUrl', '')
-                                    print(f"   ⚠️ QR Code URL não disponível, usando invoiceUrl")
-                                
-                                # Salva PIX na tabela PixEntrada
-                                pix_entrada = PixEntrada.objects.create(
-                                    venda=venda,
-                                    asaas_payment_id=cobranca['id'],
-                                    valor=venda.valor_entrada,
-                                    pix_code=pix_code or f'PIX não disponível - ID: {cobranca["id"]}',
-                                    pix_qr_code_url=pix_qr_url or cobranca.get('invoiceUrl', ''),
-                                    status_pagamento='pendente'
-                                )
-                                print(f"✅ PIX Entrada criado: ID={pix_entrada.id}, ASAAS={pix_entrada.asaas_payment_id}")
-                                print(f"   PIX Code: {pix_code[:50]}..." if len(pix_code) > 50 else f"   PIX Code: {pix_code}")
-                                messages.success(request, f'PIX de entrada gerado com sucesso! Valor: R$ {venda.valor_entrada}')
+                                        print(f"      ⚠️ Falha ao criar cobrança para entrada {entrada.numero_entrada}")
+                                        
+                                except Exception as e:
+                                    print(f"      ❌ Erro ao processar entrada {entrada.numero_entrada}: {str(e)}")
+                                    import traceback
+                                    traceback.print_exc()
+                            
+                            # Mensagem final
+                            if entradas_com_sucesso == len(entradas_criadas):
+                                messages.success(request, f'✅ {entradas_com_sucesso} entrada(s) gerada(s) com sucesso!')
+                            elif entradas_com_sucesso > 0:
+                                messages.warning(request, f'⚠️ {entradas_com_sucesso} de {len(entradas_criadas)} entrada(s) gerada(s). Verifique os logs.')
                             else:
-                                print(f"⚠️ Cobrança ASAAS não criada corretamente: {cobranca}")
-                                messages.warning(request, 'Venda cadastrada, mas não foi possível gerar o PIX de entrada no ASAAS.')
+                                messages.warning(request, 'Venda cadastrada, mas não foi possível gerar as cobranças no ASAAS.')
                         else:
-                            print("⚠️ Cliente ASAAS sem ID válido - pulando criação de cobrança")
-                            messages.warning(request, 'Venda cadastrada, mas não foi possível criar cliente no ASAAS para gerar PIX.')
+                            print("⚠️ Cliente ASAAS sem ID válido - pulando criação de cobranças")
+                            messages.warning(request, 'Venda cadastrada, mas não foi possível criar cliente no ASAAS para gerar cobranças.')
                             
                     except Exception as e:
-                        print(f"⚠️ Erro na integração ASAAS (entrada): {str(e)}")
+                        print(f"⚠️ Erro na integração ASAAS (entradas): {str(e)}")
                         import traceback
                         traceback.print_exc()
-                        messages.warning(request, f'Venda cadastrada, mas houve erro ao gerar PIX de entrada: {str(e)}')
+                        messages.warning(request, f'Venda cadastrada, mas houve erro ao gerar cobranças de entrada: {str(e)}')
                 else:
-                    print("ℹ️ Sem valor de entrada - PIX não será gerado")
+                    print("ℹ️ Sem entradas - cobranças não serão geradas")
                 
                 # ============================================================
                 # CRIAR COMISSÕES FUTURAS (ENTRADA + TODAS AS PARCELAS)
@@ -1663,9 +1905,12 @@ def cadastro_venda(request, pre_venda_id):
                     'parcelas_consultor': [],
                 }
                 
-                #COMISSÕES DA ENTRADA (se houver entrada)
-                if venda.valor_entrada > 0 and not venda.sem_entrada:
-                    print(f"\n1️⃣ Criando comissões da ENTRADA (R$ {venda.valor_entrada:.2f})...")
+                # Calcula valor total das entradas
+                valor_total_entradas = sum(e.valor for e in entradas_criadas)
+                
+                #COMISSÕES DA ENTRADA (se houver entradas)
+                if valor_total_entradas > 0 and not venda.sem_entrada:
+                    print(f"\n1️⃣ Criando comissões da ENTRADA (R$ {valor_total_entradas:.2f} - {len(entradas_criadas)} entrada(s))...")
                     try:
                         comissoes_entrada = CommissionService.criar_comissao_entrada_venda(venda)
                         comissoes_criadas_total['entrada_captador'] = comissoes_entrada.get('captador')
@@ -1682,7 +1927,7 @@ def cadastro_venda(request, pre_venda_id):
                         import traceback
                         traceback.print_exc()
                 else:
-                    print(f"\n1️⃣ Sem entrada - comissões da entrada não criadas")
+                    print(f"\n1️⃣ Sem entradas - comissões da entrada não criadas")
                 
                 #GERAR PARCELAS E CRIAR COMISSÕES FUTURAS
                 if venda.quantidade_parcelas > 0:

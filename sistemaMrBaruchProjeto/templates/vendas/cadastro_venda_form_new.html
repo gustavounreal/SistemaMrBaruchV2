@@ -308,28 +308,101 @@
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label" for="valor_entrada">Valor de Entrada</label>
-                            <div class="input-group">
-                                <span class="input-group-text">R$</span>
-                                <input type="text" class="form-control valor-input" name="valor_entrada_display" 
-                                       id="valor_entrada_display">
-                                <input type="hidden" name="valor_entrada" id="valor_entrada" value="0">
+                            <label class="form-label required" for="quantidade_parcelas">Qtd. Parcelas</label>
+                            <input type="number" class="form-control" name="quantidade_parcelas" 
+                                   id="quantidade_parcelas" min="0" value="1" required>
+                            <small class="text-muted">Coloque 0 se pagamento apenas com entrada(s)</small>
+                        </div>
+                    </div>
+
+                    <!-- SEÇÃO DE ENTRADAS -->
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i><strong>Entradas:</strong> Você pode configurar até 2 entradas com valores e datas diferentes
+                    </div>
+
+                    <div id="entradas-container">
+                        <!-- Entrada 1 -->
+                        <div class="card mb-3 entrada-item" data-entrada="1">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="bi bi-cash-stack"></i> Entrada 1</h6>
                             </div>
-                            <div class="form-check mt-2">
-                                <input type="checkbox" class="form-check-input" name="sem_entrada" id="sem_entrada">
-                                <label class="form-check-label" for="sem_entrada">Sem entrada</label>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label required" for="valor_entrada_1_display">Valor da Entrada 1</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="text" class="form-control valor-input valor-entrada" 
+                                                   name="valor_entrada_1_display" id="valor_entrada_1_display" required>
+                                            <input type="hidden" name="valor_entrada_1" id="valor_entrada_1" value="0">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label required" for="data_vencimento_entrada_1">Data de Vencimento</label>
+                                        <input type="date" class="form-control" name="data_vencimento_entrada_1" 
+                                               id="data_vencimento_entrada_1" required>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label required" for="forma_pagamento_entrada_1">Forma de Pagamento</label>
+                                        <select class="form-select" name="forma_pagamento_entrada_1" id="forma_pagamento_entrada_1" required>
+                                            <option value="PIX" selected>PIX</option>
+                                            <option value="BOLETO">Boleto</option>
+                                            <option value="DINHEIRO">Dinheiro</option>
+                                            <option value="CARTAO">Cartão</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Entrada 2 (Opcional - Inicialmente oculta) -->
+                        <div class="card mb-3 entrada-item" id="entrada-2-card" style="display: none;" data-entrada="2">
+                            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="bi bi-cash-stack"></i> Entrada 2 (Opcional)</h6>
+                                <button type="button" class="btn btn-sm btn-danger" id="removerEntrada2">
+                                    <i class="bi bi-x-circle"></i> Remover
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label" for="valor_entrada_2_display">Valor da Entrada 2</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="text" class="form-control valor-input valor-entrada" 
+                                                   name="valor_entrada_2_display" id="valor_entrada_2_display">
+                                            <input type="hidden" name="valor_entrada_2" id="valor_entrada_2" value="0">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label" for="data_vencimento_entrada_2">Data de Vencimento</label>
+                                        <input type="date" class="form-control" name="data_vencimento_entrada_2" 
+                                               id="data_vencimento_entrada_2">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label" for="forma_pagamento_entrada_2">Forma de Pagamento</label>
+                                        <select class="form-select" name="forma_pagamento_entrada_2" id="forma_pagamento_entrada_2">
+                                            <option value="PIX" selected>PIX</option>
+                                            <option value="BOLETO">Boleto</option>
+                                            <option value="DINHEIRO">Dinheiro</option>
+                                            <option value="CARTAO">Cartão</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Botão para adicionar segunda entrada -->
+                    <div class="mb-3" id="btn-adicionar-entrada-container">
+                        <button type="button" class="btn btn-outline-success" id="adicionarEntrada2">
+                            <i class="bi bi-plus-circle"></i> Adicionar Segunda Entrada
+                        </button>
+                    </div>
+
                     <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label required" for="quantidade_parcelas">Qtd. Parcelas</label>
-                            <input type="number" class="form-control" name="quantidade_parcelas" 
-                                   id="quantidade_parcelas" min="1" value="1" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label required" for="valor_parcela">Valor da Parcela</label>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="valor_parcela">Valor da Parcela</label>
                             <div class="input-group">
                                 <span class="input-group-text">R$</span>
                                 <input type="text" class="form-control valor-input" name="valor_parcela_display" 
@@ -337,7 +410,7 @@
                                 <input type="hidden" name="valor_parcela" id="valor_parcela">
                             </div>
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label required" for="frequencia_pagamento">Frequência</label>
                             <select class="form-select" name="frequencia_pagamento" id="frequencia_pagamento" required>
                                 <option value="MENSAL">Mensal</option>
@@ -365,29 +438,20 @@
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label required" for="forma_entrada">Forma de Pag. da Entrada</label>
-                            <select class="form-select" name="forma_entrada" id="forma_entrada" required>
-                                <option value="PIX">PIX</option>
-                                <option value="BOLETO">Boleto</option>
-                                <option value="DINHEIRO">Dinheiro</option>
-                                <option value="CARTAO">Cartão</option>
-                            </select>
+                            <label class="form-label required" for="data_vencimento_primeira">Vencimento da 1ª Parcela</label>
+                            <input type="date" class="form-control" name="data_vencimento_primeira" 
+                                   id="data_vencimento_primeira" required>
+                            <small class="text-muted">Data de vencimento da primeira parcela do financiamento</small>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label required" for="forma_pagamento">Forma de Pag. das Parcelas</label>
-                            <select class="form-select" name="forma_pagamento" id="forma_pagamento" required>
+                            <label class="form-label" for="forma_pagamento">Forma de Pag. das Parcelas</label>
+                            <select class="form-select" name="forma_pagamento" id="forma_pagamento">
                                 <option value="BOLETO">Boleto</option>
                                 <option value="PIX">PIX</option>
                                 <option value="DINHEIRO">Dinheiro</option>
                                 <option value="CARTAO">Cartão</option>
                             </select>
                         </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label required" for="data_vencimento_primeira">Vencimento da 1ª Parcela</label>
-                        <input type="date" class="form-control" name="data_vencimento_primeira" 
-                               id="data_vencimento_primeira" required>
                     </div>
 
                     <div class="mb-3">
@@ -433,9 +497,9 @@
                             <option value="30">30 dias</option>
                             <option value="60">60 dias</option>
                             <option value="90">90 dias</option>
-                            <option value="120" selected>120 dias</option>
+                            <option value="120">120 dias</option>
                             <option value="150">150 dias</option>
-                            <option value="180">180 dias</option>
+                            <option value="180" selected>180 dias</option>
                             <option value="210">210 dias</option>
                             <option value="240">240 dias</option>
                             <option value="270">270 dias</option>
@@ -672,28 +736,168 @@
         const valorTotalHidden = document.getElementById('valor_total');
         aplicarMascaraMoeda(valorTotalDisplay, valorTotalHidden);
 
-        const valorEntradaDisplay = document.getElementById('valor_entrada_display');
-        const valorEntradaHidden = document.getElementById('valor_entrada');
-        aplicarMascaraMoeda(valorEntradaDisplay, valorEntradaHidden);
+        // Múltiplas entradas
+        const valorEntrada1Display = document.getElementById('valor_entrada_1_display');
+        const valorEntrada1Hidden = document.getElementById('valor_entrada_1');
+        aplicarMascaraMoeda(valorEntrada1Display, valorEntrada1Hidden);
+
+        const valorEntrada2Display = document.getElementById('valor_entrada_2_display');
+        const valorEntrada2Hidden = document.getElementById('valor_entrada_2');
+        aplicarMascaraMoeda(valorEntrada2Display, valorEntrada2Hidden);
 
         const valorParcelaDisplay = document.getElementById('valor_parcela_display');
         const valorParcelaHidden = document.getElementById('valor_parcela');
+        
+        // 🔧 MÁSCARA DE CEP
+        const cepInput = document.getElementById('cep');
+        if (cepInput) {
+            cepInput.addEventListener('input', function(e) {
+                let valor = e.target.value.replace(/\D/g, ''); // Remove não-numéricos
+                if (valor.length > 8) valor = valor.substr(0, 8); // Limita a 8 dígitos
+                
+                // Aplica máscara: 00000-000
+                if (valor.length > 5) {
+                    valor = valor.substr(0, 5) + '-' + valor.substr(5);
+                }
+                
+                e.target.value = valor;
+            });
+            console.log('✅ Máscara de CEP aplicada');
+        } else {
+            console.warn('⚠️ Campo CEP não encontrado');
+        }
+        
         // Parcela é readonly, só precisa formatar
         valorParcelaDisplay.addEventListener('focus', function(e) {
             e.target.blur(); // Não permite editar
         });
 
+        // === CONTROLE DE ENTRADAS ===
+        document.getElementById('adicionarEntrada2').addEventListener('click', function() {
+            document.getElementById('entrada-2-card').style.display = 'block';
+            document.getElementById('btn-adicionar-entrada-container').style.display = 'none';
+            
+            // Tornar campos da entrada 2 obrigatórios quando visível
+            document.getElementById('valor_entrada_2_display').required = true;
+            document.getElementById('data_vencimento_entrada_2').required = true;
+            document.getElementById('forma_pagamento_entrada_2').required = true;
+        });
+
+        document.getElementById('removerEntrada2').addEventListener('click', function() {
+            document.getElementById('entrada-2-card').style.display = 'none';
+            document.getElementById('btn-adicionar-entrada-container').style.display = 'block';
+            
+            // Limpar valores e remover obrigatoriedade
+            valorEntrada2Display.value = '';
+            valorEntrada2Hidden.value = '0';
+            document.getElementById('data_vencimento_entrada_2').value = '';
+            document.getElementById('forma_pagamento_entrada_2').value = 'PIX';
+            
+            document.getElementById('valor_entrada_2_display').required = false;
+            document.getElementById('data_vencimento_entrada_2').required = false;
+            document.getElementById('forma_pagamento_entrada_2').required = false;
+            
+            // Recalcular parcelas
+            calcularParcela();
+        });
+
+        // Validação: soma das entradas não pode exceder valor total
+        function validarSomaEntradas() {
+            const valorTotal = desformatarMoeda(valorTotalDisplay.value) || 0;
+            const valorEntrada1 = desformatarMoeda(valorEntrada1Display.value) || 0;
+            const valorEntrada2 = desformatarMoeda(valorEntrada2Display.value) || 0;
+            const somaEntradas = valorEntrada1 + valorEntrada2;
+            
+            if (somaEntradas > valorTotal) {
+                showAlert('A soma das entradas (R$ ' + formatarMoeda(somaEntradas) + ') não pode ser maior que o valor total (R$ ' + formatarMoeda(valorTotal) + ')', 'warning');
+                return false;
+            }
+            return true;
+        }
+
+        // Adicionar listeners para validação
+        valorEntrada1Display.addEventListener('blur', validarSomaEntradas);
+        valorEntrada2Display.addEventListener('blur', validarSomaEntradas);
+        valorTotalDisplay.addEventListener('blur', validarSomaEntradas);
+
         // Inicializa valor total com valor da pré-venda
         const valorInicialTotal = parseFloat('{{ pre_venda.valor_total|default:pre_venda.valor_proposto|unlocalize }}');
-        const valorInicialEntrada = parseFloat('{{ pre_venda.valor_entrada|default:"0"|unlocalize }}');
         const qtdInicialParcelas = parseInt('{{ pre_venda.quantidade_parcelas|default:"1" }}');
         
         valorTotalDisplay.value = formatarMoeda(valorInicialTotal);
         valorTotalHidden.value = (Number(valorInicialTotal) || 0).toFixed(2);
 
-        // Inicializa valor entrada com valor da pré-venda (ou 0)
-        valorEntradaDisplay.value = formatarMoeda(valorInicialEntrada);
-        valorEntradaHidden.value = (Number(valorInicialEntrada) || 0).toFixed(2);
+        // Carregar entradas da pré-venda se existirem
+        try {
+            {% if pre_venda.entradas.exists %}
+                console.log('🔍 Carregando entradas da pré-venda...');
+                let entradasCarregadas = 0;
+                {% for entrada in pre_venda.entradas.all %}
+                    entradasCarregadas++;
+                    console.log('   Entrada {{ entrada.numero_entrada }}: R$ {{ entrada.valor }} - Venc: {{ entrada.data_vencimento|date:"d/m/Y" }} - Forma: {{ entrada.forma_pagamento }}');
+                    
+                    {% if entrada.numero_entrada == 1 %}
+                        valorEntrada1Display.value = formatarMoeda({{ entrada.valor|unlocalize }});
+                        valorEntrada1Hidden.value = ({{ entrada.valor|unlocalize }}).toFixed(2);
+                        document.getElementById('data_vencimento_entrada_1').value = '{{ entrada.data_vencimento|date:"Y-m-d" }}';
+                        document.getElementById('forma_pagamento_entrada_1').value = '{{ entrada.forma_pagamento }}';
+                        console.log('   ✅ Entrada 1 carregada nos campos');
+                    {% elif entrada.numero_entrada == 2 %}
+                        // Mostrar card da entrada 2
+                        const entrada2Card = document.getElementById('entrada-2-card');
+                        const btnAddEntrada2 = document.getElementById('btn-adicionar-entrada-container');
+                        
+                        if (entrada2Card) {
+                            entrada2Card.style.display = 'block';
+                            console.log('   📦 Card Entrada 2 exibido');
+                            
+                            // Tornar campos obrigatórios
+                            const valorEntrada2Req = document.getElementById('valor_entrada_2_display');
+                            const dataEntrada2Req = document.getElementById('data_vencimento_entrada_2');
+                            const formaEntrada2Req = document.getElementById('forma_pagamento_entrada_2');
+                            
+                            if (valorEntrada2Req) valorEntrada2Req.required = true;
+                            if (dataEntrada2Req) dataEntrada2Req.required = true;
+                            if (formaEntrada2Req) formaEntrada2Req.required = true;
+                        } else {
+                            console.error('   ❌ Card entrada-2-card não encontrado!');
+                        }
+                        
+                        if (btnAddEntrada2) {
+                            btnAddEntrada2.style.display = 'none';
+                            console.log('   🔘 Botão adicionar entrada ocultado');
+                        }
+                        
+                        valorEntrada2Display.value = formatarMoeda({{ entrada.valor|unlocalize }});
+                        valorEntrada2Hidden.value = ({{ entrada.valor|unlocalize }}).toFixed(2);
+                        
+                        const dataVenc2 = document.getElementById('data_vencimento_entrada_2');
+                        const formaPgto2 = document.getElementById('forma_pagamento_entrada_2');
+                        
+                        if (dataVenc2) {
+                            dataVenc2.value = '{{ entrada.data_vencimento|date:"Y-m-d" }}';
+                            console.log('   📅 Data vencimento 2:', dataVenc2.value);
+                        }
+                        if (formaPgto2) {
+                            formaPgto2.value = '{{ entrada.forma_pagamento }}';
+                            console.log('   💳 Forma pagamento 2:', formaPgto2.value);
+                        }
+                        
+                        console.log('   ✅ Entrada 2 carregada nos campos e card exibido');
+                    {% endif %}
+                {% endfor %}
+                console.log(`✅ Total de ${entradasCarregadas} entrada(s) carregada(s)`);
+            {% else %}
+                // Fallback: usar valor_entrada da pré-venda se não houver entradas detalhadas
+                console.log('⚠️ Nenhuma entrada detalhada encontrada, usando valor_entrada da pré-venda');
+                const valorInicialEntrada = parseFloat('{{ pre_venda.valor_entrada|default:"0"|unlocalize }}');
+                valorEntrada1Display.value = formatarMoeda(valorInicialEntrada);
+                valorEntrada1Hidden.value = (Number(valorInicialEntrada) || 0).toFixed(2);
+            {% endif %}
+        } catch (erro) {
+            console.error('❌ Erro ao carregar entradas:', erro);
+            console.error('Stack trace:', erro.stack);
+        }
         
         // Inicializa quantidade de parcelas
         document.getElementById('quantidade_parcelas').value = qtdInicialParcelas;
@@ -705,64 +909,55 @@
             document.getElementById('resumoFrequencia').textContent = freq;
         } catch (e) {}
 
-    // Calcular valor da parcela automaticamente
+        // Calcular valor da parcela automaticamente
         valorTotalHidden.addEventListener('change', calcularParcela);
-        valorEntradaHidden.addEventListener('change', calcularParcela);
+        valorEntrada1Hidden.addEventListener('change', calcularParcela);
+        valorEntrada2Hidden.addEventListener('change', calcularParcela);
         document.getElementById('quantidade_parcelas').addEventListener('input', calcularParcela);
 
-    // Calcular inicialmente para preencher o campo de parcela
-    calcularParcela();
-        
-        document.getElementById('sem_entrada').addEventListener('change', function() {
-            const entradaDisplay = document.getElementById('valor_entrada_display');
-            const entradaHidden = document.getElementById('valor_entrada');
-            entradaDisplay.disabled = this.checked;
-            if (this.checked) {
-                entradaDisplay.value = formatarMoeda(0);
-                entradaHidden.value = '0.00';
-            }
-            calcularParcela();
-        });
+        // Calcular inicialmente para preencher o campo de parcela
+        calcularParcela();
 
         function calcularParcela() {
             const total = parseFloat(valorTotalHidden.value) || 0;
-            const entrada = parseFloat(valorEntradaHidden.value) || 0;
-            const qtdParcelas = parseInt(document.getElementById('quantidade_parcelas').value) || 1;
+            const entrada1 = parseFloat(valorEntrada1Hidden.value) || 0;
+            const entrada2 = parseFloat(valorEntrada2Hidden.value) || 0;
+            const entradaTotal = entrada1 + entrada2;
+            const qtdParcelas = parseInt(document.getElementById('quantidade_parcelas').value) || 0;
             
-            // Se a entrada for maior que o total, ajusta para o total
-            let entradaAjustada = entrada;
-            if (entradaAjustada > total) {
-                entradaAjustada = total;
-                // Atualiza campos visuais
-                valorEntradaHidden.value = entradaAjustada.toFixed(2);
-                valorEntradaDisplay.value = formatarMoeda(entradaAjustada);
-                // Mensagem simples ao usuário
-                alert('Valor de entrada não pode ser maior que o valor total. Foi ajustado automaticamente.');
+            // Validar que soma das entradas não excede o total
+            if (entradaTotal > total) {
+                showAlert('Soma das entradas (R$ ' + formatarMoeda(entradaTotal) + ') não pode ser maior que o total (R$ ' + formatarMoeda(total) + ')', 'warning');
+                return;
             }
 
-            const saldo = Math.max(0, total - entradaAjustada);
-            const parcelas = Math.max(1, qtdParcelas);
-            const valorParcela = saldo / parcelas;
-
-            valorParcelaHidden.value = valorParcela.toFixed(2);
-            valorParcelaDisplay.value = formatarMoeda(valorParcela);
+            const saldo = Math.max(0, total - entradaTotal);
+            
+            if (qtdParcelas > 0 && saldo > 0) {
+                const valorParcela = saldo / qtdParcelas;
+                valorParcelaHidden.value = valorParcela.toFixed(2);
+                valorParcelaDisplay.value = formatarMoeda(valorParcela);
+            } else {
+                valorParcelaHidden.value = '0.00';
+                valorParcelaDisplay.value = formatarMoeda(0);
+            }
         }
-
-        // Validação ao alterar valor de entrada (display)
-        document.getElementById('valor_entrada_display').addEventListener('change', function() {
-            // Força recalcular e ajustar
-            calcularParcela();
-        });
 
         // Validação final no submit para garantir integridade
         document.getElementById('vendaForm').addEventListener('submit', function(event) {
             const total = parseFloat(valorTotalHidden.value) || 0;
-            const entrada = parseFloat(valorEntradaHidden.value) || 0;
-            const parcela = parseFloat(document.getElementById('valor_parcela').value) || 0;
+            const entrada1 = parseFloat(valorEntrada1Hidden.value) || 0;
+            const entrada2 = parseFloat(valorEntrada2Hidden.value) || 0;
+            const entradaTotal = entrada1 + entrada2;
 
-            if (entrada > total) {
+            if (entradaTotal > total) {
                 event.preventDefault();
-                alert('O valor de entrada não pode ser maior que o valor total. Ajuste o valor antes de submeter.');
+                showAlert('O valor total das entradas não pode ser maior que o valor total. Ajuste os valores antes de submeter.', 'danger');
+                return false;
+            }
+            
+            if (!validarSomaEntradas()) {
+                event.preventDefault();
                 return false;
             }
 

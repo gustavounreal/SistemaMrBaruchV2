@@ -216,6 +216,61 @@ class Parcela(models.Model):
         unique_together = ['venda', 'numero_parcela']
         ordering = ['venda', 'numero_parcela']
 
+class EntradaVenda(models.Model):
+    """
+    Modelo para gerenciar múltiplas entradas de uma venda.
+    Permite até 2 entradas com valores e datas independentes.
+    """
+    STATUS_CHOICES = [
+        ('PENDENTE', 'Pendente'),
+        ('PAGO', 'Pago'),
+        ('VENCIDO', 'Vencido'),
+        ('CANCELADO', 'Cancelado'),
+    ]
+    
+    FORMA_PAGAMENTO_CHOICES = [
+        ('BOLETO', 'Boleto'),
+        ('PIX', 'PIX'),
+        ('DINHEIRO', 'Dinheiro'),
+        ('CARTAO', 'Cartão'),
+    ]
+    
+    # Relacionamentos
+    venda = models.ForeignKey(Venda, on_delete=models.CASCADE, related_name='entradas')
+    numero_entrada = models.IntegerField(help_text='Número sequencial da entrada (1 ou 2)')
+    
+    # Valores e datas
+    valor = models.DecimalField(max_digits=10, decimal_places=2)
+    data_vencimento = models.DateField(help_text='Data de vencimento da entrada')
+    data_pagamento = models.DateTimeField(null=True, blank=True, help_text='Data do pagamento confirmado')
+    
+    # Forma de pagamento
+    forma_pagamento = models.CharField(max_length=20, choices=FORMA_PAGAMENTO_CHOICES, default='PIX')
+    
+    # Status
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDENTE')
+    
+    # Integração ASAAS
+    asaas_payment_id = models.CharField(max_length=255, blank=True, null=True, help_text='ID da cobrança no ASAAS')
+    pix_code = models.TextField(blank=True, null=True, help_text='Código copia e cola do PIX')
+    pix_qr_code_url = models.TextField(blank=True, null=True, help_text='URL da imagem do QR Code')
+    url_boleto = models.URLField(blank=True, null=True, help_text='URL do boleto')
+    codigo_barras = models.TextField(blank=True, null=True, help_text='Código de barras do boleto')
+    
+    # Timestamps
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    data_atualizacao = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Entrada de Venda"
+        verbose_name_plural = "Entradas de Venda"
+        unique_together = ['venda', 'numero_entrada']
+        ordering = ['venda', 'numero_entrada']
+    
+    def __str__(self):
+        return f"Entrada {self.numero_entrada} - Venda #{self.venda.id} - R$ {self.valor} - {self.status}"
+
+
 class PagamentoPIX(models.Model):
     STATUS_CHOICES = [
         ('PENDENTE', 'Pendente'),
@@ -353,6 +408,44 @@ class PreVenda(models.Model):
         self.save()
         self.lead.status = 'QUALIFICADO'
         self.lead.save()
+
+
+class EntradaPreVenda(models.Model):
+    """
+    Modelo para gerenciar múltiplas entradas de uma pré-venda.
+    Permite até 2 entradas com valores e datas independentes.
+    Facilita a conversão para EntradaVenda quando a pré-venda for aceita.
+    """
+    FORMA_PAGAMENTO_CHOICES = [
+        ('BOLETO', 'Boleto'),
+        ('PIX', 'PIX'),
+        ('DINHEIRO', 'Dinheiro'),
+        ('CARTAO', 'Cartão'),
+    ]
+    
+    # Relacionamentos
+    pre_venda = models.ForeignKey(PreVenda, on_delete=models.CASCADE, related_name='entradas')
+    numero_entrada = models.IntegerField(help_text='Número sequencial da entrada (1 ou 2)')
+    
+    # Valores e datas
+    valor = models.DecimalField(max_digits=10, decimal_places=2)
+    data_vencimento = models.DateField(help_text='Data de vencimento prevista da entrada')
+    
+    # Forma de pagamento prevista
+    forma_pagamento = models.CharField(max_length=20, choices=FORMA_PAGAMENTO_CHOICES, default='PIX')
+    
+    # Timestamps
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    data_atualizacao = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Entrada de Pré-Venda"
+        verbose_name_plural = "Entradas de Pré-Venda"
+        unique_together = ['pre_venda', 'numero_entrada']
+        ordering = ['pre_venda', 'numero_entrada']
+    
+    def __str__(self):
+        return f"Entrada {self.numero_entrada} - Pré-Venda #{self.pre_venda.id} - R$ {self.valor}"
 
 
 class DocumentoVenda(models.Model):

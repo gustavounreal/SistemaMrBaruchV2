@@ -47,25 +47,96 @@
                                     <p><strong>Data:</strong> {{ venda.data_venda|date:"d/m/Y" }}</p>
                                     <p><strong>Serviço:</strong> {{ venda.servico.nome }}</p>
                                     <p><strong>Valor Total:</strong> R$ <span class="format-brl">{{ venda.valor_total|floatformat:2 }}</span></p>
-                                    <p><strong>Entrada:</strong> R$ <span class="format-brl">{{ venda.valor_entrada|floatformat:2 }}</span></p>
-                                    <p><strong>Parcelas:</strong> {{ venda.numero_parcelas }}x</p>
-                                    <p><strong>Forma Pagamento:</strong> {{ venda.get_forma_pagamento_entrada_display }}</p>
+                                    <p><strong>Parcelas:</strong> {{ venda.quantidade_parcelas }}x de R$ {{ venda.valor_parcela|floatformat:2 }}</p>
+                                    <p><strong>Forma Pagamento Parcelas:</strong> {{ venda.get_forma_pagamento_display }}</p>
                                     <p><strong>Status:</strong> 
-                                        {% if venda.status == 'ATIVA' %}
+                                        {% if venda.status == 'CONTRATO_ASSINADO' %}
                                             <span class="badge badge-success">{{ venda.get_status_display }}</span>
-                                        {% elif venda.status == 'PENDENTE' %}
+                                        {% elif venda.status == 'ORCAMENTO' %}
                                             <span class="badge badge-warning">{{ venda.get_status_display }}</span>
-                                        {% elif venda.status == 'CANCELADA' %}
+                                        {% elif venda.status == 'CANCELADO' %}
                                             <span class="badge badge-danger">{{ venda.get_status_display }}</span>
                                         {% else %}
                                             <span class="badge badge-info">{{ venda.get_status_display }}</span>
                                         {% endif %}
                                     </p>
+                                    <p><strong>Captador:</strong> {{ venda.captador.get_full_name }}</p>
                                     <p class="mb-0"><strong>Consultor:</strong> {{ venda.consultor.get_full_name }}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Entradas da Venda -->
+                    {% if venda.entradas.exists %}
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-money-bill-wave"></i> Entradas do Pagamento</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        {% for entrada in venda.entradas.all %}
+                                        <div class="col-md-6 mb-3">
+                                            <div class="card h-100 {% if entrada.status == 'PAGO' %}border-success{% elif entrada.status == 'VENCIDO' %}border-danger{% else %}border-warning{% endif %}">
+                                                <div class="card-header {% if entrada.status == 'PAGO' %}bg-success{% elif entrada.status == 'VENCIDO' %}bg-danger{% else %}bg-warning{% endif %} text-white">
+                                                    <h6 class="mb-0">
+                                                        <i class="fas fa-receipt"></i> Entrada {{ entrada.numero_entrada }}
+                                                        {% if entrada.status == 'PAGO' %}
+                                                            <span class="badge badge-light text-success float-right">✓ PAGO</span>
+                                                        {% elif entrada.status == 'VENCIDO' %}
+                                                            <span class="badge badge-light text-danger float-right">⚠ VENCIDO</span>
+                                                        {% else %}
+                                                            <span class="badge badge-light text-warning float-right">⏳ PENDENTE</span>
+                                                        {% endif %}
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <p><strong>Valor:</strong> R$ {{ entrada.valor|floatformat:2 }}</p>
+                                                    <p><strong>Vencimento:</strong> {{ entrada.data_vencimento|date:"d/m/Y" }}</p>
+                                                    {% if entrada.data_pagamento %}
+                                                    <p><strong>Data Pagamento:</strong> {{ entrada.data_pagamento|date:"d/m/Y H:i" }}</p>
+                                                    {% endif %}
+                                                    <p><strong>Forma:</strong> {{ entrada.get_forma_pagamento_display }}</p>
+                                                    
+                                                    {% if entrada.forma_pagamento == 'PIX' and entrada.pix_code %}
+                                                    <hr>
+                                                    <div class="text-center">
+                                                        {% if entrada.pix_qr_code_url %}
+                                                        <img src="{{ entrada.pix_qr_code_url }}" alt="QR Code PIX" class="img-fluid mb-2" style="max-width: 200px;">
+                                                        {% endif %}
+                                                        <div class="input-group mb-2">
+                                                            <input type="text" class="form-control form-control-sm" value="{{ entrada.pix_code }}" id="pixCode{{ entrada.id }}" readonly>
+                                                            <div class="input-group-append">
+                                                                <button class="btn btn-sm btn-outline-primary" type="button" onclick="copiarPix('pixCode{{ entrada.id }}')">
+                                                                    <i class="fas fa-copy"></i> Copiar
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {% elif entrada.forma_pagamento == 'BOLETO' and entrada.url_boleto %}
+                                                    <hr>
+                                                    <div class="text-center">
+                                                        <a href="{{ entrada.url_boleto }}" target="_blank" class="btn btn-sm btn-primary">
+                                                            <i class="fas fa-barcode"></i> Ver Boleto
+                                                        </a>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    <div class="alert alert-info mt-3 mb-0">
+                                        <strong>Total das Entradas:</strong> R$ {{ venda.valor_entrada|floatformat:2 }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
 
                     <!-- Configuração de Nota Fiscal - COMENTADO TEMPORARIAMENTE -->
                     <!--
@@ -350,5 +421,23 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Script removido - usando collapse ao invés de modal -->
+<script>
+function copiarPix(elementId) {
+    const pixInput = document.getElementById(elementId);
+    pixInput.select();
+    pixInput.setSelectionRange(0, 99999); // Para dispositivos móveis
+    
+    try {
+        document.execCommand('copy');
+        alert('✓ Código PIX copiado!');
+    } catch (err) {
+        // Fallback para navegadores mais novos
+        navigator.clipboard.writeText(pixInput.value).then(function() {
+            alert('✓ Código PIX copiado!');
+        }, function(err) {
+            alert('Erro ao copiar código PIX');
+        });
+    }
+}
+</script>
 {% endblock %}

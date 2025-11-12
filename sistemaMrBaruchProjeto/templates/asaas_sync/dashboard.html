@@ -6,13 +6,48 @@
 
 {% block content %}
 <div class="container-fluid py-4">
+    <!-- Alerta sobre Token Alternativo (Colapsável) -->
+    <div class="mb-3">
+        <button class="btn btn-outline-warning btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#infoSincronizacao" aria-expanded="false" aria-controls="infoSincronizacao">
+            <i class="fas fa-info-circle me-2"></i>Informações sobre Sincronização Alternativa
+            <i class="fas fa-chevron-down ms-2"></i>
+        </button>
+    </div>
+    
+    <div class="collapse" id="infoSincronizacao">
+        <div class="alert alert-warning alert-dismissible" role="alert">
+            <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Informação sobre Sincronização Alternativa</h5>
+            <p class="mb-2">
+                <strong>Asaas 1 (Principal):</strong> Sincroniza com a conta Asaas principal<br>
+                <strong>Asaas 2 (Alternativo):</strong> Sincroniza com uma conta Asaas secundária
+            </p>
+            <hr>
+            <p class="mb-0">
+                <small>
+                    ⚠️ <strong>IMPORTANTE:</strong> Se a sincronização alternativa retornar erro, pode ser:
+                    <br>• Credenciais expiradas
+                    <br>• Credenciais inválidas
+                    <br>• Sem permissões adequadas
+                    <br><br>
+                    💡 <strong>Solução:</strong> Verifique as credenciais da conta Asaas alternativa
+                </small>
+            </p>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </div>
+
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <h2><i class="fas fa-chart-line me-2"></i>Dashboard Asaas - Dados Sincronizados</h2>
-                <button class="btn btn-primary" onclick="sincronizarAgora()">
-                    <i class="fas fa-sync me-2"></i>Sincronizar Agora
-                </button>
+                <div>
+                    <button class="btn btn-primary me-2" onclick="sincronizarAgora()">
+                        <i class="fas fa-sync me-2"></i>Sincronizar(Asaas 1)
+                    </button>
+                    <button class="btn btn-secondary" onclick="sincronizarAsaasAlternativo()">
+                        <i class="fas fa-download me-2"></i>Sincronizar(Asaas 2)
+                    </button>
+                </div>
             </div>
             {% if ultima_sync %}
             <small class="text-muted">
@@ -120,6 +155,8 @@
                                             <span class="badge bg-success">
                                                 {% if item.status == 'RECEIVED' %}Recebida{% else %}Confirmada{% endif %}
                                             </span>
+                                        {% elif item.status == 'RECEIVED_IN_CASH' %}
+                                            <span class="badge bg-success">Recebida em Dinheiro</span>
                                         {% elif item.status == 'PENDING' %}
                                             <span class="badge bg-warning">Pendente</span>
                                         {% elif item.status == 'OVERDUE' %}
@@ -310,6 +347,51 @@ function sincronizarAgora() {
     .then(data => {
         if (data.success) {
             alert('✅ Sincronização concluída com sucesso!\n\n' +
+                  'Clientes: ' + data.log.total_clientes + ' (' + data.log.clientes_novos + ' novos)\n' +
+                  'Cobranças: ' + data.log.total_cobrancas + ' (' + data.log.cobrancas_novas + ' novas)\n' +
+                  'Duração: ' + data.log.duracao + 's');
+            location.reload();
+        } else {
+            alert('❌ Erro na sincronização: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('❌ Erro ao sincronizar: ' + error);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = btnHtml;
+    });
+}
+
+function sincronizarAsaasAlternativo() {
+    if (!confirm('⚠️ ATENÇÃO: Deseja sincronizar dados do Asaas Alternativo?\n\nEsta operação importará dados de outra conta Asaas de PRODUÇÃO.\n\nContinuar?')) {
+        return;
+    }
+    
+    const btn = event.target.closest('button');
+    const btnHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sincronizando...';
+    
+    // Token alternativo para sincronização (AMBIENTE DE PRODUÇÃO)
+    // URL: https://api.asaas.com/v3
+    const tokenAlternativo = '$aact_prod_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OjM5MzQxOTNmLTFjNTAtNDcwNS1hNDQyLTYzYmM0YjBmODU1MTo6JGFhY2hfYWU4YWUxMmEtOTU2Zi00OTJhLTkxYmEtNjE4ZTlhNGFhNjQ3';
+    
+    fetch('{% url "asaas_sync:sincronizar_alternativo" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            token: tokenAlternativo
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ Sincronização do Asaas Alternativo concluída com sucesso!\n\n' +
                   'Clientes: ' + data.log.total_clientes + ' (' + data.log.clientes_novos + ' novos)\n' +
                   'Cobranças: ' + data.log.total_cobrancas + ' (' + data.log.cobrancas_novas + ' novas)\n' +
                   'Duração: ' + data.log.duracao + 's');

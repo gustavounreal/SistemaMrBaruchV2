@@ -153,21 +153,6 @@
             </div>
         </div>
 
-        <!-- Card: Atribuídos Hoje -->
-        <div class="col-md-3">
-            <div class="status-card" onclick="window.location.href='{% url 'compliance:lista_analises' %}?status=ATRIBUIDO'" style="cursor: pointer; border-top: 4px solid #28a745;">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <h6 class="mb-0 text-success">
-                        <i class="bi bi-check-circle"></i> Atribuídos Hoje
-                    </h6>
-                </div>
-                <div class="status-number text-success mb-2">{{ total_atribuidos_hoje }}</div>
-                <button class="btn btn-sm btn-outline-success w-100" onclick="event.stopPropagation(); window.location.href='{% url 'compliance:lista_analises' %}?status=ATRIBUIDO'">
-                    Ver todos
-                </button>
-            </div>
-        </div>
-
         <!-- Card: Aprovados - Aguardando Atribuição -->
         <div class="col-md-3">
             <div class="status-card" onclick="window.location.href='{% url 'compliance:lista_analises' %}?status=APROVADO'" style="cursor: pointer; border-top: 4px solid #fd7e14;">
@@ -178,6 +163,21 @@
                 </div>
                 <div class="status-number mb-2" style="color: #fd7e14;">{{ total_aprovados_aguardando }}</div>
                 <button class="btn btn-sm w-100" style="color: #fd7e14; border-color: #fd7e14;" onclick="event.stopPropagation(); window.location.href='{% url 'compliance:lista_analises' %}?status=APROVADO'">
+                    Ver todos
+                </button>
+            </div>
+        </div>
+
+        <!-- Card: Atribuídos Hoje -->
+        <div class="col-md-3">
+            <div class="status-card" onclick="window.location.href='{% url 'compliance:lista_analises' %}?status=ATRIBUIDO'" style="cursor: pointer; border-top: 4px solid #28a745;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0 text-success">
+                        <i class="bi bi-check-circle"></i> Atribuídos Hoje
+                    </h6>
+                </div>
+                <div class="status-number text-success mb-2">{{ total_atribuidos_hoje }}</div>
+                <button class="btn btn-sm btn-outline-success w-100" onclick="event.stopPropagation(); window.location.href='{% url 'compliance:lista_analises' %}?status=ATRIBUIDO'">
                     Ver todos
                 </button>
             </div>

@@ -38,6 +38,10 @@ class AsaasClienteSyncronizado(models.Model):
     data_criacao_asaas = models.DateTimeField('Criado no Asaas', blank=True, null=True)
     notificacoes_desabilitadas = models.BooleanField('Notificações Desabilitadas', default=False)
     
+    # Campos de controle interno
+    consultor_responsavel = models.CharField('Consultor Responsável', max_length=255, blank=True, null=True)
+    servico_concluido = models.BooleanField('Serviço Concluído', default=False)
+    
     # Controle de sincronização
     sincronizado_em = models.DateTimeField('Sincronizado em', auto_now=True)
     criado_em = models.DateTimeField('Criado em', auto_now_add=True)
@@ -55,6 +59,39 @@ class AsaasClienteSyncronizado(models.Model):
     
     def __str__(self):
         return f"{self.nome} ({self.asaas_customer_id})"
+    
+    def get_valor_total_servico(self):
+        """Calcula o valor total de todas as cobranças do cliente"""
+        from django.db.models import Sum
+        total = self.cobrancas.aggregate(total=Sum('valor'))['total']
+        return total or 0
+    
+    def get_cobrancas_vencidas(self):
+        """Retorna cobranças vencidas (OVERDUE) do cliente"""
+        return self.cobrancas.filter(status='OVERDUE')
+    
+    def esta_inadimplente(self):
+        """Verifica se o cliente tem cobranças vencidas"""
+        return self.get_cobrancas_vencidas().exists()
+    
+    def get_periodo_inadimplencia(self):
+        """Retorna o período de inadimplência (data mais antiga até mais recente)"""
+        cobrancas_vencidas = self.get_cobrancas_vencidas().order_by('data_vencimento')
+        if not cobrancas_vencidas.exists():
+            return None
+        
+        primeira = cobrancas_vencidas.first().data_vencimento
+        ultima = cobrancas_vencidas.last().data_vencimento
+        
+        if primeira == ultima:
+            return primeira.strftime('%d/%m/%Y')
+        return f"{primeira.strftime('%d/%m/%Y')} a {ultima.strftime('%d/%m/%Y')}"
+    
+    def get_valor_inadimplente(self):
+        """Retorna o valor total das cobranças vencidas"""
+        from django.db.models import Sum
+        total = self.get_cobrancas_vencidas().aggregate(total=Sum('valor'))['total']
+        return total or 0
 
 
 class AsaasCobrancaSyncronizada(models.Model):

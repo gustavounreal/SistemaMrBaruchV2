@@ -64,35 +64,82 @@ def dashboard_asaas_sync(request):
 
 @login_required
 def lista_clientes(request):
-    """Lista todos os clientes sincronizados"""
+    """Lista todos os clientes sincronizados com paginação"""
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
     
     # Filtros
     busca = request.GET.get('busca', '')
-    estado = request.GET.get('estado', '')
+    inadimplente = request.GET.get('inadimplente', '')
+    servico_concluido = request.GET.get('servico_concluido', '')
+    page = request.GET.get('page', 1)
     
-    clientes = AsaasClienteSyncronizado.objects.all()
+    clientes = AsaasClienteSyncronizado.objects.prefetch_related('cobrancas').all()
     
+    # Filtro por nome, CPF ou CNPJ
     if busca:
         clientes = clientes.filter(
             Q(nome__icontains=busca) |
-            Q(cpf_cnpj__icontains=busca) |
-            Q(email__icontains=busca)
+            Q(cpf_cnpj__icontains=busca)
         )
     
-    if estado:
-        clientes = clientes.filter(estado=estado)
+    # Filtro por inadimplência
+    if inadimplente:
+        if inadimplente == 'sim':
+            # Clientes com cobranças vencidas
+            clientes_ids = []
+            for cliente in clientes:
+                if cliente.esta_inadimplente():
+                    clientes_ids.append(cliente.id)
+            clientes = clientes.filter(id__in=clientes_ids)
+        elif inadimplente == 'nao':
+            # Clientes sem cobranças vencidas
+            clientes_ids = []
+            for cliente in clientes:
+                if not cliente.esta_inadimplente():
+                    clientes_ids.append(cliente.id)
+            clientes = clientes.filter(id__in=clientes_ids)
     
-    # Paginação simples (primeiros 100)
-    clientes = clientes[:100]
+    # Filtro por serviço concluído
+    if servico_concluido:
+        if servico_concluido == 'sim':
+            clientes = clientes.filter(servico_concluido=True)
+        elif servico_concluido == 'nao':
+            clientes = clientes.filter(servico_concluido=False)
     
-    # Estados únicos para filtro
-    estados = AsaasClienteSyncronizado.objects.values_list('estado', flat=True).distinct().order_by('estado')
+    # Ordenação
+    clientes = clientes.order_by('nome')
+    
+    # Contagem total antes da paginação
+    total_clientes = clientes.count()
+    
+    # Paginação - 50 clientes por página
+    paginator = Paginator(clientes, 50)
+    
+    try:
+        clientes_paginados = paginator.page(page)
+    except PageNotAnInteger:
+        clientes_paginados = paginator.page(1)
+    except EmptyPage:
+        clientes_paginados = paginator.page(paginator.num_pages)
+    
+    # Preparar dados enriquecidos
+    clientes_dados = []
+    for cliente in clientes_paginados:
+        clientes_dados.append({
+            'cliente': cliente,
+            'valor_total': cliente.get_valor_total_servico(),
+            'esta_inadimplente': cliente.esta_inadimplente(),
+            'periodo_inadimplencia': cliente.get_periodo_inadimplencia(),
+            'valor_inadimplente': cliente.get_valor_inadimplente(),
+        })
     
     context = {
-        'clientes': clientes,
+        'clientes_dados': clientes_dados,
+        'clientes_paginados': clientes_paginados,
+        'total_clientes': total_clientes,
         'busca': busca,
-        'estado': estado,
-        'estados': estados,
+        'inadimplente': inadimplente,
+        'servico_concluido': servico_concluido,
     }
     
     return render(request, 'asaas_sync/lista_clientes.html', context)
@@ -136,7 +183,8 @@ def detalhes_cliente(request, cliente_id):
 
 @login_required
 def lista_cobrancas(request):
-    """Lista todas as cobranças com filtros"""
+    """Lista todas as cobranças com filtros e paginação"""
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
     
     # Filtros
     status = request.GET.get('status', '')
@@ -144,6 +192,7 @@ def lista_cobrancas(request):
     cliente_busca = request.GET.get('cliente', '')
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
+    page = request.GET.get('page', 1)
     
     cobrancas = AsaasCobrancaSyncronizada.objects.select_related('cliente').all()
     
@@ -166,12 +215,26 @@ def lista_cobrancas(request):
         cobrancas = cobrancas.filter(data_vencimento__lte=data_fim)
     
     # Ordenação
-    cobrancas = cobrancas.order_by('-data_vencimento')[:200]
+    cobrancas = cobrancas.order_by('-data_vencimento')
+    
+    # Totais antes da paginação
+    total_cobrancas = cobrancas.count()
+    valor_total = cobrancas.aggregate(Sum('valor'))['valor__sum'] or 0
+    
+    # Paginação - 100 cobranças por página
+    paginator = Paginator(cobrancas, 100)
+    
+    try:
+        cobrancas_paginadas = paginator.page(page)
+    except PageNotAnInteger:
+        cobrancas_paginadas = paginator.page(1)
+    except EmptyPage:
+        cobrancas_paginadas = paginator.page(paginator.num_pages)
     
     # Totais
     totais = {
-        'quantidade': cobrancas.count(),
-        'valor_total': cobrancas.aggregate(Sum('valor'))['valor__sum'] or 0
+        'quantidade': total_cobrancas,
+        'valor_total': valor_total
     }
     
     # Status filtrados para o dropdown
@@ -183,7 +246,9 @@ def lista_cobrancas(request):
     ]
     
     context = {
-        'cobrancas': cobrancas,
+        'cobrancas': cobrancas_paginadas,
+        'cobrancas_paginadas': cobrancas_paginadas,
+        'total_cobrancas': total_cobrancas,
         'status': status,
         'tipo': tipo,
         'cliente_busca': cliente_busca,
@@ -265,3 +330,122 @@ def relatorio_completo(request):
     }
     
     return render(request, 'asaas_sync/relatorio_completo.html', context)
+
+
+@login_required
+def atualizar_cliente(request, cliente_id):
+    """Atualiza dados do cliente (consultor e status do serviço)"""
+    
+    if request.method == 'POST':
+        try:
+            cliente = get_object_or_404(AsaasClienteSyncronizado, id=cliente_id)
+            
+            # Atualizar consultor
+            if 'consultor_responsavel' in request.POST:
+                consultor = request.POST.get('consultor_responsavel', '').strip()
+                cliente.consultor_responsavel = consultor if consultor else None
+            
+            # Atualizar status do serviço
+            if 'servico_concluido' in request.POST:
+                servico = request.POST.get('servico_concluido', 'false')
+                cliente.servico_concluido = servico.lower() == 'true'
+            
+            cliente.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Cliente atualizado com sucesso!',
+                'data': {
+                    'consultor_responsavel': cliente.consultor_responsavel or '',
+                    'servico_concluido': cliente.servico_concluido,
+                }
+            })
+            
+        except Exception as e:
+            logger.error(f"Erro ao atualizar cliente: {str(e)}", exc_info=True)
+            return JsonResponse({
+                'success': False,
+                'message': f'Erro ao atualizar: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({
+        'success': False,
+        'message': 'Método não permitido'
+    }, status=405)
+
+
+@login_required
+def sincronizar_alternativo(request):
+    """Sincroniza dados de uma conta Asaas alternativa usando token temporário"""
+    
+    if request.method == 'POST':
+        try:
+            import json
+            data = json.loads(request.body)
+            token_alternativo = data.get('token', '')
+            
+            if not token_alternativo:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Token não fornecido'
+                }, status=400)
+            
+            logger.info(f"Sincronização alternativa iniciada por {request.user.username}")
+            logger.info(f"Token alternativo: {token_alternativo[:20]}...")
+            
+            # Criar instância do serviço com token alternativo
+            sync_service = AsaasSyncService()
+            
+            # GARANTIR que está usando PRODUÇÃO do Asaas
+            url_producao = 'https://api.asaas.com/v3'
+            sync_service.base_url = url_producao
+            logger.info(f"URL forçada para produção: {url_producao}")
+            
+            # Substituir temporariamente o token
+            token_original = sync_service.api_token
+            url_original = sync_service.base_url
+            sync_service.api_token = token_alternativo
+            sync_service.headers['access_token'] = token_alternativo
+            
+            try:
+                # Executar sincronização
+                log = sync_service.sincronizar_tudo(usuario=request.user)
+                
+                # Verificar se houve erro de autenticação
+                if log.status == 'ERRO' and '401' in str(log.mensagem or ''):
+                    return JsonResponse({
+                        'success': False,
+                        'message': '❌ Credenciais inválidas ou expiradas.\n\nVerifique se as credenciais da conta Asaas alternativa estão corretas e têm permissões adequadas.'
+                    })
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Sincronização alternativa concluída com sucesso!',
+                    'log': {
+                        'id': log.id,
+                        'status': log.status,
+                        'total_clientes': log.total_clientes,
+                        'clientes_novos': log.clientes_novos,
+                        'total_cobrancas': log.total_cobrancas,
+                        'cobrancas_novas': log.cobrancas_novas,
+                        'duracao': log.duracao_segundos,
+                        'mensagem': log.mensagem,
+                    }
+                })
+            finally:
+                # Restaurar token e URL originais
+                sync_service.api_token = token_original
+                sync_service.base_url = url_original
+                sync_service.headers['access_token'] = token_original
+            
+        except Exception as e:
+            logger.error(f"Erro na sincronização alternativa: {str(e)}", exc_info=True)
+            return JsonResponse({
+                'success': False,
+                'message': f'Erro na sincronização: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({
+        'success': False,
+        'message': 'Método não permitido'
+    }, status=405)

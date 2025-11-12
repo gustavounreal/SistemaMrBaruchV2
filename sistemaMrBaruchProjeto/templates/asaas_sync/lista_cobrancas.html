@@ -137,10 +137,86 @@
                         </table>
                     </div>
 
-                    {% if cobrancas %}
+                    <!-- Paginação -->
+                    {% if cobrancas_paginadas.has_other_pages %}
+                    <nav aria-label="Paginação de cobranças" class="mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <small class="text-muted">
+                                    Mostrando {{ cobrancas_paginadas.start_index }} a {{ cobrancas_paginadas.end_index }} 
+                                    de {{ total_cobrancas }} cobranças
+                                </small>
+                            </div>
+                            <div>
+                                <small class="text-muted">
+                                    Página {{ cobrancas_paginadas.number }} de {{ cobrancas_paginadas.paginator.num_pages }}
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <ul class="pagination justify-content-center">
+                            <!-- Primeira página -->
+                            {% if cobrancas_paginadas.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if status %}&status={{ status }}{% endif %}{% if tipo %}&tipo={{ tipo }}{% endif %}{% if cliente_busca %}&cliente={{ cliente_busca }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">
+                                    <i class="fas fa-angle-double-left"></i> Primeira
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ cobrancas_paginadas.previous_page_number }}{% if status %}&status={{ status }}{% endif %}{% if tipo %}&tipo={{ tipo }}{% endif %}{% if cliente_busca %}&cliente={{ cliente_busca }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">
+                                    <i class="fas fa-angle-left"></i> Anterior
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-angle-double-left"></i> Primeira</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-angle-left"></i> Anterior</span>
+                            </li>
+                            {% endif %}
+
+                            <!-- Páginas numeradas -->
+                            {% for num in cobrancas_paginadas.paginator.page_range %}
+                                {% if cobrancas_paginadas.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > cobrancas_paginadas.number|add:'-3' and num < cobrancas_paginadas.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}{% if status %}&status={{ status }}{% endif %}{% if tipo %}&tipo={{ tipo }}{% endif %}{% if cliente_busca %}&cliente={{ cliente_busca }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">
+                                            {{ num }}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            <!-- Última página -->
+                            {% if cobrancas_paginadas.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ cobrancas_paginadas.next_page_number }}{% if status %}&status={{ status }}{% endif %}{% if tipo %}&tipo={{ tipo }}{% endif %}{% if cliente_busca %}&cliente={{ cliente_busca }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">
+                                    Próxima <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ cobrancas_paginadas.paginator.num_pages }}{% if status %}&status={{ status }}{% endif %}{% if tipo %}&tipo={{ tipo }}{% endif %}{% if cliente_busca %}&cliente={{ cliente_busca }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}">
+                                    Última <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Próxima <i class="fas fa-angle-right"></i></span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">Última <i class="fas fa-angle-double-right"></i></span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% else %}
                     <div class="alert alert-info mt-3">
                         <i class="fas fa-info-circle me-2"></i>
-                        Mostrando até 200 cobranças. Use os filtros para refinar a busca.
+                        Total de {{ total_cobrancas }} cobrança(s) encontrada(s).
                     </div>
                     {% endif %}
                 </div>

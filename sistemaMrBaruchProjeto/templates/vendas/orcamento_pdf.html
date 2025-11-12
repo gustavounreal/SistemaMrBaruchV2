@@ -490,23 +490,36 @@
                 <h3>RESUMO FINANCEIRO</h3>
                 
                 {% if venda %}
-                    {% if not venda.sem_entrada %}
-                    <div class="valor-item">
-                        <span>Entrada ({{ venda.get_forma_entrada_display }}):</span>
-                        <span class="valor-moeda"><strong>{{ venda.valor_entrada }}</strong></span>
-                    </div>
+                    <!-- Exibir múltiplas entradas se existirem -->
+                    {% if venda.entradas.all %}
+                        {% for entrada in venda.entradas.all %}
+                        <div class="valor-item">
+                            <span>Entrada {{ entrada.numero_entrada }} ({{ entrada.get_forma_pagamento_display }}) - Venc: {{ entrada.data_vencimento|date:"d/m/Y" }}:</span>
+                            <span class="valor-moeda"><strong>{{ entrada.valor }}</strong></span>
+                        </div>
+                        {% endfor %}
+                        <div class="valor-item" style="border-top: 1px solid #ffc107; padding-top: 6px; margin-top: 3px;">
+                            <span><strong>Total de Entradas:</strong></span>
+                            <span class="valor-moeda"><strong>{{ venda.valor_entrada }}</strong></span>
+                        </div>
+                    {% elif not venda.sem_entrada %}
+                        <div class="valor-item">
+                            <span>Entrada ({{ venda.get_forma_entrada_display }}):</span>
+                            <span class="valor-moeda"><strong>{{ venda.valor_entrada }}</strong></span>
+                        </div>
                     {% else %}
-                    <div class="valor-item">
-                        <span>Entrada:</span>
-                        <span><strong>SEM ENTRADA</strong></span>
-                    </div>
+                        <div class="valor-item">
+                            <span>Entrada:</span>
+                            <span><strong>SEM ENTRADA</strong></span>
+                        </div>
                     {% endif %}
+                    
                     <div class="valor-item">
                         <span>Parcelamento:</span>
                         <span><strong>{{ venda.quantidade_parcelas }}x de <span class="valor-moeda">{{ venda.valor_parcela }}</span> ({{ venda.get_frequencia_pagamento_display }})</strong></span>
                     </div>
                     <div class="valor-item">
-                        <span>Forma de Pagamento:</span>
+                        <span>Forma de Pagamento das Parcelas:</span>
                         <span><strong>{{ venda.get_forma_pagamento_display }}</strong></span>
                     </div>
                     <div class="valor-item total">
@@ -514,16 +527,35 @@
                         <span class="valor-moeda">{{ venda.valor_total }}</span>
                     </div>
                 {% elif pre_venda %}
-                    <div class="valor-item">
-                        <span>Entrada:</span>
-                        <span class="valor-moeda"><strong>{{ pre_venda.valor_entrada|default:'0,00' }}</strong></span>
-                    </div>
+                    <!-- Para pré-venda, exibir múltiplas entradas se existirem -->
+                    {% if pre_venda.entradas.exists %}
+                        {% for entrada in pre_venda.entradas.all %}
+                        <div class="valor-item">
+                            <span>Entrada {{ entrada.numero_entrada }} ({{ entrada.get_forma_pagamento_display }}) - Venc: {{ entrada.data_vencimento|date:"d/m/Y" }}:</span>
+                            <span class="valor-moeda"><strong>{{ entrada.valor }}</strong></span>
+                        </div>
+                        {% endfor %}
+                        <div class="valor-item" style="border-top: 1px solid #ffc107; padding-top: 6px; margin-top: 3px;">
+                            <span><strong>Total de Entradas:</strong></span>
+                            <span class="valor-moeda"><strong>{{ pre_venda.valor_entrada }}</strong></span>
+                        </div>
+                    {% elif pre_venda.valor_entrada and pre_venda.valor_entrada > 0 %}
+                        <div class="valor-item">
+                            <span>Entrada:</span>
+                            <span class="valor-moeda"><strong>{{ pre_venda.valor_entrada }}</strong></span>
+                        </div>
+                    {% else %}
+                        <div class="valor-item">
+                            <span>Entrada:</span>
+                            <span><strong>SEM ENTRADA</strong></span>
+                        </div>
+                    {% endif %}
                     <div class="valor-item">
                         <span>Parcelamento:</span>
                         <span><strong>{{ pre_venda.quantidade_parcelas|default:'1' }}x de <span class="valor-moeda">{{ pre_venda.valor_parcela|default:'0,00' }}</span> ({{ pre_venda.get_frequencia_pagamento_display|default:'Mensal' }})</strong></span>
                     </div>
                     <div class="valor-item">
-                        <span>Forma de Pagamento:</span>
+                        <span>Forma de Pagamento das Parcelas:</span>
                         <span><strong>Boleto</strong></span>
                     </div>
                     <div class="valor-item total">

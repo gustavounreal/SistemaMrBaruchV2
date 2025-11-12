@@ -219,7 +219,9 @@
                     </div>
                      <div class="col-md-3 mb-3">
                         <label class="form-label text-muted">Data de Nascimento</label>
-                        {% if lead.cliente and lead.cliente.data_nascimento %}
+                        {% if lead.data_nascimento %}
+                            <p class="mb-0"><strong>{{ lead.data_nascimento|date:"d/m/Y" }}</strong></p>
+                        {% elif lead.cliente and lead.cliente.data_nascimento %}
                             <p class="mb-0"><strong>{{ lead.cliente.data_nascimento|date:"d/m/Y" }}</strong></p>
                         {% else %}
                             <p class="mb-0"><strong>-</strong></p>

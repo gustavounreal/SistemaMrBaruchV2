@@ -3,6 +3,48 @@
 
 {% block title %}Clientes Asaas - Sistema Mr. Baruch{% endblock %}
 
+{% block extra_css %}
+<style>
+    .status-badge {
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+    .status-inadimplente {
+        background-color: #dc3545;
+        color: white;
+    }
+    .status-adimplente {
+        background-color: #28a745;
+        color: white;
+    }
+    .servico-concluido {
+        color: #28a745;
+        font-size: 1.2rem;
+    }
+    .servico-pendente {
+        color: #dc3545;
+        font-size: 1.2rem;
+    }
+    .edit-field {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 0.9rem;
+    }
+    .edit-field:focus {
+        outline: none;
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+    .btn-save {
+        padding: 2px 8px;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid py-4">
     <div class="row mb-4">
@@ -25,23 +67,28 @@
                 <div class="card-body">
                     <!-- Filtros -->
                     <form method="get" class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <label for="busca" class="form-label">Buscar</label>
+                        <div class="col-md-4">
+                            <label for="busca" class="form-label">Buscar por Nome, CPF ou CNPJ</label>
                             <input type="text" class="form-control" id="busca" name="busca" 
-                                   placeholder="Nome, CPF/CNPJ ou E-mail" value="{{ busca }}">
+                                   placeholder="Digite o nome, CPF ou CNPJ" value="{{ busca }}">
                         </div>
                         <div class="col-md-3">
-                            <label for="estado" class="form-label">Estado</label>
-                            <select class="form-select" id="estado" name="estado">
+                            <label for="inadimplente" class="form-label">Inadimplência</label>
+                            <select class="form-select" id="inadimplente" name="inadimplente">
                                 <option value="">Todos</option>
-                                {% for uf in estados %}
-                                    {% if uf %}
-                                    <option value="{{ uf }}" {% if estado == uf %}selected{% endif %}>{{ uf }}</option>
-                                    {% endif %}
-                                {% endfor %}
+                                <option value="sim" {% if inadimplente == 'sim' %}selected{% endif %}>Sim (Inadimplente)</option>
+                                <option value="nao" {% if inadimplente == 'nao' %}selected{% endif %}>Não (Adimplente)</option>
                             </select>
                         </div>
-                        <div class="col-md-3 d-flex align-items-end">
+                        <div class="col-md-3">
+                            <label for="servico_concluido" class="form-label">Serviço Concluído</label>
+                            <select class="form-select" id="servico_concluido" name="servico_concluido">
+                                <option value="">Todos</option>
+                                <option value="sim" {% if servico_concluido == 'sim' %}selected{% endif %}>Sim</option>
+                                <option value="nao" {% if servico_concluido == 'nao' %}selected{% endif %}>Não</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary w-100">
                                 <i class="fas fa-search me-2"></i>Filtrar
                             </button>
@@ -53,32 +100,63 @@
                         <table class="table table-hover">
                             <thead class="table-dark">
                                 <tr>
-                                    <th>Nome</th>
-                                    <th>CPF/CNPJ</th>
-                                    <th>E-mail</th>
-                                    <th>Telefone</th>
-                                    <th>Cidade/UF</th>
-                                    <th>Sincronizado</th>
-                                    <th>Ações</th>
+                                    <th>Nome / CPF-CNPJ</th>
+                                    <th>Consultor</th>
+                                    <th>Inadimplente</th>
+                                    <th class="text-end">Valor Total</th>
+                                    <th class="text-center">Serviço Concluído</th>
+                                    <th class="text-center">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for cliente in clientes %}
+                                {% for item in clientes_dados %}
                                 <tr>
                                     <td>
-                                        <a href="{% url 'asaas_sync:detalhes_cliente' cliente.id %}" class="text-decoration-none fw-bold">
-                                            {{ cliente.nome }}
+                                        <a href="{% url 'asaas_sync:detalhes_cliente' item.cliente.id %}" class="text-decoration-none fw-bold">
+                                            {{ item.cliente.nome }}
                                         </a>
-                                    </td>
-                                    <td>{{ cliente.cpf_cnpj|default:"-" }}</td>
-                                    <td>{{ cliente.email|default:"-" }}</td>
-                                    <td>{{ cliente.telefone|default:"-" }}</td>
-                                    <td>{{ cliente.cidade|default:"-" }}/{{ cliente.estado|default:"-" }}</td>
-                                    <td>
-                                        <small class="text-muted">{{ cliente.sincronizado_em|date:"d/m/Y H:i" }}</small>
+                                        <br>
+                                        <small class="text-muted">{{ item.cliente.cpf_cnpj|default:"CPF/CNPJ não informado" }}</small>
                                     </td>
                                     <td>
-                                        <a href="{% url 'asaas_sync:detalhes_cliente' cliente.id %}" 
+                                        <input type="text" 
+                                               class="edit-field consultor-field" 
+                                               data-cliente-id="{{ item.cliente.id }}"
+                                               value="{{ item.cliente.consultor_responsavel|default:'' }}"
+                                               placeholder="Digite o nome do consultor"
+                                               style="width: 100%;">
+                                    </td>
+                                    <td>
+                                        {% if item.esta_inadimplente %}
+                                            <span class="status-badge status-inadimplente">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>SIM
+                                            </span>
+                                            <br>
+                                            <small class="text-muted">{{ item.periodo_inadimplencia }}</small>
+                                            <br>
+                                            <small class="text-danger fw-bold">R$ {{ item.valor_inadimplente|floatformat:2 }}</small>
+                                        {% else %}
+                                            <span class="status-badge status-adimplente">
+                                                <i class="fas fa-check-circle me-1"></i>NÃO
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <strong class="fs-5">R$ {{ item.valor_total|floatformat:2 }}</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-link p-0 toggle-servico" 
+                                                data-cliente-id="{{ item.cliente.id }}"
+                                                data-servico-concluido="{{ item.cliente.servico_concluido|yesno:'true,false' }}">
+                                            {% if item.cliente.servico_concluido %}
+                                                <i class="fas fa-check-circle servico-concluido" title="Serviço Concluído"></i>
+                                            {% else %}
+                                                <i class="fas fa-times-circle servico-pendente" title="Serviço Pendente"></i>
+                                            {% endif %}
+                                        </button>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{% url 'asaas_sync:detalhes_cliente' item.cliente.id %}" 
                                            class="btn btn-sm btn-outline-primary" title="Ver Detalhes">
                                             <i class="fas fa-eye"></i>
                                         </a>
@@ -86,7 +164,7 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">
+                                    <td colspan="6" class="text-center text-muted py-4">
                                         <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
                                         Nenhum cliente encontrado
                                     </td>
@@ -96,10 +174,88 @@
                         </table>
                     </div>
 
-                    {% if clientes %}
+                    <!-- Paginação -->
+                    {% if clientes_paginados.has_other_pages %}
+                    <nav aria-label="Paginação de clientes" class="mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <small class="text-muted">
+                                    Mostrando {{ clientes_paginados.start_index }} a {{ clientes_paginados.end_index }} 
+                                    de {{ total_clientes }} clientes
+                                </small>
+                            </div>
+                            <div>
+                                <small class="text-muted">
+                                    Página {{ clientes_paginados.number }} de {{ clientes_paginados.paginator.num_pages }}
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <ul class="pagination justify-content-center">
+                            <!-- Primeira página -->
+                            {% if clientes_paginados.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if busca %}&busca={{ busca }}{% endif %}{% if inadimplente %}&inadimplente={{ inadimplente }}{% endif %}{% if servico_concluido %}&servico_concluido={{ servico_concluido }}{% endif %}">
+                                    <i class="fas fa-angle-double-left"></i> Primeira
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ clientes_paginados.previous_page_number }}{% if busca %}&busca={{ busca }}{% endif %}{% if inadimplente %}&inadimplente={{ inadimplente }}{% endif %}{% if servico_concluido %}&servico_concluido={{ servico_concluido }}{% endif %}">
+                                    <i class="fas fa-angle-left"></i> Anterior
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-angle-double-left"></i> Primeira</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-angle-left"></i> Anterior</span>
+                            </li>
+                            {% endif %}
+
+                            <!-- Páginas numeradas -->
+                            {% for num in clientes_paginados.paginator.page_range %}
+                                {% if clientes_paginados.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > clientes_paginados.number|add:'-3' and num < clientes_paginados.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}{% if busca %}&busca={{ busca }}{% endif %}{% if inadimplente %}&inadimplente={{ inadimplente }}{% endif %}{% if servico_concluido %}&servico_concluido={{ servico_concluido }}{% endif %}">
+                                            {{ num }}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            <!-- Última página -->
+                            {% if clientes_paginados.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ clientes_paginados.next_page_number }}{% if busca %}&busca={{ busca }}{% endif %}{% if inadimplente %}&inadimplente={{ inadimplente }}{% endif %}{% if servico_concluido %}&servico_concluido={{ servico_concluido }}{% endif %}">
+                                    Próxima <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ clientes_paginados.paginator.num_pages }}{% if busca %}&busca={{ busca }}{% endif %}{% if inadimplente %}&inadimplente={{ inadimplente }}{% endif %}{% if servico_concluido %}&servico_concluido={{ servico_concluido }}{% endif %}">
+                                    Última <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Próxima <i class="fas fa-angle-right"></i></span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">Última <i class="fas fa-angle-double-right"></i></span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% else %}
                     <div class="alert alert-info mt-3">
                         <i class="fas fa-info-circle me-2"></i>
-                        Mostrando até 100 clientes. Use os filtros para refinar a busca.
+                        Total de {{ total_clientes }} cliente(s) encontrado(s).
+                        <br>
+                        <small><strong>Dica:</strong> Clique no nome do consultor para editar. Clique no ícone de status para marcar o serviço como concluído.</small>
                     </div>
                     {% endif %}
                 </div>
@@ -107,4 +263,96 @@
         </div>
     </div>
 </div>
+
+<script>
+// Função para obter o token CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+// Atualizar consultor ao sair do campo
+document.querySelectorAll('.consultor-field').forEach(field => {
+    field.addEventListener('blur', function() {
+        const clienteId = this.dataset.clienteId;
+        const consultor = this.value.trim();
+        
+        fetch(`/asaas-sync/clientes/${clienteId}/atualizar/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrftoken
+            },
+            body: `consultor_responsavel=${encodeURIComponent(consultor)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Feedback visual
+                this.style.borderColor = '#28a745';
+                setTimeout(() => {
+                    this.style.borderColor = '#ced4da';
+                }, 1000);
+            } else {
+                alert('Erro ao salvar: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao salvar consultor');
+        });
+    });
+});
+
+// Toggle serviço concluído
+document.querySelectorAll('.toggle-servico').forEach(button => {
+    button.addEventListener('click', function() {
+        const clienteId = this.dataset.clienteId;
+        const servicoConcluido = this.dataset.servicoConcluido === 'true';
+        const novoStatus = !servicoConcluido;
+        
+        fetch(`/asaas-sync/clientes/${clienteId}/atualizar/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrftoken
+            },
+            body: `servico_concluido=${novoStatus}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Atualizar ícone
+                const icon = this.querySelector('i');
+                if (novoStatus) {
+                    icon.className = 'fas fa-check-circle servico-concluido';
+                    icon.title = 'Serviço Concluído';
+                } else {
+                    icon.className = 'fas fa-times-circle servico-pendente';
+                    icon.title = 'Serviço Pendente';
+                }
+                this.dataset.servicoConcluido = novoStatus.toString();
+            } else {
+                alert('Erro ao atualizar: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao atualizar status do serviço');
+        });
+    });
+});
+</script>
 {% endblock %}

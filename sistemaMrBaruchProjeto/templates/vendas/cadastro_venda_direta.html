@@ -631,43 +631,145 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label for="valor_entrada">Valor da Entrada <span class="text-danger">*</span></label>
-                                            <div class="input-group">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text">R$</span>
-                                                </div>
-                                                <input type="number" step="0.01" name="valor_entrada" id="valor_entrada" 
-                                                       class="form-control" value="0.00" required min="0">
-                                            </div>
+                                            <label for="numero_parcelas">Número de Parcelas <span class="text-danger">*</span></label>
+                                            <input type="number" name="numero_parcelas" id="numero_parcelas" 
+                                                   class="form-control" value="1" required min="0" max="36">
+                                            <small class="form-text text-muted">Coloque 0 se pagamento apenas com entrada(s)</small>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label for="numero_parcelas">Número de Parcelas <span class="text-danger">*</span></label>
-                                            <input type="number" name="numero_parcelas" id="numero_parcelas" 
-                                                   class="form-control" value="1" required min="1" max="36">
+                                            <label for="frequencia_pagamento">Frequência de Pagamento</label>
+                                            <select name="frequencia_pagamento" id="frequencia_pagamento" class="form-control">
+                                                <option value="MENSAL" selected>Mensal</option>
+                                                <option value="QUINZENAL">Quinzenal</option>
+                                                <option value="SEMANAL">Semanal</option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
 
+                                <!-- SEÇÃO DE ENTRADAS -->
+                                <div class="alert alert-info mt-3">
+                                    <i class="fas fa-info-circle"></i> <strong>Entradas:</strong> Você pode configurar até 2 entradas com valores e datas diferentes
+                                </div>
+
+                                <div id="entradas-container">
+                                    <!-- Entrada 1 -->
+                                    <div class="card mb-3 entrada-item" data-entrada="1">
+                                        <div class="card-header bg-primary text-white">
+                                            <h6 class="mb-0"><i class="fas fa-money-bill-wave"></i> Entrada 1</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="valor_entrada_1">Valor da Entrada 1 <span class="text-danger">*</span></label>
+                                                        <div class="input-group">
+                                                            <div class="input-group-prepend">
+                                                                <span class="input-group-text">R$</span>
+                                                            </div>
+                                                            <input type="number" step="0.01" name="valor_entrada_1" id="valor_entrada_1" 
+                                                                   class="form-control valor-entrada" value="0.00" required min="0">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="data_vencimento_entrada_1">Data de Vencimento <span class="text-danger">*</span></label>
+                                                        <input type="date" name="data_vencimento_entrada_1" id="data_vencimento_entrada_1" 
+                                                               class="form-control" required>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="forma_pagamento_entrada_1">Forma de Pagamento <span class="text-danger">*</span></label>
+                                                        <select name="forma_pagamento_entrada_1" id="forma_pagamento_entrada_1" 
+                                                                class="form-control" required>
+                                                            <option value="">Selecione...</option>
+                                                            {% for value, label in formas_pagamento %}
+                                                                <option value="{{ value }}" {% if value == 'PIX' %}selected{% endif %}>{{ label }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Entrada 2 (Opcional - Inicialmente oculta) -->
+                                    <div class="card mb-3 entrada-item" id="entrada-2-card" style="display: none;" data-entrada="2">
+                                        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0"><i class="fas fa-money-bill-wave"></i> Entrada 2 (Opcional)</h6>
+                                            <button type="button" class="btn btn-sm btn-danger" id="removerEntrada2">
+                                                <i class="fas fa-times"></i> Remover
+                                            </button>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="valor_entrada_2">Valor da Entrada 2</label>
+                                                        <div class="input-group">
+                                                            <div class="input-group-prepend">
+                                                                <span class="input-group-text">R$</span>
+                                                            </div>
+                                                            <input type="number" step="0.01" name="valor_entrada_2" id="valor_entrada_2" 
+                                                                   class="form-control valor-entrada" value="0.00" min="0">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="data_vencimento_entrada_2">Data de Vencimento</label>
+                                                        <input type="date" name="data_vencimento_entrada_2" id="data_vencimento_entrada_2" 
+                                                               class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="forma_pagamento_entrada_2">Forma de Pagamento</label>
+                                                        <select name="forma_pagamento_entrada_2" id="forma_pagamento_entrada_2" 
+                                                                class="form-control">
+                                                            <option value="">Selecione...</option>
+                                                            {% for value, label in formas_pagamento %}
+                                                                <option value="{{ value }}" {% if value == 'PIX' %}selected{% endif %}>{{ label }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Botão para adicionar segunda entrada -->
+                                <div class="mb-3" id="btn-adicionar-entrada-container">
+                                    <button type="button" class="btn btn-outline-success" id="adicionarEntrada2">
+                                        <i class="fas fa-plus"></i> Adicionar Segunda Entrada
+                                    </button>
+                                </div>
+
+                                <!-- Informações sobre Parcelas -->
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="forma_pagamento_entrada">Forma de Pagamento <span class="text-danger">*</span></label>
-                                            <select name="forma_pagamento_entrada" id="forma_pagamento_entrada" 
-                                                    class="form-control" required>
+                                            <label for="forma_pagamento_parcelas">Forma de Pagamento das Parcelas</label>
+                                            <select name="forma_pagamento_parcelas" id="forma_pagamento_parcelas" 
+                                                    class="form-control">
                                                 <option value="">Selecione...</option>
                                                 {% for value, label in formas_pagamento %}
-                                                    <option value="{{ value }}">{{ label }}</option>
+                                                    <option value="{{ value }}" {% if value == 'BOLETO' %}selected{% endif %}>{{ label }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="data_vencimento">Data 1º Vencimento <span class="text-danger">*</span></label>
-                                            <input type="date" name="data_vencimento" id="data_vencimento" 
-                                                   class="form-control" required>
+                                            <label for="data_vencimento_primeira_parcela">Data 1ª Parcela</label>
+                                            <input type="date" name="data_vencimento_primeira_parcela" id="data_vencimento_primeira_parcela" 
+                                                   class="form-control">
+                                            <small class="form-text text-muted">Deixe em branco se não houver parcelas</small>
                                         </div>
                                     </div>
                                 </div>
@@ -733,6 +835,50 @@ document.getElementById('addDocumento').addEventListener('click', function() {
     container.appendChild(newItem);
 });
 
+// === CONTROLE DE ENTRADAS ===
+document.getElementById('adicionarEntrada2').addEventListener('click', function() {
+    document.getElementById('entrada-2-card').style.display = 'block';
+    document.getElementById('btn-adicionar-entrada-container').style.display = 'none';
+    
+    // Tornar campos da entrada 2 obrigatórios quando visível
+    document.getElementById('valor_entrada_2').required = true;
+    document.getElementById('data_vencimento_entrada_2').required = true;
+    document.getElementById('forma_pagamento_entrada_2').required = true;
+});
+
+document.getElementById('removerEntrada2').addEventListener('click', function() {
+    document.getElementById('entrada-2-card').style.display = 'none';
+    document.getElementById('btn-adicionar-entrada-container').style.display = 'block';
+    
+    // Limpar valores e remover obrigatoriedade
+    document.getElementById('valor_entrada_2').value = '0.00';
+    document.getElementById('valor_entrada_2').required = false;
+    document.getElementById('data_vencimento_entrada_2').value = '';
+    document.getElementById('data_vencimento_entrada_2').required = false;
+    document.getElementById('forma_pagamento_entrada_2').value = '';
+    document.getElementById('forma_pagamento_entrada_2').required = false;
+});
+
+// Validação: soma das entradas não pode exceder valor total
+document.querySelectorAll('.valor-entrada, #valor_total').forEach(function(input) {
+    input.addEventListener('input', function() {
+        validarSomaEntradas();
+    });
+});
+
+function validarSomaEntradas() {
+    const valorTotal = parseFloat(document.getElementById('valor_total').value) || 0;
+    const valorEntrada1 = parseFloat(document.getElementById('valor_entrada_1').value) || 0;
+    const valorEntrada2 = parseFloat(document.getElementById('valor_entrada_2').value) || 0;
+    const somaEntradas = valorEntrada1 + valorEntrada2;
+    
+    if (somaEntradas > valorTotal) {
+        alert('⚠️ A soma das entradas (R$ ' + somaEntradas.toFixed(2) + ') não pode ser maior que o valor total (R$ ' + valorTotal.toFixed(2) + ')');
+        return false;
+    }
+    return true;
+}
+
 // Preencher valor total ao selecionar serviço
 document.getElementById('servico').addEventListener('change', function() {
     const selectedOption = this.options[this.selectedIndex];
@@ -789,8 +935,13 @@ document.getElementById('cep').addEventListener('blur', function() {
     }
 });
 
-// Define data mínima como hoje
-document.getElementById('data_vencimento').valueAsDate = new Date();
+// Define data mínima como hoje para todas as datas
+const hoje = new Date().toISOString().split('T')[0];
+document.getElementById('data_vencimento_entrada_1').min = hoje;
+document.getElementById('data_vencimento_entrada_2').min = hoje;
+if (document.getElementById('data_vencimento_primeira_parcela')) {
+    document.getElementById('data_vencimento_primeira_parcela').min = hoje;
+}
 
 // Validação do formulário
 (function() {
@@ -798,6 +949,17 @@ document.getElementById('data_vencimento').valueAsDate = new Date();
     window.addEventListener('load', function() {
         var forms = document.getElementsByClassName('needs-validation');
         Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false || !validarSomaEntradas()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+</script>
             form.addEventListener('submit', function(event) {
                 if (form.checkValidity() === false) {
                     event.preventDefault();

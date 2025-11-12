@@ -48,11 +48,40 @@
                             </div>
                             <div class="col-md-6">
                                 <p class="mb-2"><strong>Valor Total:</strong> R$ {{ pre_venda.valor_total|default:pre_venda.valor_proposto|floatformat:2 }}</p>
-                                {% if pre_venda.valor_entrada %}
-                                <p class="mb-2"><strong>Entrada:</strong> R$ {{ pre_venda.valor_entrada|floatformat:2 }}</p>
+                                
+                                <!-- Exibir entradas detalhadas se existirem -->
+                                {% if pre_venda.entradas.exists %}
+                                    <p class="mb-2"><strong>Entradas:</strong></p>
+                                    <ul class="list-unstyled ps-3">
+                                        {% for entrada in pre_venda.entradas.all %}
+                                        <li class="mb-1">
+                                            <i class="fas fa-arrow-right text-primary"></i>
+                                            <strong>Entrada {{ entrada.numero_entrada }}:</strong> 
+                                            R$ {{ entrada.valor|floatformat:2 }} 
+                                            ({{ entrada.get_forma_pagamento_display }})
+                                            <br>
+                                            <small class="text-muted ms-4">
+                                                Vencimento: {{ entrada.data_vencimento|date:"d/m/Y" }}
+                                            </small>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                    <p class="mb-2">
+                                        <strong>Total de Entradas:</strong> 
+                                        <span class="text-success">R$ {{ pre_venda.valor_entrada|floatformat:2 }}</span>
+                                    </p>
+                                {% elif pre_venda.valor_entrada and pre_venda.valor_entrada > 0 %}
+                                    <p class="mb-2"><strong>Entrada Total:</strong> R$ {{ pre_venda.valor_entrada|floatformat:2 }}</p>
+                                    <p class="mb-0 text-muted small">
+                                        <i class="fas fa-info-circle"></i> 
+                                        Entrada poderá ser dividida em até 2 pagamentos
+                                    </p>
+                                {% else %}
+                                    <p class="mb-2"><strong>Entrada:</strong> <span class="text-muted">Sem entrada</span></p>
                                 {% endif %}
+                                
                                 {% if pre_venda.quantidade_parcelas and pre_venda.valor_parcela %}
-                                <p class="mb-2">
+                                <p class="mb-2 mt-2">
                                     <strong>Parcelamento:</strong> 
                                     {{ pre_venda.quantidade_parcelas }}x de R$ {{ pre_venda.valor_parcela|floatformat:2 }}
                                     <span class="text-muted">({{ pre_venda.get_frequencia_pagamento_display|default:"Mensal" }})</span>

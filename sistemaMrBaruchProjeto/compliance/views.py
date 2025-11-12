@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.urls import reverse
+from django.core.files.base import ContentFile
 from .models import (
     AnaliseCompliance, GestaoDocumentosPosVenda, HistoricoAnaliseCompliance,
     StatusAnaliseCompliance, ClassificacaoLead, StatusPosVendaCompliance,
@@ -20,9 +21,102 @@ from .services import (
 from marketing.models import Lead
 from vendas.models import PreVenda, Venda
 import json
+import io
 from datetime import datetime, timedelta
 
 User = get_user_model()
+
+
+def comprimir_pdf(arquivo):
+    """
+    Comprime um arquivo PDF usando PyPDF2 ou pikepdf.
+    Retorna o arquivo comprimido ou o original se falhar/não for PDF.
+    """
+    # Verificar se é PDF
+    if not arquivo.name.lower().endswith('.pdf'):
+        return arquivo
+    
+    try:
+        # Tentar importar pikepdf (melhor compressão)
+        try:
+            import pikepdf
+            
+            # Ler o PDF original
+            arquivo.seek(0)
+            pdf_original = pikepdf.open(arquivo)
+            
+            # Criar buffer para o PDF comprimido
+            buffer = io.BytesIO()
+            
+            # Salvar com compressão (sem linearize que conflita)
+            pdf_original.save(
+                buffer,
+                compress_streams=True,
+                stream_decode_level=pikepdf.StreamDecodeLevel.generalized,
+                object_stream_mode=pikepdf.ObjectStreamMode.generate
+            )
+            pdf_original.close()
+            
+            # Obter tamanho original e comprimido
+            tamanho_original = arquivo.size
+            tamanho_comprimido = buffer.tell()
+            
+            print(f"📦 Compressão PDF: {tamanho_original} bytes → {tamanho_comprimido} bytes ({((tamanho_original - tamanho_comprimido) / tamanho_original * 100):.1f}% redução)")
+            
+            # Se a compressão reduziu significativamente (mais de 5%), usar o comprimido
+            if tamanho_comprimido < tamanho_original * 0.95:
+                buffer.seek(0)
+                return ContentFile(buffer.read(), name=arquivo.name)
+            else:
+                # Se não reduziu muito, retornar original
+                print("⚠️ Compressão não significativa, usando arquivo original")
+                arquivo.seek(0)
+                return arquivo
+                
+        except ImportError:
+            # Se pikepdf não estiver disponível, tentar PyPDF2
+            try:
+                from PyPDF2 import PdfReader, PdfWriter
+                
+                arquivo.seek(0)
+                reader = PdfReader(arquivo)
+                writer = PdfWriter()
+                
+                # Copiar páginas com compressão
+                for page in reader.pages:
+                    page.compress_content_streams()
+                    writer.add_page(page)
+                
+                # Criar buffer para o PDF comprimido
+                buffer = io.BytesIO()
+                writer.write(buffer)
+                
+                # Obter tamanho original e comprimido
+                tamanho_original = arquivo.size
+                tamanho_comprimido = buffer.tell()
+                
+                print(f"📦 Compressão PDF (PyPDF2): {tamanho_original} bytes → {tamanho_comprimido} bytes ({((tamanho_original - tamanho_comprimido) / tamanho_original * 100):.1f}% redução)")
+                
+                # Se a compressão reduziu significativamente, usar o comprimido
+                if tamanho_comprimido < tamanho_original * 0.95:
+                    buffer.seek(0)
+                    return ContentFile(buffer.read(), name=arquivo.name)
+                else:
+                    print("⚠️ Compressão não significativa, usando arquivo original")
+                    arquivo.seek(0)
+                    return arquivo
+                    
+            except ImportError:
+                # Se nenhuma biblioteca estiver disponível, retornar original
+                print("⚠️ Bibliotecas de compressão PDF não disponíveis")
+                arquivo.seek(0)
+                return arquivo
+    
+    except Exception as e:
+        # Em caso de erro, retornar arquivo original
+        print(f"❌ Erro ao comprimir PDF: {str(e)}")
+        arquivo.seek(0)
+        return arquivo
 
 
 def is_compliance(user):
@@ -1464,7 +1558,7 @@ def adicionar_documento_extra(request, venda_id):
 @user_passes_test(is_compliance)
 def upload_documento_levantamento(request, analise_id):
     """
-    Upload de documentos de levantamento.
+    Upload de documentos de levantamento com compressão automática de PDFs.
     """
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': 'Método inválido'}, status=405)
@@ -1482,34 +1576,52 @@ def upload_documento_levantamento(request, analise_id):
         if not tipo:
             return JsonResponse({'success': False, 'message': 'Tipo de documento não informado'})
         
-        # Verificar tamanho do arquivo (max 10MB)
-        max_size = 10 * 1024 * 1024  # 10MB
-        if arquivo.size > max_size:
+        # Tamanho original
+        tamanho_original = arquivo.size
+        
+        # Comprimir PDF se for o caso
+        arquivo_processado = comprimir_pdf(arquivo)
+        tamanho_final = arquivo_processado.size if hasattr(arquivo_processado, 'size') else len(arquivo_processado.read())
+        arquivo_processado.seek(0) if hasattr(arquivo_processado, 'seek') else None
+        
+        # Verificar tamanho do arquivo após compressão (max 50MB)
+        max_size = 50 * 1024 * 1024  # 50MB
+        if tamanho_final > max_size:
             return JsonResponse({
                 'success': False, 
-                'message': 'Arquivo muito grande. Tamanho máximo: 10MB'
+                'message': 'Arquivo muito grande. Tamanho máximo: 50MB'
             })
         
-        # Criar documento
+        # Criar documento com arquivo comprimido
         documento = DocumentoLevantamentoCompliance.objects.create(
             analise=analise,
             tipo=tipo,
-            arquivo=arquivo,
+            arquivo=arquivo_processado,
             descricao=descricao,
             enviado_por=request.user
         )
+        
+        # Calcular redução de tamanho
+        reducao_percentual = 0
+        if tamanho_original > tamanho_final:
+            reducao_percentual = ((tamanho_original - tamanho_final) / tamanho_original) * 100
+        
+        # Mensagem de log
+        mensagem_log = f'Documento adicionado: {documento.get_tipo_display()}'
+        if reducao_percentual > 5:
+            mensagem_log += f' (Comprimido: {reducao_percentual:.1f}% menor)'
         
         # Adicionar ao histórico
         HistoricoAnaliseCompliance.objects.create(
             analise=analise,
             acao='DOCUMENTO_ADICIONADO',
             usuario=request.user,
-            descricao=f'Documento adicionado: {documento.get_tipo_display()} - {descricao}'
+            descricao=mensagem_log
         )
         
         return JsonResponse({
             'success': True,
-            'message': 'Documento enviado com sucesso!',
+            'message': 'Documento enviado com sucesso!' + (f' (Reduzido {reducao_percentual:.1f}%)' if reducao_percentual > 5 else ''),
             'documento': {
                 'id': documento.id,
                 'tipo': documento.get_tipo_display(),

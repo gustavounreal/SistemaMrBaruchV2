@@ -21,8 +21,19 @@
     <div class="row mb-4">
         <div class="col-md-8">
             <div class="card">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h4 class="mb-0"><i class="fas fa-user me-2"></i>{{ cliente.nome }}</h4>
+                    <div>
+                        {% if cliente.servico_concluido %}
+                            <span class="badge bg-success fs-6">
+                                <i class="fas fa-check-circle me-1"></i>Serviço Concluído
+                            </span>
+                        {% else %}
+                            <span class="badge bg-danger fs-6">
+                                <i class="fas fa-times-circle me-1"></i>Serviço Pendente
+                            </span>
+                        {% endif %}
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -41,8 +52,19 @@
                             <p class="mb-2"><strong>Cidade/UF:</strong> {{ cliente.cidade|default:"-" }}/{{ cliente.estado|default:"-" }}</p>
                         </div>
                     </div>
+                    
+                    <!-- Consultor Responsável -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="alert alert-info mb-0">
+                                <strong><i class="fas fa-user-tie me-2"></i>Consultor Responsável:</strong>
+                                <span class="fs-5 ms-2">{{ cliente.consultor_responsavel|default:"Não informado" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
                     {% if cliente.observacoes %}
-                    <div class="alert alert-info mt-3">
+                    <div class="alert alert-secondary mt-3">
                         <strong>Observações:</strong> {{ cliente.observacoes }}
                     </div>
                     {% endif %}
@@ -58,6 +80,42 @@
                     <h2 class="mb-0">{{ stats.total_cobrancas }}</h2>
                 </div>
             </div>
+            
+            <!-- Inadimplência -->
+            {% if cliente.esta_inadimplente %}
+            <div class="card mb-3 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>INADIMPLENTE</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Período:</strong><br>{{ cliente.get_periodo_inadimplencia }}</p>
+                    <p class="mb-0"><strong>Valor:</strong><br>
+                        <span class="text-danger fs-4">R$ {{ cliente.get_valor_inadimplente|floatformat:2 }}</span>
+                    </p>
+                </div>
+            </div>
+            {% else %}
+            <div class="card mb-3 border-success">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="fas fa-check-circle me-2"></i>ADIMPLENTE</h6>
+                </div>
+                <div class="card-body text-center">
+                    <p class="mb-0 text-success">
+                        <i class="fas fa-thumbs-up fa-3x"></i><br>
+                        <small>Sem cobranças vencidas</small>
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Valor Total do Serviço -->
+            <div class="card mb-3 bg-info text-white">
+                <div class="card-body text-center">
+                    <h6 class="text-white-50 mb-2">Valor Total do Serviço</h6>
+                    <h3 class="mb-0">R$ {{ cliente.get_valor_total_servico|floatformat:2 }}</h3>
+                </div>
+            </div>
+            
             <div class="card mb-3 bg-success text-white">
                 <div class="card-body text-center">
                     <h6 class="text-white-50 mb-2">Total Recebido</h6>
