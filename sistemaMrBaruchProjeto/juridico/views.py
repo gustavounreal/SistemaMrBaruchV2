@@ -489,7 +489,7 @@ def gerar_contrato(request, venda_id):
         if venda.recuperacao_score:
             servicos_texto.append("• <b>Restauração do Score</b> (observada a possível variação conforme critérios técnicos dos órgãos de proteção ao crédito). <b>A pontuação voltará a ser o que era antes do nome ser negativado. A pontuação pode variar, mas não abaixará.</b>")
         
-        servicos_texto.append(f"• <b>Entrega do resultado <u>(nada consta)</u></b> em até <b>{dias_uteis} dias úteis</b>, a partir da assinatura do contrato e do pagamento da entrada.")
+        servicos_texto.append(f"• <b>Entrega do resultado <u>(nada consta)</u></b> em até <b>{dias_uteis} dias</b>, a partir da assinatura do contrato e do pagamento da entrada.")
         
         story.append(Paragraph(
             f"1.1. O presente contrato tem por objeto a prestação de serviços especializados pelo <b>CONTRATADO</b> ao <b>CONTRATANTE</b>, visando:<br/><br/>" +
@@ -611,8 +611,8 @@ def gerar_contrato(request, venda_id):
             "em razão dos custos operacionais e administrativos já incorridos.<br/><br/>"
             "<b>5.2. Em caso de rescisão contratual por inadimplemento ou por qualquer outra motivação por parte do CONTRATANTE, "
             "será devida multa rescisória correspondente a 25% (vinte e cinco por cento) sobre o valor total do contrato.</b><br/><br/>"
-            "• <b>Serviço já entregue ou em andamento irreversível:</b> O CONTRATANTE deverá arcar com a multa rescisória de 25% (vinte e cinco por cento) sobre o valor total do contrato, além de não haver devolução dos valores já pagos.<br/><br/>"
-            "• <b>Serviço não iniciado ou passível de interrupção:</b> O CONTRATANTE deverá arcar com a multa rescisória de 25% (vinte e cinco por cento) sobre o valor total do contrato, sendo que os valores já pagos serão deduzidos da multa.<br/><br/>"
+            #"• <b>Serviço já entregue ou em andamento irreversível:</b> O CONTRATANTE deverá arcar com a multa rescisória de 25% (vinte e cinco por cento) sobre o valor total do contrato, além de não haver devolução dos valores já pagos.<br/><br/>"
+            #"• <b>Serviço não iniciado ou passível de interrupção:</b> O CONTRATANTE deverá arcar com a multa rescisória de 25% (vinte e cinco por cento) sobre o valor total do contrato, sendo que os valores já pagos serão deduzidos da multa.<br/><br/>"
             "<b>5.3. As partes reconhecem que os valores já pagos, bem como a multa rescisória, referem-se à compensação pelos custos administrativos, operacionais e lucros cessantes decorrentes da interrupção do contrato, ficando a critério exclusivo do CONTRATADO a aplicação ou não da multa rescisória, conforme análise do caso concreto.</b><br/><br/>",
             paragrafos_com_indentacao
         ))
