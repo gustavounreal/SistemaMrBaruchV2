@@ -418,6 +418,21 @@ def sincronizar_alternativo(request):
                         'message': '❌ Credenciais inválidas ou expiradas.\n\nVerifique se as credenciais da conta Asaas alternativa estão corretas e têm permissões adequadas.'
                     })
                 
+                # Verificar se houve erro de endpoint não encontrado
+                if log.status == 'ERRO' and '404' in str(log.mensagem or ''):
+                    return JsonResponse({
+                        'success': False,
+                        'message': '❌ Erro de comunicação com API Asaas.\n\nEndpoint não encontrado (404). Verifique se a URL da API está correta e se o endpoint existe.'
+                    })
+                
+                # Verificar se houve outros erros
+                if log.status == 'ERRO':
+                    mensagem_erro = log.mensagem or 'Erro desconhecido durante sincronização'
+                    return JsonResponse({
+                        'success': False,
+                        'message': f'❌ Erro durante sincronização:\n\n{mensagem_erro}'
+                    })
+                
                 return JsonResponse({
                     'success': True,
                     'message': 'Sincronização alternativa concluída com sucesso!',
@@ -442,10 +457,11 @@ def sincronizar_alternativo(request):
             logger.error(f"Erro na sincronização alternativa: {str(e)}", exc_info=True)
             return JsonResponse({
                 'success': False,
-                'message': f'Erro na sincronização: {str(e)}'
+                'message': f'❌ Erro na sincronização: {str(e)}'
             }, status=500)
     
     return JsonResponse({
         'success': False,
         'message': 'Método não permitido'
     }, status=405)
+

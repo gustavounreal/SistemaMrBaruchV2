@@ -45,22 +45,31 @@ class AsaasSyncService:
             logger.info(f"Status Code: {response.status_code}")
             logger.info(f"Headers enviados: {self.headers}")
             
-            if response.status_code == 200:
-                try:
-                    return response.json()
-                except ValueError as json_error:
-                    logger.error(f"Resposta não é JSON válido. Conteúdo: {response.text[:500]}")
-                    return None
-            elif response.status_code == 401:
+            # Verificar status code ANTES de tentar parsear JSON
+            if response.status_code == 401:
                 logger.error("❌ ERRO 401: Token de acesso inválido ou expirado")
                 logger.error(f"Token usado: {self.api_token[:10]}...")
                 return None
             elif response.status_code == 403:
                 logger.error("❌ ERRO 403: Sem permissão para acessar este recurso")
                 return None
-            else:
+            elif response.status_code == 404:
+                logger.error(f"❌ ERRO 404: Endpoint não encontrado: {endpoint}")
+                logger.error(f"URL completa: {url}")
+                logger.error(f"Resposta: {response.text[:500]}")
+                return None
+            elif response.status_code != 200:
                 logger.error(f"❌ Erro Asaas {response.status_code}: {response.text[:500]}")
                 return None
+            
+            # Somente tenta parsear JSON se status 200
+            if response.status_code == 200:
+                try:
+                    return response.json()
+                except ValueError as json_error:
+                    logger.error(f"❌ Resposta não é JSON válido. Conteúdo: {response.text[:500]}")
+                    logger.error(f"Erro de parse: {str(json_error)}")
+                    return None
                 
         except requests.exceptions.Timeout:
             logger.error(f"❌ Timeout ao conectar com ASAAS (>{self.timeout}s)")
