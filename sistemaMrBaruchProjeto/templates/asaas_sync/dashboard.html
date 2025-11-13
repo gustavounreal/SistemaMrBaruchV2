@@ -365,14 +365,14 @@ function sincronizarAgora() {
 }
 
 function sincronizarAsaasAlternativo() {
-    if (!confirm('⚠️ ATENÇÃO: Deseja sincronizar dados do Asaas Alternativo?\n\nEsta operação importará dados de outra conta Asaas de PRODUÇÃO.\n\nContinuar?')) {
+    if (!confirm('⚠️ ATENÇÃO: Deseja sincronizar dados do Asaas Alternativo?\n\nEsta operação importará dados de outra conta Asaas de PRODUÇÃO em background.\n\nO processo levará alguns minutos.\n\nContinuar?')) {
         return;
     }
     
     const btn = event.target.closest('button');
     const btnHtml = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sincronizando...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Iniciando...';
     
     // Token armazenado de forma segura no backend
     fetch('{% url "asaas_sync:sincronizar_alternativo" %}', {
@@ -385,19 +385,20 @@ function sincronizarAsaasAlternativo() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('✅ Sincronização do Asaas Alternativo concluída com sucesso!\n\n' +
-                  'Clientes: ' + data.log.total_clientes + ' (' + data.log.clientes_novos + ' novos)\n' +
-                  'Cobranças: ' + data.log.total_cobrancas + ' (' + data.log.cobrancas_novas + ' novas)\n' +
-                  'Duração: ' + data.log.duracao + 's');
-            location.reload();
+            // Sincronização iniciada em background
+            alert(data.message);
+            // Recarregar após 3 segundos para mostrar que o processo iniciou
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
         } else {
-            alert('❌ Erro na sincronização: ' + data.message);
+            alert('❌ Erro: ' + data.message);
+            btn.disabled = false;
+            btn.innerHTML = btnHtml;
         }
     })
     .catch(error => {
         alert('❌ Erro ao sincronizar: ' + error);
-    })
-    .finally(() => {
         btn.disabled = false;
         btn.innerHTML = btnHtml;
     });
