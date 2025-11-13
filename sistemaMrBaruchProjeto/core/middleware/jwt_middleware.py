@@ -27,14 +27,22 @@ class JWTAuthMiddleware(MiddlewareMixin):
             # NÃO retornar aqui - deixar o AuthenticationMiddleware processar
             return None
         
+        # Verificar se há token JWT nos cookies
+        access_token = request.COOKIES.get('access_token')
+        print(f"Token nos cookies: {access_token[:20] if access_token else 'Nenhum'}")
+        
         # Se não há sessão e não há cookies JWT, não tentar autenticar
-        # Isso previne recriar sessão após logout
-        if not request.COOKIES.get('access_token') and not request.COOKIES.get('refresh_token'):
+        if not access_token and not request.COOKIES.get('refresh_token'):
             print("Sem sessão e sem tokens JWT - pulando autenticação")
             return None
             
-        # Tenta autenticação via JWT
+        # Tenta autenticação via JWT dos cookies
         try:
+            if access_token:
+                # Criar header Authorization a partir do cookie
+                request.META['HTTP_AUTHORIZATION'] = f'Bearer {access_token}'
+                print(f"Header Authorization criado a partir do cookie")
+            
             jwt_auth = JWTAuthentication()
             header = jwt_auth.get_header(request)
             
@@ -59,6 +67,8 @@ class JWTAuthMiddleware(MiddlewareMixin):
                     
         except Exception as e:
             print(f"Erro na autenticacao JWT: {str(e)}")
+            import traceback
+            traceback.print_exc()
         
         print(f"=== FIM JWT MIDDLEWARE ===")
         return None

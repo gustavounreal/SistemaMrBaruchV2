@@ -282,12 +282,41 @@ const AuthUtils = {
     redirectToDashboard() {
         try {
             const user = JSON.parse(localStorage.getItem('user_data') || 'null');
-            if (user && Array.isArray(user.groups) && user.groups.includes('atendente')) {
-                
-                window.location.href = '/atendimento/novo/';
-                return;
+            if (user && Array.isArray(user.groups)) {
+                // Redirecionar baseado no grupo do usuário
+                if (user.groups.includes('captador')) {
+                    window.location.href = '/captadores/area/';
+                    return;
+                }
+                if (user.groups.includes('atendente')) {
+                    window.location.href = '/atendimento/novo/';
+                    return;
+                }
+                if (user.groups.includes('compliance')) {
+                    window.location.href = '/compliance/painel/';
+                    return;
+                }
+                if (user.groups.includes('comercial1')) {
+                    window.location.href = '/vendas/';
+                    return;
+                }
+                if (user.groups.includes('comercial2')) {
+                    window.location.href = '/vendas/comercial2/';
+                    return;
+                }
+                if (user.groups.includes('relacionamento')) {
+                    window.location.href = '/relacionamento/';
+                    return;
+                }
+                if (user.groups.includes('cliente')) {
+                    window.location.href = '/clientes/area/';
+                    return;
+                }
             }
-        } catch (err) {}
+        } catch (err) {
+            console.error('Erro ao redirecionar:', err);
+        }
+        // Fallback: redirecionar para dashboard padrão
         window.location.href = '/accounts/dashboard/';
     }
 };
@@ -442,8 +471,12 @@ class AuthForms {
 
             if (response.ok && result.access_token) {
                 AuthUtils.saveTokens(result);
+                localStorage.setItem('user_data', JSON.stringify(result.user));
                 AuthUtils.showAlert('Login realizado com sucesso!', 'success');
-                setTimeout(AuthUtils.redirectToDashboard, 1500);
+                // Aguardar 500ms para garantir que cookies foram salvos
+                setTimeout(() => {
+                    AuthUtils.redirectToDashboard();
+                }, 500);
             } else {
                 AuthUtils.showAlert(result.error || 'Erro no login. Verifique suas credenciais.');
             }
@@ -606,31 +639,15 @@ class AuthForms {
     }
 
     async checkExistingAuth() {
-        const token = localStorage.getItem('access_token');
+        // DESABILITADO: Não verificar autenticação automaticamente na página de login
+        // Isso causava loop infinito após logout
+        // A verificação de autenticação será feita apenas após login bem-sucedido
         
-        if (token && !AuthUtils.isTokenExpired()) {
-            try {
-                const response = await fetch('/accounts/api/profile/', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                if (response.ok) {
-                    AuthUtils.redirectToDashboard();
-                } else {
-                // Token inválido, limpa do localStorage
-                    localStorage.removeItem('access_token');
-                    localStorage.removeItem('refresh_token');
-                    localStorage.removeItem('token_expires');
-                }
-            } catch (error) {
-                console.error('Token validation error:', error);
-                localStorage.removeItem('access_token');
-                localStorage.removeItem('refresh_token');
-                localStorage.removeItem('token_expires');
-            }
-        }
+        // Limpar qualquer token antigo quando estiver na página de login
+        // Isso garante que após logout o usuário não seja redirecionado automaticamente
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('token_expires');
     }
 }
 
