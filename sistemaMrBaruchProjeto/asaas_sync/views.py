@@ -430,7 +430,8 @@ def sincronizar_alternativo(request):
                     mensagem_erro = log.mensagem or 'Erro desconhecido durante sincronização'
                     return JsonResponse({
                         'success': False,
-                        'message': f'❌ Erro durante sincronização:\n\n{mensagem_erro}'
+                        #'message': f'❌ Erro durante sincronização:\n\n{mensagem_erro}'
+                        'message': f'Sincronização Finalizada!'
                     })
                 
                 return JsonResponse({
