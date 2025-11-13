@@ -10,6 +10,9 @@ from django.conf import settings
 from .models import AsaasClienteSyncronizado, AsaasCobrancaSyncronizada, AsaasSyncronizacaoLog
 from .services import AsaasSyncService
 import logging
+import subprocess
+import threading
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -377,88 +380,65 @@ def atualizar_cliente(request, cliente_id):
 
 @login_required
 def sincronizar_alternativo(request):
-    """Sincroniza dados de uma conta Asaas alternativa usando token configurado no backend"""
+    """Sincroniza dados de uma conta Asaas alternativa usando processamento em background"""
     
     if request.method == 'POST':
         try:
-            # Buscar token alternativo das configurações (mais seguro que no frontend)
+            # Buscar token alternativo das configurações
             token_alternativo = getattr(settings, 'ASAAS_ALTERNATIVO_TOKEN', None)
             
             if not token_alternativo:
                 return JsonResponse({
                     'success': False,
-                    'message': '❌ Token alternativo não configurado.\n\nConfigure ASAAS_ALTERNATIVO_TOKEN nas variáveis de ambiente ou settings.py'
+                    'message': '❌ Token alternativo não configurado.\n\nConfigure ASAAS_ALTERNATIVO_TOKEN nas variáveis de ambiente.'
                 }, status=500)
             
             logger.info(f"Sincronização alternativa iniciada por {request.user.username}")
-            logger.info(f"Token alternativo: {token_alternativo[:20]}...")
             
-            # Criar instância do serviço com token alternativo
-            sync_service = AsaasSyncService()
+            # Iniciar sincronização em background usando comando Django
+            def executar_sync():
+                try:
+                    # Caminho para o manage.py
+                    base_dir = settings.BASE_DIR
+                    manage_py = base_dir / 'manage.py'
+                    
+                    # Executar comando em background
+                    python_executable = sys.executable
+                    
+                    comando = [
+                        python_executable,
+                        str(manage_py),
+                        'sincronizar_asaas_alternativo'
+                    ]
+                    
+                    logger.info(f"Executando comando: {' '.join(comando)}")
+                    
+                    # Executar sem bloquear
+                    subprocess.Popen(
+                        comando,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        cwd=str(base_dir)
+                    )
+                    
+                except Exception as e:
+                    logger.error(f"Erro ao iniciar sincronização em background: {str(e)}", exc_info=True)
             
-            # GARANTIR que está usando PRODUÇÃO do Asaas
-            url_producao = 'https://api.asaas.com/v3'
-            sync_service.base_url = url_producao
-            logger.info(f"URL forçada para produção: {url_producao}")
+            # Iniciar thread para não bloquear a resposta HTTP
+            thread = threading.Thread(target=executar_sync)
+            thread.daemon = True
+            thread.start()
             
-            # Substituir temporariamente o token
-            token_original = sync_service.api_token
-            url_original = sync_service.base_url
-            sync_service.api_token = token_alternativo
-            sync_service.headers['access_token'] = token_alternativo
-            
-            try:
-                # Executar sincronização
-                log = sync_service.sincronizar_tudo(usuario=request.user)
-                
-                # Verificar se houve erro de autenticação
-                if log.status == 'ERRO' and '401' in str(log.mensagem or ''):
-                    return JsonResponse({
-                        'success': False,
-                        'message': '❌ Credenciais inválidas ou expiradas.\n\nVerifique se as credenciais da conta Asaas alternativa estão corretas e têm permissões adequadas.'
-                    })
-                
-                # Verificar se houve erro de endpoint não encontrado
-                if log.status == 'ERRO' and '404' in str(log.mensagem or ''):
-                    return JsonResponse({
-                        'success': False,
-                        'message': '❌ Erro de comunicação com API Asaas.\n\nEndpoint não encontrado (404). Verifique se a URL da API está correta e se o endpoint existe.'
-                    })
-                
-                # Verificar se houve outros erros
-                if log.status == 'ERRO':
-                    mensagem_erro = log.mensagem or 'Erro desconhecido durante sincronização'
-                    return JsonResponse({
-                        'success': False,
-                        #'message': f'❌ Erro durante sincronização:\n\n{mensagem_erro}'
-                        'message': f'Sincronização Finalizada!'
-                    })
-                
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Sincronização alternativa concluída com sucesso!',
-                    'log': {
-                        'id': log.id,
-                        'status': log.status,
-                        'total_clientes': log.total_clientes,
-                        'clientes_novos': log.clientes_novos,
-                        'total_cobrancas': log.total_cobrancas,
-                        'cobrancas_novas': log.cobrancas_novas,
-                        'duracao': log.duracao_segundos,
-                        'mensagem': log.mensagem,
-                    }
-                })
-            finally:
-                # Restaurar token e URL originais
-                sync_service.api_token = token_original
-                sync_service.base_url = url_original
-                sync_service.headers['access_token'] = token_original
+            return JsonResponse({
+                'success': True,
+                'message': '🔄 Sincronização iniciada em background!\n\nO processo pode levar alguns minutos. Recarregue a página em instantes para ver os novos dados.'
+            })
             
         except Exception as e:
-            logger.error(f"Erro na sincronização alternativa: {str(e)}", exc_info=True)
+            logger.error(f"Erro ao iniciar sincronização alternativa: {str(e)}", exc_info=True)
             return JsonResponse({
                 'success': False,
-                'message': f'❌ Erro na sincronização: {str(e)}'
+                'message': f'❌ Erro ao iniciar sincronização: {str(e)}'
             }, status=500)
     
     return JsonResponse({
