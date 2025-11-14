@@ -38,14 +38,17 @@
 
     <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2><i class="fas fa-chart-line me-2"></i>Dashboard Asaas - Dados Sincronizados</h2>
-                <div>
-                    <button class="btn btn-primary me-2" onclick="sincronizarAgora()">
-                        <i class="fas fa-sync me-2"></i>Sincronizar(Asaas 1)
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <h2 class="mb-3 mb-md-0"><i class="fas fa-chart-line me-2"></i>Dashboard Asaas - Dados Sincronizados</h2>
+                <div class="d-flex gap-2 flex-wrap justify-content-end">
+                    <button class="btn btn-primary" onclick="sincronizarAgora()" title="Sincroniza TODOS os clientes e cobranças do ASAAS Principal">
+                        <i class="fas fa-sync me-2"></i>Sincronizar Completo (Asaas 1)
                     </button>
-                    <button class="btn btn-secondary" onclick="sincronizarAsaasAlternativo()">
-                        <i class="fas fa-download me-2"></i>Sincronizar(Asaas 2)
+                    <button class="btn btn-secondary" onclick="sincronizarAsaasAlternativo()" title="Sincroniza TODOS os clientes e cobranças do ASAAS Alternativo">
+                        <i class="fas fa-download me-2"></i>Sincronizar Completo (Asaas 2)
+                    </button>
+                    <button class="btn btn-info" onclick="sincronizarBoletosFaltantes()" title="Sincroniza APENAS boletos faltantes dos clientes já cadastrados">
+                        <i class="fas fa-file-invoice me-2"></i>Sincronizar Boletos Faltantes
                     </button>
                 </div>
             </div>
@@ -62,6 +65,96 @@
                 {% endif %}
             </small>
             {% endif %}
+        </div>
+    </div>
+
+    <!-- Card de Progresso da Sincronização (Oculto por padrão) -->
+    <div class="row mb-4" id="cardProgressoSync" style="display: none;">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-sync fa-spin me-2"></i>
+                            <span id="tituloProgresso">Sincronizando Boletos Faltantes...</span>
+                        </h5>
+                        <button type="button" class="btn btn-sm btn-light" onclick="fecharProgresso()" id="btnFecharProgresso" disabled>
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="alert alert-info mb-3" id="statusSyncCard">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <span id="mensagemSyncCard">Iniciando sincronização...</span>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <small class="text-muted">Progresso estimado:</small>
+                                <div class="progress" style="height: 25px;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" 
+                                         role="progressbar" 
+                                         id="barraProgresso"
+                                         style="width: 0%">
+                                        <span id="textoProgresso">Iniciando...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div id="estatisticasSyncCard">
+                                <h6 class="mb-3">Estatísticas em Tempo Real:</h6>
+                                
+                                <div class="card bg-light mb-2">
+                                    <div class="card-body py-2 px-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Clientes:</small>
+                                            <strong id="totalClientesCard">0</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card bg-light mb-2">
+                                    <div class="card-body py-2 px-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Total Cobranças:</small>
+                                            <strong id="totalCobrancasCard">0</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card bg-success text-white mb-2">
+                                    <div class="card-body py-2 px-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small>Novas:</small>
+                                            <strong id="cobrancasNovasCard">0</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card bg-primary text-white mb-2">
+                                    <div class="card-body py-2 px-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small>Atualizadas:</small>
+                                            <strong id="cobrancasAtualizadasCard">0</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3 text-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>
+                                        <span id="duracaoSyncCard">0s</span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -203,6 +296,7 @@
                             <thead>
                                 <tr>
                                     <th>Data/Hora</th>
+                                    <th>Tipo</th>
                                     <th>Status</th>
                                     <th class="text-end">Clientes</th>
                                     <th class="text-end">Cobranças</th>
@@ -212,28 +306,73 @@
                             <tbody>
                                 {% for sync in ultimas_syncs %}
                                 <tr>
-                                    <td>{{ sync.data_inicio|date:"d/m/Y H:i" }}</td>
                                     <td>
-                                        {% if sync.status == 'SUCESSO' %}
-                                            <span class="badge bg-success">{{ sync.get_status_display }}</span>
-                                        {% elif sync.status == 'PARCIAL' %}
-                                            <span class="badge bg-warning">{{ sync.get_status_display }}</span>
+                                        <small>{{ sync.data_inicio|date:"d/m H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        {% if sync.tipo_sincronizacao == 'BOLETOS_FALTANTES' %}
+                                            <span class="badge bg-info" title="Sincronização de Boletos Faltantes">
+                                                <i class="fas fa-file-invoice"></i> Boletos
+                                            </span>
+                                        {% elif sync.tipo_sincronizacao == 'ALTERNATIVO' %}
+                                            <span class="badge bg-secondary" title="Sincronização Alternativa">
+                                                <i class="fas fa-download"></i> Alt
+                                            </span>
                                         {% else %}
-                                            <span class="badge bg-danger">{{ sync.get_status_display }}</span>
+                                            <span class="badge bg-primary" title="Sincronização Completa">
+                                                <i class="fas fa-sync"></i> Completa
+                                            </span>
                                         {% endif %}
                                     </td>
-                                    <td class="text-end">{{ sync.total_clientes }} ({{ sync.clientes_novos }} novos)</td>
-                                    <td class="text-end">{{ sync.total_cobrancas }} ({{ sync.cobrancas_novas }} novas)</td>
-                                    <td class="text-end">{{ sync.duracao_segundos }}s</td>
+                                    <td>
+                                        {% if sync.status == 'SUCESSO' %}
+                                            <span class="badge bg-success">✓</span>
+                                        {% elif sync.status == 'EM_ANDAMENTO' %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-spinner fa-spin"></i>
+                                            </span>
+                                        {% elif sync.status == 'PARCIAL' %}
+                                            <span class="badge bg-warning">⚠</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">✗</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <small>
+                                            {{ sync.total_clientes }}
+                                            {% if sync.clientes_novos > 0 %}
+                                                <span class="text-success">(+{{ sync.clientes_novos }})</span>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td class="text-end">
+                                        <small>
+                                            <strong>{{ sync.total_cobrancas }}</strong>
+                                            {% if sync.cobrancas_novas > 0 %}
+                                                <span class="text-success">(+{{ sync.cobrancas_novas }})</span>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td class="text-end">
+                                        <small>{{ sync.duracao_segundos|default:"-" }}s</small>
+                                    </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted">Nenhuma sincronização realizada</td>
+                                    <td colspan="6" class="text-center text-muted">Nenhuma sincronização realizada</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
+                    {% if ultimas_syncs|length > 0 %}
+                    <div class="mt-2 text-end">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Mostrando últimas 5 sincronizações
+                        </small>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -244,13 +383,86 @@
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title mb-3"><i class="fas fa-link me-2"></i>Links Rápidos</h5>
-                            <div class="d-grid gap-2 d-md-flex">
+                            <div class="d-grid gap-2 d-md-flex mb-3">
                                 <a href="{% url 'asaas_sync:lista_clientes' %}" class="btn btn-outline-primary">
                                     <i class="fas fa-users me-2"></i>Ver Todos os Clientes
                                 </a>
                                 <a href="{% url 'asaas_sync:lista_cobrancas' %}" class="btn btn-outline-success">
                                     <i class="fas fa-receipt me-2"></i>Ver Todas as Cobranças
-                                </a>                                
+                                </a>
+                               <!-- <a href="{% url 'asaas_sync:validar_sincronizacao' %}" class="btn btn-outline-info">
+                                    <i class="fas fa-check-double me-2"></i>Validar Sincronização
+                                </a>-->
+                            </div>
+                            
+                            <hr>
+                            
+                            <h5 class="card-title mb-3"><i class="fas fa-file-excel me-2"></i>Exportar para Excel</h5>
+                            
+                            <!-- Banco de Dados Local -->
+                            <div class="mb-4">
+                                <h6 class="text-muted mb-2"><i class="fas fa-database me-2"></i>Banco de Dados Local</h6>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <a href="{% url 'asaas_sync:exportar_clientes_excel' %}?origem=local" class="btn btn-primary">
+                                        <i class="fas fa-users me-2"></i>Exportar Clientes
+                                    </a>
+                                    <a href="{% url 'asaas_sync:exportar_cobrancas_excel' %}?origem=local" class="btn btn-success">
+                                        <i class="fas fa-receipt me-2"></i>Exportar Cobranças
+                                    </a>
+                                    <a href="{% url 'asaas_sync:exportar_clientes_com_boletos_excel' %}?origem=local" class="btn btn-info">
+                                        <i class="fas fa-file-invoice-dollar me-2"></i>Exportar Completo (Clientes + Boletos)
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- ASAAS Principal 
+                            <div class="mb-4">
+                                <h6 class="text-muted mb-2"><i class="fas fa-cloud me-2"></i>ASAAS Principal</h6>
+                                <div class="d-flex gap-2 flex-wrap mb-2">
+                                    <a href="{% url 'asaas_sync:exportar_clientes_excel' %}?origem=asaas" class="btn btn-outline-primary">
+                                        <i class="fas fa-users me-2"></i>Exportar Clientes
+                                    </a>
+                                    <a href="{% url 'asaas_sync:exportar_cobrancas_excel' %}?origem=asaas" class="btn btn-outline-success">
+                                        <i class="fas fa-receipt me-2"></i>Exportar Cobranças
+                                    </a>
+                                    <a href="{% url 'asaas_sync:exportar_clientes_com_boletos_excel' %}?origem=asaas" class="btn btn-outline-info">
+                                        <i class="fas fa-file-invoice-dollar me-2"></i>Exportar Completo (Clientes + Boletos)
+                                    </a>
+                                </div>
+                               <div class="alert alert-warning mb-0" role="alert">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Atenção:</strong> O token principal está inválido. Use o ASAAS Alternativo.
+                                </div>
+                            </div>-->
+                            
+                            <!-- ASAAS Alternativo 
+                            <div class="mb-3">
+                                <h6 class="text-muted mb-2"><i class="fas fa-cloud me-2"></i>ASAAS Alternativo</h6>
+                                <div class="d-flex gap-2 flex-wrap mb-2">
+                                    <a href="{% url 'asaas_sync:exportar_clientes_excel' %}?origem=asaas&alternativo=true" class="btn btn-warning">
+                                        <i class="fas fa-users me-2"></i>Exportar Clientes
+                                    </a>
+                                    <a href="{% url 'asaas_sync:exportar_cobrancas_excel' %}?origem=asaas&alternativo=true" class="btn btn-warning">
+                                        <i class="fas fa-receipt me-2"></i>Exportar Cobranças
+                                    </a>
+                                    <a href="{% url 'asaas_sync:exportar_clientes_com_boletos_excel' %}?origem=asaas&alternativo=true" class="btn btn-warning">
+                                        <i class="fas fa-file-invoice-dollar me-2"></i>Exportar Completo (Clientes + Boletos)
+                                    </a>
+                                </div>
+                               <div class="alert alert-success mb-0" role="alert">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    <strong>Token Válido:</strong> 1253 clientes disponíveis.
+                                </div>-->
+                            </div>
+                            
+                            <div class="alert alert-info mt-3 mb-0" role="alert">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Sobre as Exportações:</strong><br>
+                                <small>
+                                    • <strong>Banco Local:</strong> Dados já sincronizados no sistema (rápido)<br>
+                                    • <strong>ASAAS:</strong> Dados em tempo real da API (pode demorar alguns minutos)<br>
+                                    • <strong>Completo:</strong> Relatório detalhado com cada cliente e seus boletos
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -323,9 +535,10 @@
         </div>
     </div>
 
-   
-
 <script>
+let intervalCheckStatus = null;
+let tempoInicio = null;
+
 function sincronizarAgora() {
     if (!confirm('Deseja iniciar a sincronização com o Asaas agora? Isso pode levar alguns minutos.')) {
         return;
@@ -402,6 +615,141 @@ function sincronizarAsaasAlternativo() {
         btn.disabled = false;
         btn.innerHTML = btnHtml;
     });
+}
+
+function sincronizarBoletosFaltantes() {
+    if (!confirm('Esta operação vai sincronizar APENAS os boletos faltantes dos clientes já cadastrados.\n\nDeseja continuar?')) {
+        return;
+    }
+    
+    // Mostrar card de progresso
+    document.getElementById('cardProgressoSync').style.display = 'block';
+    document.getElementById('cardProgressoSync').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+    // Resetar estado
+    document.getElementById('mensagemSyncCard').textContent = 'Iniciando sincronização...';
+    document.getElementById('statusSyncCard').className = 'alert alert-info mb-3';
+    document.getElementById('btnFecharProgresso').disabled = true;
+    document.getElementById('barraProgresso').style.width = '10%';
+    document.getElementById('textoProgresso').textContent = 'Iniciando...';
+    
+    // Resetar contadores
+    document.getElementById('totalClientesCard').textContent = '0';
+    document.getElementById('totalCobrancasCard').textContent = '0';
+    document.getElementById('cobrancasNovasCard').textContent = '0';
+    document.getElementById('cobrancasAtualizadasCard').textContent = '0';
+    document.getElementById('duracaoSyncCard').textContent = '0s';
+    
+    tempoInicio = Date.now();
+    
+    fetch('{% url "asaas_sync:sincronizar_boletos_faltantes" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('mensagemSyncCard').textContent = 'Sincronização em andamento...';
+            document.getElementById('barraProgresso').style.width = '30%';
+            document.getElementById('textoProgresso').textContent = 'Processando...';
+            
+            // Iniciar verificação de status
+            verificarStatusSincronizacao(data.log_id);
+        } else {
+            document.getElementById('statusSyncCard').className = 'alert alert-danger mb-3';
+            document.getElementById('mensagemSyncCard').innerHTML = '<i class="fas fa-times-circle me-2"></i>' + data.message;
+            document.getElementById('btnFecharProgresso').disabled = false;
+            document.getElementById('barraProgresso').style.width = '0%';
+            document.getElementById('barraProgresso').classList.remove('progress-bar-animated');
+        }
+    })
+    .catch(error => {
+        document.getElementById('statusSyncCard').className = 'alert alert-danger mb-3';
+        document.getElementById('mensagemSyncCard').innerHTML = '<i class="fas fa-times-circle me-2"></i>Erro: ' + error;
+        document.getElementById('btnFecharProgresso').disabled = false;
+        document.getElementById('barraProgresso').style.width = '0%';
+        document.getElementById('barraProgresso').classList.remove('progress-bar-animated');
+    });
+}
+
+function verificarStatusSincronizacao(logId) {
+    if (intervalCheckStatus) {
+        clearInterval(intervalCheckStatus);
+    }
+    
+    intervalCheckStatus = setInterval(() => {
+        // Atualizar duração
+        if (tempoInicio) {
+            const segundos = Math.floor((Date.now() - tempoInicio) / 1000);
+            document.getElementById('duracaoSyncCard').textContent = segundos + 's';
+        }
+        
+        fetch(`/asaas-sync/status-sincronizacao/${logId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Atualizar estatísticas
+                    if (data.total_clientes > 0) {
+                        document.getElementById('totalClientesCard').textContent = data.total_clientes || 0;
+                        document.getElementById('totalCobrancasCard').textContent = data.total_cobrancas || 0;
+                        document.getElementById('cobrancasNovasCard').textContent = data.cobrancas_novas || 0;
+                        document.getElementById('cobrancasAtualizadasCard').textContent = data.cobrancas_atualizadas || 0;
+                        
+                        // Atualizar barra de progresso (estimativa)
+                        const progresso = Math.min(90, 30 + (data.total_clientes * 0.05));
+                        document.getElementById('barraProgresso').style.width = progresso + '%';
+                        document.getElementById('textoProgresso').textContent = data.total_clientes + ' clientes processados';
+                    }
+                    
+                    // Verificar se finalizou
+                    if (data.status === 'SUCESSO') {
+                        clearInterval(intervalCheckStatus);
+                        document.getElementById('statusSyncCard').className = 'alert alert-success mb-3';
+                        document.getElementById('mensagemSyncCard').innerHTML = 
+                            '<i class="fas fa-check-circle me-2"></i>✅ Sincronização concluída com sucesso!';
+                        document.getElementById('btnFecharProgresso').disabled = false;
+                        document.getElementById('barraProgresso').style.width = '100%';
+                        document.getElementById('barraProgresso').classList.remove('progress-bar-animated');
+                        document.getElementById('barraProgresso').classList.remove('bg-info');
+                        document.getElementById('barraProgresso').classList.add('bg-success');
+                        document.getElementById('textoProgresso').textContent = '✓ Concluído!';
+                        
+                        if (data.duracao_segundos) {
+                            document.getElementById('duracaoSyncCard').textContent = data.duracao_segundos + 's';
+                        }
+                        
+                    } else if (data.status === 'ERRO') {
+                        clearInterval(intervalCheckStatus);
+                        document.getElementById('statusSyncCard').className = 'alert alert-danger mb-3';
+                        document.getElementById('mensagemSyncCard').innerHTML = 
+                            '<i class="fas fa-times-circle me-2"></i>❌ Erro: ' + (data.erros || 'Erro desconhecido');
+                        document.getElementById('btnFecharProgresso').disabled = false;
+                        document.getElementById('barraProgresso').classList.remove('progress-bar-animated');
+                        document.getElementById('barraProgresso').classList.remove('bg-info');
+                        document.getElementById('barraProgresso').classList.add('bg-danger');
+                        document.getElementById('textoProgresso').textContent = '✗ Erro';
+                        
+                    } else if (data.status === 'EM_ANDAMENTO') {
+                        document.getElementById('mensagemSyncCard').textContent = data.mensagem || 'Processando...';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao verificar status:', error);
+            });
+    }, 2000); // Verificar a cada 2 segundos
+}
+
+function fecharProgresso() {
+    document.getElementById('cardProgressoSync').style.display = 'none';
+    if (intervalCheckStatus) {
+        clearInterval(intervalCheckStatus);
+    }
+    // Recarregar para mostrar novos dados
+    location.reload();
 }
 </script>
 {% endblock %}

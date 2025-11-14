@@ -295,21 +295,24 @@ class AsaasSyncService:
         
         return stats_total
     
-    def sincronizar_tudo(self, usuario=None, limite_clientes=50):
+    def sincronizar_tudo(self, usuario=None, limite_clientes=None):
         """
         Sincroniza clientes e cobranças
         Cria log da sincronização
         
         Args:
             usuario: Usuário que iniciou a sincronização
-            limite_clientes: Quantos clientes processar cobranças (padrão: 50)
+            limite_clientes: Quantos clientes processar cobranças (None = TODOS)
             
         Returns:
             AsaasSyncronizacaoLog
         """
         logger.info("="*60)
         logger.info("INICIANDO SINCRONIZAÇÃO COMPLETA DO ASAAS")
-        logger.info(f"Limite de clientes para cobranças: {limite_clientes}")
+        if limite_clientes:
+            logger.info(f"Limite de clientes para cobranças: {limite_clientes}")
+        else:
+            logger.info("Processando TODOS os clientes para cobranças")
         logger.info("="*60)
         
         # Criar log
@@ -329,8 +332,12 @@ class AsaasSyncService:
             
             logger.info(f"✅ Clientes: {stats_clientes['total']} total, {stats_clientes['novos']} novos, {stats_clientes['atualizados']} atualizados")
             
-            # 2. Sincronizar cobranças (com limite)
-            logger.info(f"\n💰 ETAPA 2: Sincronizando cobranças (primeiros {limite_clientes} clientes)...")
+            # 2. Sincronizar cobranças
+            if limite_clientes:
+                logger.info(f"\n💰 ETAPA 2: Sincronizando cobranças (primeiros {limite_clientes} clientes)...")
+            else:
+                logger.info(f"\n💰 ETAPA 2: Sincronizando cobranças de TODOS os clientes...")
+            
             stats_cobrancas = self.sincronizar_todas_cobrancas(limite_clientes=limite_clientes)
             
             log.total_cobrancas = stats_cobrancas['total']
@@ -399,3 +406,141 @@ class AsaasSyncService:
         except Exception as e:
             logger.warning(f"Erro ao parsear datetime '{datetime_string}': {e}")
             return None
+
+    def sincronizar_boletos_faltantes(self, usuario=None):
+        """
+        Sincroniza apenas os boletos faltantes dos clientes já cadastrados.
+        Ideal para executar após uma sincronização que foi interrompida ou limitada.
+        
+        Estratégia:
+        1. Busca todos os clientes no banco local
+        2. Para cada cliente, busca cobranças na API
+        3. Compara com banco local e adiciona apenas as faltantes
+        
+        Args:
+            usuario: Usuário que iniciou a sincronização
+            
+        Returns:
+            dict com estatísticas
+        """
+        logger.info("="*60)
+        logger.info("SINCRONIZANDO BOLETOS FALTANTES")
+        logger.info("="*60)
+        
+        stats = {
+            'clientes_processados': 0,
+            'clientes_sem_cobrancas': 0,
+            'total_cobrancas_api': 0,
+            'cobrancas_novas': 0,
+            'cobrancas_atualizadas': 0,
+            'erros': 0
+        }
+        
+        # Buscar todos os clientes do banco local
+        clientes = AsaasClienteSyncronizado.objects.all()
+        total_clientes = clientes.count()
+        
+        logger.info(f"Total de clientes no banco local: {total_clientes}")
+        
+        for i, cliente in enumerate(clientes, 1):
+            try:
+                logger.info(f"\n[{i}/{total_clientes}] Processando: {cliente.nome}")
+                
+                # Contar cobranças já cadastradas
+                cobrancas_locais = AsaasCobrancaSyncronizada.objects.filter(cliente=cliente).count()
+                logger.info(f"  Cobranças locais: {cobrancas_locais}")
+                
+                # Buscar cobranças da API
+                offset = 0
+                limit = 100
+                cobrancas_api_count = 0
+                novas_count = 0
+                atualizadas_count = 0
+                
+                while True:
+                    params = {
+                        'customer': cliente.asaas_customer_id,
+                        'offset': offset,
+                        'limit': limit
+                    }
+                    
+                    response = self._fazer_requisicao('GET', 'payments', params=params)
+                    
+                    if not response:
+                        logger.warning(f"  ⚠️ Falha ao buscar cobranças da API")
+                        break
+                    
+                    cobrancas_data = response.get('data', [])
+                    has_more = response.get('hasMore', False)
+                    
+                    cobrancas_api_count += len(cobrancas_data)
+                    
+                    # Processar cada cobrança
+                    for cobranca_data in cobrancas_data:
+                        try:
+                            asaas_payment_id = cobranca_data.get('id')
+                            
+                            cobranca, created = AsaasCobrancaSyncronizada.objects.update_or_create(
+                                asaas_payment_id=asaas_payment_id,
+                                defaults={
+                                    'cliente': cliente,
+                                    'tipo_cobranca': cobranca_data.get('billingType', 'UNDEFINED'),
+                                    'status': cobranca_data.get('status', 'PENDING'),
+                                    'valor': Decimal(str(cobranca_data.get('value', 0))),
+                                    'valor_liquido': Decimal(str(cobranca_data.get('netValue', 0))) if cobranca_data.get('netValue') else None,
+                                    'descricao': cobranca_data.get('description', ''),
+                                    'data_vencimento': self._parse_date(cobranca_data.get('dueDate')),
+                                    'data_pagamento': self._parse_date(cobranca_data.get('paymentDate')),
+                                    'data_criacao_asaas': self._parse_datetime(cobranca_data.get('dateCreated')),
+                                    'invoice_url': cobranca_data.get('invoiceUrl', ''),
+                                    'bank_slip_url': cobranca_data.get('bankSlipUrl', ''),
+                                    'pix_qrcode_url': cobranca_data.get('pixQrCodeUrl', ''),
+                                    'pix_copy_paste': cobranca_data.get('pixCopyAndPaste', ''),
+                                    'numero_parcela': cobranca_data.get('installmentNumber'),
+                                    'total_parcelas': cobranca_data.get('installmentCount'),
+                                    'external_reference': cobranca_data.get('externalReference', ''),
+                                }
+                            )
+                            
+                            if created:
+                                novas_count += 1
+                            else:
+                                atualizadas_count += 1
+                                
+                        except Exception as e:
+                            logger.error(f"    ❌ Erro ao processar cobrança {cobranca_data.get('id')}: {str(e)}")
+                            stats['erros'] += 1
+                    
+                    if not has_more:
+                        break
+                    
+                    offset += limit
+                
+                # Estatísticas do cliente
+                logger.info(f"  Cobranças na API: {cobrancas_api_count}")
+                logger.info(f"  ✅ Novas: {novas_count} | 🔄 Atualizadas: {atualizadas_count}")
+                
+                stats['clientes_processados'] += 1
+                stats['total_cobrancas_api'] += cobrancas_api_count
+                stats['cobrancas_novas'] += novas_count
+                stats['cobrancas_atualizadas'] += atualizadas_count
+                
+                if cobrancas_api_count == 0:
+                    stats['clientes_sem_cobrancas'] += 1
+                
+            except Exception as e:
+                logger.error(f"  ❌ Erro ao processar cliente {cliente.nome}: {str(e)}")
+                stats['erros'] += 1
+        
+        logger.info("\n" + "="*60)
+        logger.info("RESUMO DA SINCRONIZAÇÃO DE BOLETOS FALTANTES")
+        logger.info("="*60)
+        logger.info(f"Clientes processados: {stats['clientes_processados']}")
+        logger.info(f"Clientes sem cobranças: {stats['clientes_sem_cobrancas']}")
+        logger.info(f"Total de cobranças na API: {stats['total_cobrancas_api']}")
+        logger.info(f"✅ Cobranças NOVAS baixadas: {stats['cobrancas_novas']}")
+        logger.info(f"🔄 Cobranças ATUALIZADAS: {stats['cobrancas_atualizadas']}")
+        logger.info(f"❌ Erros: {stats['erros']}")
+        logger.info("="*60)
+        
+        return stats

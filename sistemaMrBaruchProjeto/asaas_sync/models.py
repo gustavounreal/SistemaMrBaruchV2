@@ -199,9 +199,17 @@ class AsaasSyncronizacaoLog(models.Model):
         ('SUCESSO', 'Sucesso'),
         ('ERRO', 'Erro'),
         ('PARCIAL', 'Parcial'),
+        ('EM_ANDAMENTO', 'Em Andamento'),
+    ]
+    
+    TIPO_CHOICES = [
+        ('COMPLETO', 'Sincronização Completa'),
+        ('BOLETOS_FALTANTES', 'Boletos Faltantes'),
+        ('ALTERNATIVO', 'Sincronização Alternativa'),
     ]
     
     # Dados da sincronização
+    tipo_sincronizacao = models.CharField('Tipo', max_length=30, choices=TIPO_CHOICES, default='COMPLETO')
     data_inicio = models.DateTimeField('Início', auto_now_add=True)
     data_fim = models.DateTimeField('Fim', blank=True, null=True)
     status = models.CharField('Status', max_length=20, choices=STATUS_CHOICES)

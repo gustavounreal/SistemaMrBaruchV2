@@ -14,5 +14,11 @@ urlpatterns = [
     path('cobrancas/', views.lista_cobrancas, name='lista_cobrancas'),
     path('sincronizar/', views.sincronizar_agora, name='sincronizar_agora'),
     path('sincronizar-alternativo/', views.sincronizar_alternativo, name='sincronizar_alternativo'),
+    path('sincronizar-boletos-faltantes/', views.sincronizar_boletos_faltantes, name='sincronizar_boletos_faltantes'),
+    path('validar/', views.validar_sincronizacao, name='validar_sincronizacao'),
     path('relatorio/', views.relatorio_completo, name='relatorio_completo'),
+    path('exportar-clientes/', views.exportar_clientes_excel, name='exportar_clientes_excel'),
+    path('exportar-cobrancas/', views.exportar_cobrancas_excel, name='exportar_cobrancas_excel'),
+    path('exportar-completo/', views.exportar_clientes_com_boletos_excel, name='exportar_clientes_com_boletos_excel'),
+    path('status-sincronizacao/<int:log_id>/', views.status_sincronizacao, name='status_sincronizacao'),
 ]
