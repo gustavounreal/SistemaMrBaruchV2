@@ -194,7 +194,7 @@
                                             <br>
                                             <small class="text-muted">{{ item.periodo_inadimplencia }}</small>
                                             <br>
-                                            <small class="text-danger fw-bold">R$ {{ item.valor_inadimplente|floatformat:2 }}</small>
+                                            <small class="text-danger fw-bold">{{ item.valor_inadimplente|moeda_br }}</small>
                                         {% else %}
                                             <span class="status-badge status-adimplente">
                                                 <i class="fas fa-check-circle me-1"></i>NÃO
@@ -202,7 +202,7 @@
                                         {% endif %}
                                     </td>
                                     <td class="text-end">
-                                        <strong class="fs-5">R$ {{ item.valor_total|floatformat:2 }}</strong>
+                                        <strong class="fs-5">{{ item.valor_total|moeda_br }}</strong>
                                     </td>
                                     <td class="text-center">
                                         <button class="btn btn-link p-0 toggle-servico" 

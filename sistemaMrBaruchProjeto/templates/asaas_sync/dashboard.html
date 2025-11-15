@@ -183,7 +183,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-white-50 mb-1">Total Recebido</h6>
-                            <h3 class="mb-0">R$ {{ total_recebido|floatformat:2 }}</h3>
+                            <h3 class="mb-0">{{ total_recebido|moeda_br }}</h3>
                         </div>
                         <i class="fas fa-check-circle fa-3x opacity-50"></i>
                     </div>
@@ -198,7 +198,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-white-50 mb-1">Total Pendente</h6>
-                            <h3 class="mb-0">R$ {{ total_pendente|floatformat:2 }}</h3>
+                            <h3 class="mb-0">{{ total_pendente|moeda_br }}</h3>
                         </div>
                         <i class="fas fa-clock fa-3x opacity-50"></i>
                     </div>
@@ -213,7 +213,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-white-50 mb-1">Total Vencido</h6>
-                            <h3 class="mb-0">R$ {{ total_vencido|floatformat:2 }}</h3>
+                            <h3 class="mb-0">{{ total_vencido|moeda_br }}</h3>
                         </div>
                         <i class="fas fa-exclamation-triangle fa-3x opacity-50"></i>
                     </div>
@@ -511,7 +511,7 @@
                                             <span class="badge bg-secondary">{{ cobranca.get_status_display }}</span>
                                         {% endif %}
                                     </td>
-                                    <td class="text-end fw-bold">R$ {{ cobranca.valor|floatformat:2 }}</td>
+                                    <td class="text-end fw-bold">{{ cobranca.valor|moeda_br }}</td>
                                     <td>{{ cobranca.data_vencimento|date:"d/m/Y" }}</td>
                                     <td>{{ cobranca.data_pagamento|date:"d/m/Y"|default:"-" }}</td>
                                     <td>
