@@ -2,7 +2,7 @@
 Template tags customizados para formatação de valores
 """
 from django import template
-from decimal import Decimal
+from decimal import Decimal, DecimalException
 
 register = template.Library()
 
