@@ -42,6 +42,11 @@ class AsaasClienteSyncronizado(models.Model):
     consultor_responsavel = models.CharField('Consultor Responsável', max_length=255, blank=True, null=True)
     servico_concluido = models.BooleanField('Serviço Concluído', default=False)
     
+    # Serviços contratados pelo cliente
+    servico_limpa_nome = models.BooleanField('Limpa Nome', default=False)
+    servico_retirada_travas = models.BooleanField('Retirada de Travas', default=False)
+    servico_restauracao_score = models.BooleanField('Restauração de Score', default=False)
+    
     # Controle de sincronização
     sincronizado_em = models.DateTimeField('Sincronizado em', auto_now=True)
     criado_em = models.DateTimeField('Criado em', auto_now_add=True)
@@ -92,6 +97,32 @@ class AsaasClienteSyncronizado(models.Model):
         from django.db.models import Sum
         total = self.get_cobrancas_vencidas().aggregate(total=Sum('valor'))['total']
         return total or 0
+    
+    def get_cobrancas_pendentes(self):
+        """Retorna cobranças pendentes de pagamento (PENDING e OVERDUE)"""
+        return self.cobrancas.filter(status__in=['PENDING', 'OVERDUE'])
+    
+    def get_quantidade_boletos_pendentes(self):
+        """Retorna a quantidade de boletos pendentes de pagamento (inclui vencidos)"""
+        return self.get_cobrancas_pendentes().count()
+    
+    def get_servicos_contratados(self):
+        """Retorna lista de serviços contratados pelo cliente"""
+        servicos = []
+        if self.servico_limpa_nome:
+            servicos.append('Limpa Nome')
+        if self.servico_retirada_travas:
+            servicos.append('Retirada de Travas')
+        if self.servico_restauracao_score:
+            servicos.append('Restauração de Score')
+        return servicos
+    
+    def get_servicos_contratados_display(self):
+        """Retorna string formatada dos serviços contratados"""
+        servicos = self.get_servicos_contratados()
+        if not servicos:
+            return 'Nenhum serviço cadastrado'
+        return ', '.join(servicos)
 
 
 class AsaasCobrancaSyncronizada(models.Model):

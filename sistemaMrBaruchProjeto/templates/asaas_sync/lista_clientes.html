@@ -102,6 +102,8 @@
                                 <tr>
                                     <th>Nome / CPF-CNPJ</th>
                                     <th>Consultor</th>
+                                    <th>Serviços</th>
+                                    <th class="text-center">Boletos Pendentes</th>
                                     <th>Inadimplente</th>
                                     <th class="text-end">Valor Total</th>
                                     <th class="text-center">Serviço Concluído</th>
@@ -119,12 +121,70 @@
                                         <small class="text-muted">{{ item.cliente.cpf_cnpj|default:"CPF/CNPJ não informado" }}</small>
                                     </td>
                                     <td>
-                                        <input type="text" 
-                                               class="edit-field consultor-field" 
-                                               data-cliente-id="{{ item.cliente.id }}"
-                                               value="{{ item.cliente.consultor_responsavel|default:'' }}"
-                                               placeholder="Digite o nome do consultor"
-                                               style="width: 100%;">
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" 
+                                                   class="form-control consultor-field" 
+                                                   data-cliente-id="{{ item.cliente.id }}"
+                                                   value="{{ item.cliente.consultor_responsavel|default:'' }}"
+                                                   placeholder="Digite o nome do consultor"
+                                                   readonly>
+                                            <button class="btn btn-outline-secondary btn-editar-consultor" 
+                                                    type="button"
+                                                    data-cliente-id="{{ item.cliente.id }}"
+                                                    title="Editar consultor">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="servicos-container" id="servicos-{{ item.cliente.id }}">
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input servico-checkbox" 
+                                                       type="checkbox" 
+                                                       id="limpa_nome_{{ item.cliente.id }}"
+                                                       data-cliente-id="{{ item.cliente.id }}"
+                                                       data-servico="servico_limpa_nome"
+                                                       {% if item.cliente.servico_limpa_nome %}checked{% endif %}>
+                                                <label class="form-check-label small" for="limpa_nome_{{ item.cliente.id }}">
+                                                    Limpa Nome
+                                                </label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input servico-checkbox" 
+                                                       type="checkbox" 
+                                                       id="retirada_travas_{{ item.cliente.id }}"
+                                                       data-cliente-id="{{ item.cliente.id }}"
+                                                       data-servico="servico_retirada_travas"
+                                                       {% if item.cliente.servico_retirada_travas %}checked{% endif %}>
+                                                <label class="form-check-label small" for="retirada_travas_{{ item.cliente.id }}">
+                                                    Retirada Travas
+                                                </label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input servico-checkbox" 
+                                                       type="checkbox" 
+                                                       id="restauracao_score_{{ item.cliente.id }}"
+                                                       data-cliente-id="{{ item.cliente.id }}"
+                                                       data-servico="servico_restauracao_score"
+                                                       {% if item.cliente.servico_restauracao_score %}checked{% endif %}>
+                                                <label class="form-check-label small" for="restauracao_score_{{ item.cliente.id }}">
+                                                    Restauração Score
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if item.quantidade_boletos_pendentes > 0 %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-file-invoice me-1"></i>
+                                                {{ item.quantidade_boletos_pendentes }}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check me-1"></i>
+                                                0
+                                            </span>
+                                        {% endif %}
                                     </td>
                                     <td>
                                         {% if item.esta_inadimplente %}
@@ -283,11 +343,80 @@ function getCookie(name) {
 
 const csrftoken = getCookie('csrftoken');
 
-// Atualizar consultor ao sair do campo
-document.querySelectorAll('.consultor-field').forEach(field => {
-    field.addEventListener('blur', function() {
+// Botão para desbloquear/bloquear edição do consultor
+document.querySelectorAll('.btn-editar-consultor').forEach(button => {
+    button.addEventListener('click', function() {
         const clienteId = this.dataset.clienteId;
-        const consultor = this.value.trim();
+        const input = document.querySelector(`.consultor-field[data-cliente-id="${clienteId}"]`);
+        const icon = this.querySelector('i');
+        
+        if (input.hasAttribute('readonly')) {
+            // Desbloquear para edição
+            input.removeAttribute('readonly');
+            input.focus();
+            input.select();
+            icon.classList.remove('fa-edit');
+            icon.classList.add('fa-save');
+            this.classList.remove('btn-outline-secondary');
+            this.classList.add('btn-success');
+            this.title = 'Salvar';
+        } else {
+            // Salvar e bloquear
+            const consultor = input.value.trim();
+            
+            fetch(`/asaas-sync/clientes/${clienteId}/atualizar/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrftoken
+                },
+                body: `consultor_responsavel=${encodeURIComponent(consultor)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Bloquear novamente
+                    input.setAttribute('readonly', true);
+                    icon.classList.remove('fa-save');
+                    icon.classList.add('fa-edit');
+                    this.classList.remove('btn-success');
+                    this.classList.add('btn-outline-secondary');
+                    this.title = 'Editar consultor';
+                    
+                    // Feedback visual
+                    input.style.borderColor = '#28a745';
+                    setTimeout(() => {
+                        input.style.borderColor = '';
+                    }, 1000);
+                } else {
+                    alert('Erro ao atualizar consultor: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao atualizar consultor');
+            });
+        }
+    });
+});
+
+// Atualizar consultor ao pressionar Enter (quando desbloqueado)
+document.querySelectorAll('.consultor-field').forEach(field => {
+    field.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !this.hasAttribute('readonly')) {
+            const clienteId = this.dataset.clienteId;
+            const button = document.querySelector(`.btn-editar-consultor[data-cliente-id="${clienteId}"]`);
+            button.click(); // Acionar o botão de salvar
+        }
+    });
+});
+
+// Atualizar serviços ao marcar/desmarcar checkboxes
+document.querySelectorAll('.servico-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const clienteId = this.dataset.clienteId;
+        const servico = this.dataset.servico;
+        const checked = this.checked;
         
         fetch(`/asaas-sync/clientes/${clienteId}/atualizar/`, {
             method: 'POST',
@@ -295,15 +424,19 @@ document.querySelectorAll('.consultor-field').forEach(field => {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'X-CSRFToken': csrftoken
             },
-            body: `consultor_responsavel=${encodeURIComponent(consultor)}`
+            body: `${servico}=${checked}`
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 // Feedback visual
-                this.style.borderColor = '#28a745';
+                const label = this.nextElementSibling;
+                const originalColor = label.style.color;
+                label.style.color = '#28a745';
+                label.style.fontWeight = 'bold';
                 setTimeout(() => {
-                    this.style.borderColor = '#ced4da';
+                    label.style.color = originalColor;
+                    label.style.fontWeight = 'normal';
                 }, 1000);
             } else {
                 alert('Erro ao salvar: ' + data.message);

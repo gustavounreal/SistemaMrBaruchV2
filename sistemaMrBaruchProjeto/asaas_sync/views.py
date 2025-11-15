@@ -138,6 +138,8 @@ def lista_clientes(request):
             'esta_inadimplente': cliente.esta_inadimplente(),
             'periodo_inadimplencia': cliente.get_periodo_inadimplencia(),
             'valor_inadimplente': cliente.get_valor_inadimplente(),
+            'quantidade_boletos_pendentes': cliente.get_quantidade_boletos_pendentes(),
+            'servicos_contratados': cliente.get_servicos_contratados(),
         })
     
     context = {
@@ -481,7 +483,7 @@ def relatorio_completo(request):
 
 @login_required
 def atualizar_cliente(request, cliente_id):
-    """Atualiza dados do cliente (consultor e status do serviço)"""
+    """Atualiza dados do cliente (consultor, status do serviço e serviços contratados)"""
     
     if request.method == 'POST':
         try:
@@ -497,6 +499,14 @@ def atualizar_cliente(request, cliente_id):
                 servico = request.POST.get('servico_concluido', 'false')
                 cliente.servico_concluido = servico.lower() == 'true'
             
+            # Atualizar serviços contratados
+            if 'servico_limpa_nome' in request.POST:
+                cliente.servico_limpa_nome = request.POST.get('servico_limpa_nome') == 'true'
+            if 'servico_retirada_travas' in request.POST:
+                cliente.servico_retirada_travas = request.POST.get('servico_retirada_travas') == 'true'
+            if 'servico_restauracao_score' in request.POST:
+                cliente.servico_restauracao_score = request.POST.get('servico_restauracao_score') == 'true'
+            
             cliente.save()
             
             return JsonResponse({
@@ -505,6 +515,10 @@ def atualizar_cliente(request, cliente_id):
                 'data': {
                     'consultor_responsavel': cliente.consultor_responsavel or '',
                     'servico_concluido': cliente.servico_concluido,
+                    'servico_limpa_nome': cliente.servico_limpa_nome,
+                    'servico_retirada_travas': cliente.servico_retirada_travas,
+                    'servico_restauracao_score': cliente.servico_restauracao_score,
+                    'servicos_display': cliente.get_servicos_contratados_display(),
                 }
             })
             
