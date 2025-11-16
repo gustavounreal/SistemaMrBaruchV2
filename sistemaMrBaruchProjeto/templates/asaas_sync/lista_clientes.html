@@ -68,12 +68,21 @@
                 <div class="card-body">
                     <!-- Filtros -->
                     <form method="get" class="row g-3 mb-4">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="busca" class="form-label">Buscar por Nome, CPF ou CNPJ</label>
                             <input type="text" class="form-control" id="busca" name="busca" 
                                    placeholder="Digite o nome, CPF ou CNPJ" value="{{ busca }}">
                         </div>
                         <div class="col-md-3">
+                            <label for="consultor" class="form-label">Consultor Responsável</label>
+                            <select class="form-select" id="consultor" name="consultor">
+                                <option value="">Todos</option>
+                                {% for c in consultores %}
+                                    <option value="{{ c }}" {% if consultor == c %}selected{% endif %}>{{ c }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
                             <label for="inadimplente" class="form-label">Inadimplência</label>
                             <select class="form-select" id="inadimplente" name="inadimplente">
                                 <option value="">Todos</option>
@@ -81,7 +90,7 @@
                                 <option value="nao" {% if inadimplente == 'nao' %}selected{% endif %}>Não (Adimplente)</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label for="servico_concluido" class="form-label">Serviço Concluído</label>
                             <select class="form-select" id="servico_concluido" name="servico_concluido">
                                 <option value="">Todos</option>
@@ -256,12 +265,12 @@
                             <!-- Primeira página -->
                             {% if clientes_paginados.has_previous %}
                             <li class="page-item">
-                                <a class="page-link" href="?page=1{% if busca %}&busca={{ busca }}{% endif %}{% if inadimplente %}&inadimplente={{ inadimplente }}{% endif %}{% if servico_concluido %}&servico_concluido={{ servico_concluido }}{% endif %}">
+                                <a class="page-link" href="?page=1{% if busca %}&busca={{ busca }}{% endif %}{% if consultor %}&consultor={{ consultor }}{% endif %}{% if inadimplente %}&inadimplente={{ inadimplente }}{% endif %}{% if servico_concluido %}&servico_concluido={{ servico_concluido }}{% endif %}">
                                     <i class="fas fa-angle-double-left"></i> Primeira
                                 </a>
                             </li>
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ clientes_paginados.previous_page_number }}{% if busca %}&busca={{ busca }}{% endif %}{% if inadimplente %}&inadimplente={{ inadimplente }}{% endif %}{% if servico_concluido %}&servico_concluido={{ servico_concluido }}{% endif %}">
+                                <a class="page-link" href="?page={{ clientes_paginados.previous_page_number }}{% if busca %}&busca={{ busca }}{% endif %}{% if consultor %}&consultor={{ consultor }}{% endif %}{% if inadimplente %}&inadimplente={{ inadimplente }}{% endif %}{% if servico_concluido %}&servico_concluido={{ servico_concluido }}{% endif %}">
                                     <i class="fas fa-angle-left"></i> Anterior
                                 </a>
                             </li>
@@ -282,7 +291,7 @@
                                     </li>
                                 {% elif num > clientes_paginados.number|add:'-3' and num < clientes_paginados.number|add:'3' %}
                                     <li class="page-item">
-                                        <a class="page-link" href="?page={{ num }}{% if busca %}&busca={{ busca }}{% endif %}{% if inadimplente %}&inadimplente={{ inadimplente }}{% endif %}{% if servico_concluido %}&servico_concluido={{ servico_concluido }}{% endif %}">
+                                        <a class="page-link" href="?page={{ num }}{% if busca %}&busca={{ busca }}{% endif %}{% if consultor %}&consultor={{ consultor }}{% endif %}{% if inadimplente %}&inadimplente={{ inadimplente }}{% endif %}{% if servico_concluido %}&servico_concluido={{ servico_concluido }}{% endif %}">
                                             {{ num }}
                                         </a>
                                     </li>
@@ -292,12 +301,12 @@
                             <!-- Última página -->
                             {% if clientes_paginados.has_next %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ clientes_paginados.next_page_number }}{% if busca %}&busca={{ busca }}{% endif %}{% if inadimplente %}&inadimplente={{ inadimplente }}{% endif %}{% if servico_concluido %}&servico_concluido={{ servico_concluido }}{% endif %}">
+                                <a class="page-link" href="?page={{ clientes_paginados.next_page_number }}{% if busca %}&busca={{ busca }}{% endif %}{% if consultor %}&consultor={{ consultor }}{% endif %}{% if inadimplente %}&inadimplente={{ inadimplente }}{% endif %}{% if servico_concluido %}&servico_concluido={{ servico_concluido }}{% endif %}">
                                     Próxima <i class="fas fa-angle-right"></i>
                                 </a>
                             </li>
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ clientes_paginados.paginator.num_pages }}{% if busca %}&busca={{ busca }}{% endif %}{% if inadimplente %}&inadimplente={{ inadimplente }}{% endif %}{% if servico_concluido %}&servico_concluido={{ servico_concluido }}{% endif %}">
+                                <a class="page-link" href="?page={{ clientes_paginados.paginator.num_pages }}{% if busca %}&busca={{ busca }}{% endif %}{% if consultor %}&consultor={{ consultor }}{% endif %}{% if inadimplente %}&inadimplente={{ inadimplente }}{% endif %}{% if servico_concluido %}&servico_concluido={{ servico_concluido }}{% endif %}">
                                     Última <i class="fas fa-angle-double-right"></i>
                                 </a>
                             </li>

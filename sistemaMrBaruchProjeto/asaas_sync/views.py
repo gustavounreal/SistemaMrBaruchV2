@@ -78,6 +78,7 @@ def lista_clientes(request):
     busca = request.GET.get('busca', '')
     inadimplente = request.GET.get('inadimplente', '')
     servico_concluido = request.GET.get('servico_concluido', '')
+    consultor = request.GET.get('consultor', '').strip()
     page = request.GET.get('page', 1)
     
     clientes = AsaasClienteSyncronizado.objects.prefetch_related('cobrancas').all()
@@ -112,6 +113,10 @@ def lista_clientes(request):
             clientes = clientes.filter(servico_concluido=True)
         elif servico_concluido == 'nao':
             clientes = clientes.filter(servico_concluido=False)
+
+    # Filtro por consultor responsável
+    if consultor:
+        clientes = clientes.filter(consultor_responsavel=consultor)
     
     # Ordenação
     clientes = clientes.order_by('nome')
@@ -142,6 +147,10 @@ def lista_clientes(request):
             'servicos_contratados': cliente.get_servicos_contratados(),
         })
     
+    # Lista distinta de consultores para o filtro
+    consultores = AsaasClienteSyncronizado.objects.exclude(consultor_responsavel__isnull=True)\
+        .exclude(consultor_responsavel__exact='').values_list('consultor_responsavel', flat=True).distinct().order_by('consultor_responsavel')
+
     context = {
         'clientes_dados': clientes_dados,
         'clientes_paginados': clientes_paginados,
@@ -149,6 +158,8 @@ def lista_clientes(request):
         'busca': busca,
         'inadimplente': inadimplente,
         'servico_concluido': servico_concluido,
+        'consultor': consultor,
+        'consultores': consultores,
     }
     
     return render(request, 'asaas_sync/lista_clientes.html', context)
