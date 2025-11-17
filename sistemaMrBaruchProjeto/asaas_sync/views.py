@@ -595,7 +595,6 @@ def sincronizar_alternativo(request):
                     'mensagem': log.mensagem,
                 }
             })
-            })
             
         except Exception as e:
             logger.error(f"Erro ao iniciar sincronização alternativa: {str(e)}", exc_info=True)
