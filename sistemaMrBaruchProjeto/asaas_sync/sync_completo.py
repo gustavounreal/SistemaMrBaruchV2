@@ -35,7 +35,7 @@ class AsaasSyncCompleto:
         self.dados_cobrancas = []
         
     def _fazer_requisicao(self, metodo, endpoint, params=None):
-        """Faz requisição à API do Asaas com retry"""
+        """Faz requisição à API do Asaas com retry e rate limit handling"""
         url = f"{self.base_url}/{endpoint}"
         max_tentativas = 3
         
@@ -54,10 +54,11 @@ class AsaasSyncCompleto:
                 if response.status_code == 200:
                     return response.json()
                     
-                elif response.status_code == 429:  # Rate limit
-                    logger.warning(f"⚠️  Rate limit atingido. Aguardando...")
+                elif response.status_code == 429 or response.status_code == 403:  # Rate limit
+                    tempo_espera = 60 if response.status_code == 403 else 10
+                    logger.warning(f"⚠️  Rate limit atingido (erro {response.status_code}). Aguardando {tempo_espera}s...")
                     import time
-                    time.sleep(5)
+                    time.sleep(tempo_espera)
                     continue
                     
                 else:
@@ -130,6 +131,10 @@ class AsaasSyncCompleto:
                 logger.info("✅ Última página alcançada!")
                 break
             
+            # Aguardar 1 segundo entre requisições para evitar rate limit
+            import time
+            time.sleep(1)
+            
             # Próxima página
             offset += limit
             pagina += 1
@@ -193,10 +198,18 @@ class AsaasSyncCompleto:
                 if not has_more:
                     break
                 
+                # Aguardar 0.5 segundos entre páginas de cobranças
+                import time
+                time.sleep(0.5)
+                
                 offset += limit
                 pagina += 1
             
             logger.info(f"   ✅ {cobrancas_cliente} cobranças baixadas")
+            
+            # Aguardar 0.3 segundos entre clientes para evitar rate limit
+            import time
+            time.sleep(0.3)
         
         logger.info("\n" + "="*80)
         logger.info(f"✅ FASE 1B COMPLETA: {len(self.dados_cobrancas)} cobranças baixadas")
