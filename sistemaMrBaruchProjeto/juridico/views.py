@@ -514,7 +514,7 @@ def gerar_contrato(request, venda_id):
         
         # Exclusão e reexclusão são CONDICIONAIS (apenas para limpa_nome)
         if venda.limpa_nome:
-            obrigacoes_texto.append(f"• Realizar a <b>exclusão das restrições</b> em até <b>{dias_uteis} dias úteis</b> após assinatura e pagamento da entrada;")
+            obrigacoes_texto.append(f"• Realizar a <b>exclusão das restrições</b> em até <b>{dias_uteis} dias</b> após assinatura e pagamento da entrada;")
             obrigacoes_texto.append("• Reexcluir, sem custos, quaisquer registros que retornem durante o período de garantia;")
         
         story.append(Paragraph(
