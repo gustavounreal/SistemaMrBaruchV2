@@ -434,10 +434,10 @@ def gerar_contrato(request, venda_id):
         
         # Prefer using Lead.get_cpf_cnpj_display() to format CPF/CNPJ centrally
         
-        # Cálculo de dias úteis
+        # Cálculo de prazo (dias corridos)
         cal = Brazil()
         data_venda = venda.data_venda
-        dias_uteis = venda.dias_para_conclusao or 180
+        dias_prazo = venda.dias_para_conclusao or 180
         
         # Cabeçalho do contrato
         if hasattr(lead, 'get_cpf_cnpj_display'):
@@ -514,7 +514,7 @@ def gerar_contrato(request, venda_id):
         
         # Exclusão e reexclusão são CONDICIONAIS (apenas para limpa_nome)
         if venda.limpa_nome:
-            obrigacoes_texto.append(f"• Realizar a <b>exclusão das restrições</b> em até <b>{dias_uteis} dias</b> após assinatura e pagamento da entrada;")
+            obrigacoes_texto.append(f"• Realizar a <b>exclusão das restrições</b> em até <b>{dias_prazo} dias</b> após assinatura e pagamento da entrada;")
             obrigacoes_texto.append("• Reexcluir, sem custos, quaisquer registros que retornem durante o período de garantia;")
         
         story.append(Paragraph(
