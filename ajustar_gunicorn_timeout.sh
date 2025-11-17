@@ -34,7 +34,10 @@ echo "✅ Arquivo de serviço atualizado com timeout de 1800 segundos (30 minuto
 echo "🔄 Recarregando systemd..."
 sudo systemctl daemon-reload
 
-# Reiniciar Gunicorn
+# Limpar socket antigo e reiniciar Gunicorn
+echo "🔄 Limpando socket antigo..."
+sudo rm -f /run/gunicorn.sock
+
 echo "🔄 Reiniciando Gunicorn..."
 sudo systemctl restart gunicorn
 

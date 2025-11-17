@@ -1,0 +1,317 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Validação de Sincronização - Sistema Mr. Baruch{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-check-double me-2"></i>Validação de Sincronização ASAAS</h2>
+                    <p class="text-muted mb-0">
+                        Comparação entre dados do ASAAS e dados sincronizados no sistema
+                        {% if usar_alternativo %}
+                            <span class="badge bg-warning">ASAAS ALTERNATIVO</span>
+                        {% else %}
+                            <span class="badge bg-primary">ASAAS PRINCIPAL</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div>
+                    {% if usar_alternativo %}
+                        <a href="{% url 'asaas_sync:validar_sincronizacao' %}" class="btn btn-primary">
+                            <i class="fas fa-exchange-alt me-2"></i>Ver ASAAS Principal
+                        </a>
+                    {% else %}
+                        <a href="{% url 'asaas_sync:validar_sincronizacao' %}?alternativo=true" class="btn btn-warning">
+                            <i class="fas fa-exchange-alt me-2"></i>Ver ASAAS Alternativo
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'asaas_sync:dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if erro %}
+        <div class="alert alert-danger">
+            <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Erro na Validação</h5>
+            <p class="mb-0">{{ erro }}</p>
+        </div>
+    {% else %}
+        <!-- Alerta Informativo sobre Validação Completa -->
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <h5 class="alert-heading">
+                <i class="fas fa-info-circle me-2"></i>Validação Completa Realizada
+            </h5>
+            <p class="mb-2">
+                <strong>Esta validação verifica TODOS os dados:</strong>
+            </p>
+            <ul class="mb-2">
+                <li><strong>Clientes:</strong> Busca e compara TODOS os {{ total_clientes_asaas }} clientes do ASAAS</li>
+                <li><strong>Cobranças:</strong> Valida as cobranças de TODOS os {{ total_clientes_validados }} clientes sincronizados</li>
+                <li><strong>Tempo:</strong> A validação completa pode levar alguns minutos dependendo da quantidade de dados</li>
+            </ul>
+            <hr>
+            <p class="mb-0">
+                <small>
+                    <i class="fas fa-clock me-1"></i>Validação realizada em: {{ data_validacao|date:"d/m/Y H:i:s" }}
+                </small>
+            </p>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Cards de Resumo 
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card border-primary">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary">
+                            <i class="fas fa-cloud me-2"></i>Clientes no ASAAS
+                        </h5>
+                        <h2 class="mb-0">{{ total_clientes_asaas }}</h2>
+                        <small class="text-muted">Total de clientes cadastrados no ASAAS</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <h5 class="card-title text-success">
+                            <i class="fas fa-database me-2"></i>Clientes Sincronizados
+                        </h5>
+                        <h2 class="mb-0">{{ total_clientes_local }}</h2>
+                        <small class="text-muted">Clientes baixados para o sistema</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card {% if percentual_clientes >= 95 %}border-success{% elif percentual_clientes >= 70 %}border-warning{% else %}border-danger{% endif %}">
+                    <div class="card-body">
+                        <h5 class="card-title {% if percentual_clientes >= 95 %}text-success{% elif percentual_clientes >= 70 %}text-warning{% else %}text-danger{% endif %}">
+                            <i class="fas fa-percentage me-2"></i>Taxa de Sincronização
+                        </h5>
+                        <h2 class="mb-0">{{ percentual_clientes }}%</h2>
+                        <small class="text-muted">Percentual de clientes sincronizados</small>
+                    </div>
+                </div>
+            </div>
+        </div>-->
+
+        <!-- Clientes Faltando -->
+        {% if clientes_faltando %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            Clientes NÃO Sincronizados ({{ total_clientes_faltando }})
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">
+                            Os clientes abaixo existem no ASAAS mas não foram baixados para o sistema.
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID ASAAS</th>
+                                        <th>Nome</th>
+                                        <th>CPF/CNPJ</th>
+                                        <th>E-mail</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for cliente in clientes_faltando %}
+                                    <tr>
+                                        <td><code>{{ cliente.asaas_id }}</code></td>
+                                        <td>{{ cliente.nome }}</td>
+                                        <td>{{ cliente.cpf_cnpj }}</td>
+                                        <td>{{ cliente.email }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="alert alert-info mt-3 mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Solução:</strong> Execute uma nova sincronização para baixar estes clientes.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-success">
+            <h5 class="alert-heading"><i class="fas fa-check-circle me-2"></i>Todos os Clientes Sincronizados!</h5>
+            <p class="mb-0">✅ Não foram encontradas divergências. Todos os {{ total_clientes_asaas }} clientes do ASAAS estão sincronizados no sistema.</p>
+        </div>
+        {% endif %}
+
+        <!-- Divergências em Cobranças -->
+        {% if clientes_com_divergencia %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Clientes com Cobranças Faltando ({{ clientes_com_divergencia|length }})
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">
+                            Os clientes abaixo têm cobranças no ASAAS que não foram sincronizadas no sistema.
+                            <br><small><em>Validação completa: {{ total_clientes_validados }} clientes verificados</em></small>
+                        </p>
+                        
+                        {% for item in clientes_com_divergencia %}
+                        <div class="card mb-3 border-warning">
+                            <div class="card-header bg-light">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-user me-2"></i>{{ item.cliente.nome }}
+                                    </h6>
+                                    <span class="badge bg-warning text-dark">
+                                        {{ item.diferenca }} cobrança(s) faltando
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <strong>ASAAS ID:</strong> <code>{{ item.cliente.asaas_customer_id }}</code>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>No ASAAS:</strong> {{ item.total_asaas }} cobranças
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>No Sistema:</strong> {{ item.total_local }} cobranças
+                                    </div>
+                                </div>
+                                
+                                {% if item.cobrancas_faltando %}
+                                <h6 class="text-danger">Cobranças Faltando:</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>ID ASAAS</th>
+                                                <th>Valor</th>
+                                                <th>Status</th>
+                                                <th>Vencimento</th>
+                                                <th>Descrição</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for cobranca in item.cobrancas_faltando %}
+                                            <tr>
+                                                <td><code>{{ cobranca.asaas_id }}</code></td>
+                                                <td class="text-end">R$ {{ cobranca.valor|floatformat:2 }}</td>
+                                                <td>
+                                                    {% if cobranca.status == 'RECEIVED' or cobranca.status == 'CONFIRMED' %}
+                                                        <span class="badge bg-success">{{ cobranca.status }}</span>
+                                                    {% elif cobranca.status == 'PENDING' %}
+                                                        <span class="badge bg-warning">{{ cobranca.status }}</span>
+                                                    {% elif cobranca.status == 'OVERDUE' %}
+                                                        <span class="badge bg-danger">{{ cobranca.status }}</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">{{ cobranca.status }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ cobranca.vencimento }}</td>
+                                                <td>{{ cobranca.descricao|truncatewords:10 }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="alert alert-info mt-3 mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Solução:</strong> Execute uma nova sincronização para baixar as cobranças faltantes.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-success">
+            <h5 class="alert-heading"><i class="fas fa-check-circle me-2"></i>Cobranças Sincronizadas!</h5>
+            <p class="mb-0">✅ Não foram encontradas divergências nas cobranças. Todos os {{ total_clientes_validados }} clientes foram validados com sucesso.</p>
+        </div>
+        {% endif %}
+
+        <!-- Estatísticas Adicionais -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Estatísticas Gerais</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-6">Total de Cobranças no Sistema:</dt>
+                                    <dd class="col-sm-6 text-end"><strong>{{ total_cobrancas_local }}</strong></dd>
+                                    
+                                    <dt class="col-sm-6">Data da Validação:</dt>
+                                    <dd class="col-sm-6 text-end">{{ data_validacao|date:"d/m/Y H:i:s" }}</dd>
+                                </dl>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="alert alert-info mb-0">
+                                    <h6 class="alert-heading"><i class="fas fa-lightbulb me-2"></i>Dica</h6>
+                                    <p class="mb-0 small">
+                                        Para garantir que todos os dados estejam sincronizados, execute uma sincronização completa periodicamente.
+                                        A validação completa verifica TODOS os clientes e suas cobranças na API do ASAAS.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ações Rápidas -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-bolt me-2"></i>Ações Rápidas</h5>
+                        <div class="d-grid gap-2 d-md-flex">
+                            <a href="{% url 'asaas_sync:dashboard' %}" class="btn btn-primary">
+                                <i class="fas fa-sync me-2"></i>Executar Nova Sincronização
+                            </a>
+                            <a href="{% url 'asaas_sync:lista_clientes' %}" class="btn btn-secondary">
+                                <i class="fas fa-users me-2"></i>Ver Todos os Clientes
+                            </a>
+                            <a href="{% url 'asaas_sync:lista_cobrancas' %}" class="btn btn-secondary">
+                                <i class="fas fa-file-invoice me-2"></i>Ver Todas as Cobranças
+                            </a>
+                            <button class="btn btn-info" onclick="window.location.reload()">
+                                <i class="fas fa-redo me-2"></i>Revalidar Agora
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

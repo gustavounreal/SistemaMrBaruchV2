@@ -24,8 +24,10 @@ class AsaasSyncService:
             'Content-Type': 'application/json',
             'access_token': self.api_token
         }
-        self.timeout = 1800  # 30 minutos - adequado para processamentos em lote
-        self.limite_por_pagina = 100000 
+        # Timeout de 120 segundos por requisição (tempo razoável para API externa)
+        # O processo completo pode demorar mais, mas cada requisição individual deve ser rápida
+        self.timeout = 120
+        self.limite_por_pagina = 100 
     
     def _fazer_requisicao(self, metodo, endpoint, params=None):
         """Faz requisição à API do Asaas"""
@@ -159,14 +161,10 @@ class AsaasSyncService:
                 stats['erros'] += 1
                 logger.error(f"Erro ao sincronizar cliente {cliente_data.get('id')}: {str(e)}")
         
-        # Se houver mais clientes, sincroniza recursivamente
+        # NÃO fazer paginação recursiva automática para evitar timeout
+        # A sincronização deve ser feita em lotes controlados
         if has_more:
-            logger.info(f"Há mais clientes. Buscando próxima página...")
-            next_stats = self.sincronizar_clientes(limit=limit, offset=offset + limit)
-            stats['total'] += next_stats['total']
-            stats['novos'] += next_stats['novos']
-            stats['atualizados'] += next_stats['atualizados']
-            stats['erros'] += next_stats['erros']
+            logger.info(f"⚠️  Há mais {total_count - len(clientes)} clientes disponíveis. Use a sincronização de boletos faltantes para continuar.")
         
         return stats
     
@@ -239,13 +237,10 @@ class AsaasSyncService:
                 stats['erros'] += 1
                 logger.error(f"Erro ao sincronizar cobrança {cobranca_data.get('id')}: {str(e)}")
         
-        # Se houver mais cobranças, sincroniza recursivamente
+        # NÃO fazer paginação recursiva - processar apenas primeira página
+        # Para sincronizar todas as cobranças, use sincronizar_boletos_faltantes
         if has_more:
-            next_stats = self.sincronizar_cobrancas_cliente(cliente_sync, limit=limit, offset=offset + limit)
-            stats['total'] += next_stats['total']
-            stats['novas'] += next_stats['novas']
-            stats['atualizadas'] += next_stats['atualizadas']
-            stats['erros'] += next_stats['erros']
+            logger.info(f"   ⚠️  Cliente tem mais cobranças. Processando apenas primeira página para evitar timeout.")
         
         return stats
     
@@ -322,23 +317,22 @@ class AsaasSyncService:
         )
         
         try:
-            # 1. Sincronizar clientes (apenas primeira página)
-            logger.info("\n📋 ETAPA 1: Sincronizando clientes...")
-            stats_clientes = self.sincronizar_clientes(limit=100)  # Limitar a 100 clientes
+            # 1. Sincronizar clientes (SEM paginação recursiva - apenas primeira página)
+            logger.info("\n📋 ETAPA 1: Sincronizando primeiros 100 clientes...")
+            stats_clientes = self.sincronizar_clientes(limit=100, offset=0)
             
             log.total_clientes = stats_clientes['total']
             log.clientes_novos = stats_clientes['novos']
             log.clientes_atualizados = stats_clientes['atualizados']
             
-            logger.info(f"✅ Clientes: {stats_clientes['total']} total, {stats_clientes['novos']} novos, {stats_clientes['atualizados']} atualizados")
+            logger.info(f"✅ Clientes: {stats_clientes['total']} processados, {stats_clientes['novos']} novos, {stats_clientes['atualizados']} atualizados")
             
-            # 2. Sincronizar cobranças
-            if limite_clientes:
-                logger.info(f"\n💰 ETAPA 2: Sincronizando cobranças (primeiros {limite_clientes} clientes)...")
-            else:
-                logger.info(f"\n💰 ETAPA 2: Sincronizando cobranças de TODOS os clientes...")
+            # 2. Sincronizar cobranças apenas dos primeiros clientes
+            # Limitar para evitar timeout
+            limite_cobrancas = limite_clientes if limite_clientes else 10
+            logger.info(f"\n💰 ETAPA 2: Sincronizando cobranças dos primeiros {limite_cobrancas} clientes...")
             
-            stats_cobrancas = self.sincronizar_todas_cobrancas(limite_clientes=limite_clientes)
+            stats_cobrancas = self.sincronizar_todas_cobrancas(limite_clientes=limite_cobrancas)
             
             log.total_cobrancas = stats_cobrancas['total']
             log.cobrancas_novas = stats_cobrancas['novas']
@@ -349,7 +343,13 @@ class AsaasSyncService:
             # Finalizar log
             log.data_fim = timezone.now()
             log.calcular_duracao()
-            log.mensagem = f"Sincronização concluída com sucesso!\n\nClientes: {stats_clientes['total']} ({stats_clientes['novos']} novos)\nCobranças: {stats_cobrancas['total']} ({stats_cobrancas['novas']} novas)"
+            log.mensagem = f"""Sincronização RÁPIDA concluída com sucesso!
+
+📋 Clientes: {stats_clientes['total']} processados ({stats_clientes['novos']} novos)
+💰 Cobranças: {stats_cobrancas['total']} processadas ({stats_cobrancas['novas']} novas)
+
+⚠️  ATENÇÃO: Esta é uma sincronização rápida (primeiros 100 clientes e 10 primeiros para cobranças).
+Para sincronizar TODOS os dados, use: "Sincronizar Boletos Faltantes" """
             
             if stats_clientes['erros'] > 0 or stats_cobrancas['erros'] > 0:
                 log.status = 'PARCIAL'
