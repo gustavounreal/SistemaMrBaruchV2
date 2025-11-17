@@ -24,7 +24,7 @@ class AsaasSyncService:
             'Content-Type': 'application/json',
             'access_token': self.api_token
         }
-        self.timeout = 6000  
+        self.timeout = 1800  # 30 minutos - adequado para processamentos em lote
         self.limite_por_pagina = 100000 
     
     def _fazer_requisicao(self, metodo, endpoint, params=None):

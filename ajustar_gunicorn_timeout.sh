@@ -19,8 +19,8 @@ WorkingDirectory=/home/mrbaruch/sistemaMrBaruchProjeto
 ExecStart=/home/mrbaruch/venv/bin/gunicorn \\
           --access-logfile - \\
           --workers 3 \\
-          --timeout 300 \\
-          --graceful-timeout 300 \\
+          --timeout 1800 \\
+          --graceful-timeout 1800 \\
           --bind unix:/run/gunicorn.sock \\
           sistemaMrBaruchProjeto.wsgi:application
 
@@ -28,7 +28,7 @@ ExecStart=/home/mrbaruch/venv/bin/gunicorn \\
 WantedBy=multi-user.target
 EOF
 
-echo "✅ Arquivo de serviço atualizado com timeout de 300 segundos (5 minutos)"
+echo "✅ Arquivo de serviço atualizado com timeout de 1800 segundos (30 minutos)"
 
 # Recarregar systemd
 echo "🔄 Recarregando systemd..."
@@ -44,4 +44,5 @@ sudo systemctl status gunicorn --no-pager
 
 echo ""
 echo "✅ Configuração concluída!"
-echo "O Gunicorn agora aguarda até 5 minutos antes de matar processos longos."
+echo "O Gunicorn agora aguarda até 30 minutos antes de matar processos longos."
+echo "Ideal para sincronizações em lote que demoram mais tempo."
