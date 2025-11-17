@@ -70,6 +70,109 @@
                     {% endif %}
                 </div>
             </div>
+            
+            <!-- Atualizar Telefone -->
+            <div class="card mt-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-phone me-2"></i>Atualizar Telefone</h5>
+                </div>
+                <div class="card-body">
+                    <form id="formTelefone" onsubmit="return atualizarTelefone(event)">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Telefone Fixo</label>
+                            <input type="text" class="form-control" name="telefone" value="{{ cliente.telefone }}" placeholder="(00) 0000-0000">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Celular</label>
+                            <input type="text" class="form-control" name="celular" value="{{ cliente.celular }}" placeholder="(00) 00000-0000">
+                        </div>
+                        <button type="submit" class="btn btn-info w-100">
+                            <i class="fas fa-save me-2"></i>Salvar Telefones
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Upload de Documentos -->
+            <div class="card mt-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Upload de Documentos</h5>
+                </div>
+                <div class="card-body">
+                    <form id="formUpload" onsubmit="return uploadDocumento(event)" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Documento</label>
+                            <select class="form-select" name="tipo" required>
+                                {% for value, label in tipos_documento %}
+                                <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descrição (opcional)</label>
+                            <input type="text" class="form-control" name="descricao" placeholder="Ex: RG frente e verso">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Arquivo (máx. 50MB)</label>
+                            <input type="file" class="form-control" name="arquivo" required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                            <small class="text-muted">PDFs serão comprimidos automaticamente</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-cloud-upload-alt me-2"></i>Enviar Documento
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Lista de Documentos -->
+            {% if documentos %}
+            <div class="card mt-3">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-folder-open me-2"></i>Documentos ({{ documentos.count }})</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <tbody>
+                                {% for doc in documentos %}
+                                <tr>
+                                    <td style="width: 40px;" class="text-center">
+                                        {% if doc.arquivo.name|lower|slice:"-4:" == ".pdf" %}
+                                            <i class="fas fa-file-pdf text-danger fa-lg"></i>
+                                        {% elif doc.arquivo.name|lower|slice:"-4:" in ".jpg.jpeg.png" %}
+                                            <i class="fas fa-file-image text-primary fa-lg"></i>
+                                        {% else %}
+                                            <i class="fas fa-file text-secondary fa-lg"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ doc.get_tipo_display }}</strong><br>
+                                        <small class="text-muted">
+                                            {{ doc.descricao|default:"Sem descrição" }}<br>
+                                            {{ doc.get_tamanho_mb }} MB
+                                            {% if doc.comprimido %}
+                                                <span class="badge bg-success">Comprimido {{ doc.get_percentual_compressao }}%</span>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td style="width: 120px;" class="text-end">
+                                        <a href="{% url 'asaas_sync:download_documento_cliente' doc.id %}" class="btn btn-sm btn-outline-primary" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <button onclick="excluirDocumento({{ doc.id }})" class="btn btn-sm btn-outline-danger" title="Excluir">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Resumo Financeiro -->
@@ -401,6 +504,115 @@ function copiarPix() {
     input.select();
     document.execCommand('copy');
     alert('PIX copiado para a área de transferência!');
+}
+
+function atualizarTelefone(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    const btn = form.querySelector('button[type="submit"]');
+    const btnText = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Salvando...';
+    
+    fetch('{% url "asaas_sync:atualizar_telefone_cliente" cliente.id %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message);
+            location.reload();
+        } else {
+            alert('❌ ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('❌ Erro ao atualizar telefone: ' + error);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = btnText;
+    });
+    
+    return false;
+}
+
+function uploadDocumento(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    const btn = form.querySelector('button[type="submit"]');
+    const btnText = btn.innerHTML;
+    const arquivo = form.querySelector('input[type="file"]').files[0];
+    
+    // Validar tamanho (50MB)
+    if (arquivo && arquivo.size > 52428800) {
+        alert('❌ Arquivo muito grande! Limite: 50MB');
+        return false;
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+    
+    fetch('{% url "asaas_sync:upload_documento_cliente" cliente.id %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message);
+            location.reload();
+        } else {
+            alert('❌ ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('❌ Erro ao enviar documento: ' + error);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = btnText;
+    });
+    
+    return false;
+}
+
+function excluirDocumento(documentoId) {
+    if (!confirm('⚠️ Tem certeza que deseja excluir este documento?')) {
+        return;
+    }
+    
+    fetch(`/asaas-sync/documentos/${documentoId}/excluir/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message);
+            location.reload();
+        } else {
+            alert('❌ ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('❌ Erro ao excluir documento: ' + error);
+    });
 }
 </script>
 {% endblock %}

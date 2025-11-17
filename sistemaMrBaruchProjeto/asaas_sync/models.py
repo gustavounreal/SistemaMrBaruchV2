@@ -277,3 +277,61 @@ class AsaasSyncronizacaoLog(models.Model):
             delta = self.data_fim - self.data_inicio
             self.duracao_segundos = int(delta.total_seconds())
             self.save(update_fields=['duracao_segundos'])
+
+
+class DocumentoClienteAsaas(models.Model):
+    """Documentos anexados aos clientes Asaas"""
+    
+    TIPO_DOCUMENTO_CHOICES = [
+        ('RG', 'RG'),
+        ('CPF', 'CPF'),
+        ('CNH', 'CNH'),
+        ('COMPROVANTE_RESIDENCIA', 'Comprovante de Residência'),
+        ('CONTRATO', 'Contrato'),
+        ('PROCURACAO', 'Procuração'),
+        ('CARTA_AUTORIZACAO', 'Carta de Autorização'),
+        ('EXTRATO_BANCARIO', 'Extrato Bancário'),
+        ('RELATORIO', 'Relatório'),
+        ('OUTROS', 'Outros'),
+    ]
+    
+    cliente = models.ForeignKey(
+        AsaasClienteSyncronizado,
+        on_delete=models.CASCADE,
+        related_name='documentos',
+        verbose_name='Cliente'
+    )
+    tipo = models.CharField('Tipo', max_length=50, choices=TIPO_DOCUMENTO_CHOICES)
+    arquivo = models.FileField('Arquivo', upload_to='asaas_clientes_docs/%Y/%m/')
+    descricao = models.CharField('Descrição', max_length=255, blank=True, null=True)
+    
+    # Metadados
+    tamanho_original = models.BigIntegerField('Tamanho Original (bytes)', blank=True, null=True)
+    tamanho_final = models.BigIntegerField('Tamanho Final (bytes)', blank=True, null=True)
+    comprimido = models.BooleanField('Foi Comprimido', default=False)
+    
+    # Controle
+    enviado_por = models.CharField('Enviado por', max_length=100)
+    data_upload = models.DateTimeField('Data Upload', auto_now_add=True)
+    
+    class Meta:
+        db_table = 'asaas_sync_documentos_clientes'
+        verbose_name = 'Documento Cliente Asaas'
+        verbose_name_plural = 'Documentos Clientes Asaas'
+        ordering = ['-data_upload']
+    
+    def __str__(self):
+        return f"{self.get_tipo_display()} - {self.cliente.nome}"
+    
+    def get_tamanho_mb(self):
+        """Retorna tamanho do arquivo em MB"""
+        if self.arquivo and self.arquivo.size:
+            return round(self.arquivo.size / (1024 * 1024), 2)
+        return 0
+    
+    def get_percentual_compressao(self):
+        """Retorna percentual de compressão"""
+        if self.tamanho_original and self.tamanho_final:
+            reducao = ((self.tamanho_original - self.tamanho_final) / self.tamanho_original) * 100
+            return round(reducao, 1)
+        return 0

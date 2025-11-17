@@ -169,11 +169,15 @@ def lista_clientes(request):
 @login_required
 def detalhes_cliente(request, cliente_id):
     """Detalhes de um cliente e suas cobranças"""
+    from .models import DocumentoClienteAsaas
     
     cliente = get_object_or_404(AsaasClienteSyncronizado, id=cliente_id)
     
     # Cobranças do cliente
     cobrancas = cliente.cobrancas.all().order_by('-data_vencimento')
+    
+    # Documentos do cliente
+    documentos = DocumentoClienteAsaas.objects.filter(cliente=cliente).order_by('-data_upload')
     
     # Estatísticas do cliente
     stats = {
@@ -189,9 +193,14 @@ def detalhes_cliente(request, cliente_id):
     cobrancas_vencidas = cobrancas.filter(status='OVERDUE')
     cobrancas_outras = cobrancas.exclude(status__in=['RECEIVED', 'CONFIRMED', 'PENDING', 'OVERDUE'])
     
+    # Tipos de documento para o select
+    tipos_documento = DocumentoClienteAsaas.TIPO_DOCUMENTO_CHOICES
+    
     context = {
         'cliente': cliente,
         'cobrancas': cobrancas,
+        'documentos': documentos,
+        'tipos_documento': tipos_documento,
         'stats': stats,
         'cobrancas_pagas': cobrancas_pagas,
         'cobrancas_pendentes': cobrancas_pendentes,
@@ -552,6 +561,213 @@ def atualizar_cliente(request, cliente_id):
         'success': False,
         'message': 'Método não permitido'
     }, status=405)
+
+
+def comprimir_pdf_asaas(arquivo):
+    """
+    Comprime um arquivo PDF usando pikepdf.
+    Retorna o arquivo comprimido ou o original se falhar/não for PDF.
+    """
+    if not arquivo.name.lower().endswith('.pdf'):
+        return arquivo
+    
+    try:
+        import pikepdf
+        import io
+        
+        # Ler o PDF original
+        arquivo.seek(0)
+        pdf_original = pikepdf.open(arquivo)
+        
+        # Criar buffer para o PDF comprimido
+        buffer = io.BytesIO()
+        
+        # Salvar com compressão
+        pdf_original.save(
+            buffer,
+            compress_streams=True,
+            stream_decode_level=pikepdf.StreamDecodeLevel.generalized,
+            object_stream_mode=pikepdf.ObjectStreamMode.generate
+        )
+        pdf_original.close()
+        
+        # Obter tamanhos
+        tamanho_original = arquivo.size
+        tamanho_comprimido = buffer.tell()
+        
+        logger.info(f"📦 Compressão PDF: {tamanho_original} bytes → {tamanho_comprimido} bytes ({((tamanho_original - tamanho_comprimido) / tamanho_original * 100):.1f}% redução)")
+        
+        # Criar novo arquivo comprimido
+        buffer.seek(0)
+        from django.core.files.base import ContentFile
+        arquivo_comprimido = ContentFile(buffer.read(), name=arquivo.name)
+        
+        return arquivo_comprimido, tamanho_original, tamanho_comprimido, True
+        
+    except Exception as e:
+        logger.error(f"❌ Erro ao comprimir PDF: {str(e)}")
+        arquivo.seek(0)
+        return arquivo, arquivo.size, arquivo.size, False
+
+
+@login_required
+def upload_documento_cliente(request, cliente_id):
+    """Upload de documento para cliente Asaas"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método não permitido'}, status=405)
+    
+    try:
+        from .models import DocumentoClienteAsaas
+        
+        cliente = get_object_or_404(AsaasClienteSyncronizado, id=cliente_id)
+        
+        # Validar campos
+        if 'arquivo' not in request.FILES:
+            return JsonResponse({'success': False, 'message': 'Nenhum arquivo enviado'}, status=400)
+        
+        arquivo = request.FILES['arquivo']
+        tipo = request.POST.get('tipo', 'OUTROS')
+        descricao = request.POST.get('descricao', '')
+        
+        # Validar tamanho (50MB = 52428800 bytes)
+        if arquivo.size > 52428800:
+            return JsonResponse({
+                'success': False,
+                'message': 'Arquivo muito grande! Limite: 50MB'
+            }, status=400)
+        
+        # Comprimir PDF se necessário
+        tamanho_original = arquivo.size
+        comprimido = False
+        
+        if arquivo.name.lower().endswith('.pdf'):
+            logger.info(f"📄 Processando PDF: {arquivo.name} ({tamanho_original} bytes)")
+            arquivo, tamanho_original, tamanho_final, comprimido = comprimir_pdf_asaas(arquivo)
+        else:
+            tamanho_final = tamanho_original
+        
+        # Criar documento
+        documento = DocumentoClienteAsaas.objects.create(
+            cliente=cliente,
+            tipo=tipo,
+            arquivo=arquivo,
+            descricao=descricao,
+            tamanho_original=tamanho_original,
+            tamanho_final=tamanho_final,
+            comprimido=comprimido,
+            enviado_por=request.user.username
+        )
+        
+        logger.info(f"✅ Documento salvo: {documento.id} - {documento.get_tipo_display()}")
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Documento enviado com sucesso!{" (PDF comprimido)" if comprimido else ""}',
+            'documento': {
+                'id': documento.id,
+                'tipo': documento.get_tipo_display(),
+                'descricao': documento.descricao,
+                'tamanho_mb': documento.get_tamanho_mb(),
+                'comprimido': documento.comprimido,
+                'percentual_compressao': documento.get_percentual_compressao() if comprimido else 0,
+                'data_upload': documento.data_upload.strftime('%d/%m/%Y %H:%M'),
+                'enviado_por': documento.enviado_por,
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Erro ao fazer upload: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'message': f'Erro ao enviar documento: {str(e)}'
+        }, status=500)
+
+
+@login_required
+def excluir_documento_cliente(request, documento_id):
+    """Exclui documento de cliente Asaas"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método não permitido'}, status=405)
+    
+    try:
+        from .models import DocumentoClienteAsaas
+        
+        documento = get_object_or_404(DocumentoClienteAsaas, id=documento_id)
+        cliente_id = documento.cliente.id
+        
+        # Excluir arquivo físico
+        if documento.arquivo:
+            try:
+                documento.arquivo.delete()
+            except:
+                pass
+        
+        documento.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Documento excluído com sucesso!'
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Erro ao excluir documento: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'message': f'Erro ao excluir: {str(e)}'
+        }, status=500)
+
+
+@login_required
+def download_documento_cliente(request, documento_id):
+    """Download de documento de cliente Asaas"""
+    from .models import DocumentoClienteAsaas
+    from django.http import FileResponse
+    
+    documento = get_object_or_404(DocumentoClienteAsaas, id=documento_id)
+    
+    if not documento.arquivo:
+        return JsonResponse({'success': False, 'message': 'Arquivo não encontrado'}, status=404)
+    
+    try:
+        response = FileResponse(documento.arquivo.open('rb'))
+        response['Content-Disposition'] = f'attachment; filename="{documento.arquivo.name.split("/")[-1]}"'
+        return response
+    except Exception as e:
+        logger.error(f"❌ Erro ao fazer download: {str(e)}", exc_info=True)
+        return JsonResponse({'success': False, 'message': f'Erro: {str(e)}'}, status=500)
+
+
+@login_required
+def atualizar_telefone_cliente(request, cliente_id):
+    """Atualiza telefone do cliente Asaas"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método não permitido'}, status=405)
+    
+    try:
+        cliente = get_object_or_404(AsaasClienteSyncronizado, id=cliente_id)
+        
+        telefone = request.POST.get('telefone', '').strip()
+        celular = request.POST.get('celular', '').strip()
+        
+        cliente.telefone = telefone if telefone else None
+        cliente.celular = celular if celular else None
+        cliente.save(update_fields=['telefone', 'celular'])
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Telefone atualizado com sucesso!',
+            'data': {
+                'telefone': cliente.telefone or '',
+                'celular': cliente.celular or '',
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Erro ao atualizar telefone: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'message': f'Erro ao atualizar: {str(e)}'
+        }, status=500)
 
 
 @login_required
