@@ -348,7 +348,7 @@ class AsaasSyncService:
 📋 Clientes: {stats_clientes['total']} processados ({stats_clientes['novos']} novos)
 💰 Cobranças: {stats_cobrancas['total']} processadas ({stats_cobrancas['novas']} novas)
 
-⚠️  ATENÇÃO: Esta é uma sincronização rápida (primeiros 200 clientes e 10 primeiros para cobranças).
+⚠️  ATENÇÃO: Esta é uma sincronização rápida (primeiros 2000 clientes e 10 primeiros para cobranças).
 Para sincronizar TODOS os dados, use: "Sincronizar Boletos Faltantes" """
             
             if stats_clientes['erros'] > 0 or stats_cobrancas['erros'] > 0:
