@@ -318,8 +318,8 @@ class AsaasSyncService:
         
         try:
             # 1. Sincronizar clientes (SEM paginação recursiva - apenas primeira página)
-            logger.info("\n📋 ETAPA 1: Sincronizando primeiros 200 clientes...")
-            stats_clientes = self.sincronizar_clientes(limit=200, offset=0)
+            logger.info("\n📋 ETAPA 1: Sincronizando primeiros 2000 clientes...")
+            stats_clientes = self.sincronizar_clientes(limit=2000, offset=0)
             
             log.total_clientes = stats_clientes['total']
             log.clientes_novos = stats_clientes['novos']
