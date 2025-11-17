@@ -102,14 +102,14 @@
                 <div class="card-body">
                     <form id="formUpload" onsubmit="return uploadDocumento(event)" enctype="multipart/form-data">
                         {% csrf_token %}
-                        <div class="mb-3">
+                       <!-- <div class="mb-3">
                             <label class="form-label">Tipo de Documento</label>
                             <select class="form-select" name="tipo" required>
                                 {% for value, label in tipos_documento %}
                                 <option value="{{ value }}">{{ label }}</option>
                                 {% endfor %}
                             </select>
-                        </div>
+                        </div>-->
                         <div class="mb-3">
                             <label class="form-label">Descrição (opcional)</label>
                             <input type="text" class="form-control" name="descricao" placeholder="Ex: RG frente e verso">
