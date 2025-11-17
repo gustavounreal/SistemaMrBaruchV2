@@ -46,6 +46,23 @@ class ImportadorJSON:
         print(f"📊 Clientes: {self.dados.get('total_clientes', 0)}")
         print(f"📊 Cobranças: {self.dados.get('total_cobrancas', 0)}")
         
+        # Validar estrutura do JSON
+        print("\n🔍 Validando estrutura do JSON...")
+        validacao = self.dados.get('validacao', {})
+        
+        if validacao:
+            print(f"✅ Download completo: {validacao.get('download_completo', False)}")
+            print(f"✅ Clientes únicos: {validacao.get('clientes_unicos', 0)}")
+            print(f"✅ Cobranças únicas: {validacao.get('cobrancas_unicas', 0)}")
+        
+        if self.dados.get('cobrancas_por_status'):
+            print(f"\n📊 Cobranças por status:")
+            for status, qtd in self.dados['cobrancas_por_status'].items():
+                print(f"   • {status}: {qtd}")
+        
+        if self.dados.get('valor_total_cobrancas'):
+            print(f"\n💰 Valor total: R$ {self.dados['valor_total_cobrancas']:,.2f}")
+        
     def importar_clientes(self):
         """Importa clientes para o banco"""
         print("\n" + "="*80)
