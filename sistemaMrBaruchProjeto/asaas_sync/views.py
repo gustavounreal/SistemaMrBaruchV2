@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.conf import settings
 from .models import AsaasClienteSyncronizado, AsaasCobrancaSyncronizada, AsaasSyncronizacaoLog
 from .services import AsaasSyncService
+from .sync_completo import AsaasSyncCompleto  # NOVO: Sincronização robusta
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 from openpyxl.utils import get_column_letter
@@ -284,18 +285,25 @@ def lista_cobrancas(request):
 
 @login_required
 def sincronizar_agora(request):
-    """Inicia sincronização manual - TODOS os clientes e cobranças"""
+    """
+    Sincronização COMPLETA e ROBUSTA
+    Baixa TUDO primeiro, depois salva no banco
+    """
     
     if request.method == 'POST':
         try:
-            logger.info(f"Sincronização COMPLETA iniciada por {request.user.username}")
+            logger.info(f"🚀 Sincronização COMPLETA iniciada por {request.user.username}")
             
-            sync_service = AsaasSyncService()
-            log = sync_service.sincronizar_tudo(usuario=request.user, limite_clientes=None)  # None = TODOS
+            # Usar o novo serviço de sincronização completa
+            sync_service = AsaasSyncCompleto()
+            log = sync_service.executar_sincronizacao_completa(
+                usuario=request.user,
+                nome_conta="Asaas Principal"
+            )
             
             return JsonResponse({
                 'success': True,
-                'message': 'Sincronização concluída com sucesso!',
+                'message': 'Sincronização completa realizada com sucesso!',
                 'log': {
                     'id': log.id,
                     'status': log.status,
@@ -309,7 +317,7 @@ def sincronizar_agora(request):
             })
             
         except Exception as e:
-            logger.error(f"Erro na sincronização: {str(e)}", exc_info=True)
+            logger.error(f"❌ Erro na sincronização: {str(e)}", exc_info=True)
             return JsonResponse({
                 'success': False,
                 'message': f'Erro na sincronização: {str(e)}'
@@ -548,7 +556,10 @@ def atualizar_cliente(request, cliente_id):
 
 @login_required
 def sincronizar_alternativo(request):
-    """Sincroniza dados de uma conta Asaas alternativa usando processamento em background"""
+    """
+    Sincroniza dados de conta Asaas ALTERNATIVA
+    Usa o mesmo método robusto: baixa tudo → salva tudo
+    """
     
     if request.method == 'POST':
         try:
@@ -561,45 +572,29 @@ def sincronizar_alternativo(request):
                     'message': '❌ Token alternativo não configurado.\n\nConfigure ASAAS_ALTERNATIVO_TOKEN nas variáveis de ambiente.'
                 }, status=500)
             
-            logger.info(f"Sincronização alternativa iniciada por {request.user.username}")
+            logger.info(f"🚀 Sincronização ALTERNATIVA iniciada por {request.user.username}")
             
-            # Iniciar sincronização em background usando comando Django
-            def executar_sync():
-                try:
-                    # Caminho para o manage.py
-                    base_dir = settings.BASE_DIR
-                    manage_py = base_dir / 'manage.py'
-                    
-                    # Executar comando em background
-                    python_executable = sys.executable
-                    
-                    comando = [
-                        python_executable,
-                        str(manage_py),
-                        'sincronizar_asaas_alternativo'
-                    ]
-                    
-                    logger.info(f"Executando comando: {' '.join(comando)}")
-                    
-                    # Executar sem bloquear
-                    subprocess.Popen(
-                        comando,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        cwd=str(base_dir)
-                    )
-                    
-                except Exception as e:
-                    logger.error(f"Erro ao iniciar sincronização em background: {str(e)}", exc_info=True)
-            
-            # Iniciar thread para não bloquear a resposta HTTP
-            thread = threading.Thread(target=executar_sync)
-            thread.daemon = True
-            thread.start()
+            # Usar o novo serviço de sincronização completa com token alternativo
+            sync_service = AsaasSyncCompleto(api_token=token_alternativo)
+            log = sync_service.executar_sincronizacao_completa(
+                usuario=request.user,
+                nome_conta="Asaas Alternativo (Conta 2)"
+            )
             
             return JsonResponse({
                 'success': True,
-                'message': '🔄 Sincronização iniciada em background!\n\nO processo pode levar alguns minutos. Recarregue a página em instantes para ver os novos dados.'
+                'message': 'Sincronização alternativa completa realizada com sucesso!',
+                'log': {
+                    'id': log.id,
+                    'status': log.status,
+                    'total_clientes': log.total_clientes,
+                    'clientes_novos': log.clientes_novos,
+                    'total_cobrancas': log.total_cobrancas,
+                    'cobrancas_novas': log.cobrancas_novas,
+                    'duracao': log.duracao_segundos,
+                    'mensagem': log.mensagem,
+                }
+            })
             })
             
         except Exception as e:
