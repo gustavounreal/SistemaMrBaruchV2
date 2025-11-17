@@ -489,7 +489,7 @@ def gerar_contrato(request, venda_id):
         if venda.recuperacao_score:
             servicos_texto.append("• <b>Restauração do Score</b> (observada a possível variação conforme critérios técnicos dos órgãos de proteção ao crédito). <b>A pontuação voltará a ser o que era antes do nome ser negativado. A pontuação pode variar, mas não abaixará.</b>")
         
-        servicos_texto.append(f"• <b>Entrega do resultado <u>(nada consta)</u></b> em até <b>{dias_uteis} dias</b>, a partir da assinatura do contrato e do pagamento da entrada.")
+        servicos_texto.append(f"• <b>Entrega do resultado <u>(nada consta)</u></b> em até <b> dias</b>, a partir da assinatura do contrato e do pagamento da entrada.")
         
         story.append(Paragraph(
             f"1.1. O presente contrato tem por objeto a prestação de serviços especializados pelo <b>CONTRATADO</b> ao <b>CONTRATANTE</b>, visando:<br/><br/>" +
