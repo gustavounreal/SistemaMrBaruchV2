@@ -560,7 +560,9 @@ function sincronizarAgora() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('✅ Sincronização concluída com sucesso!\n\n' +
+            // Usar a mensagem completa do log que contém todas as informações
+            alert(data.log.mensagem || 
+                  '✅ Sincronização concluída com sucesso!\n\n' +
                   'Clientes: ' + data.log.total_clientes + ' (' + data.log.clientes_novos + ' novos)\n' +
                   'Cobranças: ' + data.log.total_cobrancas + ' (' + data.log.cobrancas_novas + ' novas)\n' +
                   'Duração: ' + data.log.duracao + 's');
