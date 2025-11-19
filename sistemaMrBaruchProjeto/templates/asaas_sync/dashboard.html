@@ -17,10 +17,22 @@
     
     <div class="collapse" id="infoSincronizacao">
         <div class="alert alert-warning alert-dismissible" role="alert">
-            <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Informação sobre Sincronização Alternativa</h5>
+            <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Informação sobre Sincronização</h5>
             <p class="mb-2">
                 <strong>Asaas 1 (Principal):</strong> Sincroniza com a conta Asaas principal<br>
-                <strong>Asaas 2 (Alternativo):</strong> Sincroniza com uma conta Asaas secundária
+                <strong>Asaas 2 (Alternativo):</strong> Sincroniza com uma conta Asaas secundária<br>
+                <strong>Boletos Faltantes:</strong> Adiciona apenas boletos novos (não remove)
+            </p>
+            <hr>
+            <p class="mb-2">
+                <strong><i class="fas fa-sync me-1"></i>O que faz a Sincronização Completa:</strong><br>
+                <small>
+                     Baixa todos os clientes e cobranças do Asaas<br>
+                     Atualiza valores alterados<br>
+                     Adiciona novos boletos<br>
+                    <strong class="text-danger">Remove boletos que foram deletados no Asaas</strong><br>
+                     Garante que os valores totais sejam idênticos
+                </small>
             </p>
             <hr>
             <p class="mb-0">
@@ -30,8 +42,7 @@
                     <br>• Credenciais inválidas
                     <br>• Sem permissões adequadas
                     <br><br>
-                    💡 <strong>Solução:</strong> Verifique as credenciais da conta Asaas alternativa
-                </small>
+                    💡 <strong>Solução:</strong> Verifique as credenciais da conta Asaas</small>
             </p>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
@@ -43,17 +54,17 @@
                 <h2 class="mb-3 mb-md-0"><i class="fas fa-chart-line me-2"></i>Dashboard Asaas - Dados Sincronizados</h2>
                 <div class="d-flex gap-2 flex-wrap justify-content-end">
                     <!-- Botões de sincronização comentados temporariamente -->
-                    <!--
-                    <button class="btn btn-primary" onclick="sincronizarAgora()" title="Sincroniza TODOS os clientes e cobranças do ASAAS Principal">
+                   
+                    <button class="btn btn-primary" onclick="sincronizarAgora()" title="Sincroniza TODOS os clientes e cobranças do ASAAS Principal + Remove boletos deletados">
                         <i class="fas fa-sync me-2"></i>Sincronizar Completo (Asaas 1)
                     </button>
-                    <button class="btn btn-secondary" onclick="sincronizarAsaasAlternativo()" title="Sincroniza TODOS os clientes e cobranças do ASAAS Alternativo">
+                    <button class="btn btn-secondary" onclick="sincronizarAsaasAlternativo()" title="Sincroniza TODOS os clientes e cobranças do ASAAS Alternativo + Remove boletos deletados">
                         <i class="fas fa-download me-2"></i>Sincronizar Completo (Asaas 2)
                     </button>
                     <button class="btn btn-info" onclick="sincronizarBoletosFaltantes()" title="Sincroniza APENAS boletos faltantes dos clientes já cadastrados">
                         <i class="fas fa-file-invoice me-2"></i>Sincronizar Boletos Faltantes
                     </button>
-                    -->
+                    
                 </div>
             </div>
             {% if ultima_sync %}

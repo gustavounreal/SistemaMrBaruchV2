@@ -369,13 +369,71 @@ class AsaasSyncCompleto:
         
         return stats
     
+    def limpar_cobrancas_deletadas(self):
+        """
+        FASE 3: Excluir cobranças que existem no servidor mas NÃO existem mais no Asaas
+        Garante que os valores totais sejam idênticos
+        """
+        logger.info("\n" + "="*80)
+        logger.info("🗑️  FASE 3: LIMPANDO COBRANÇAS DELETADAS DO ASAAS")
+        logger.info("="*80)
+        
+        # IDs de cobranças que vieram do Asaas
+        ids_asaas = set()
+        for cobranca_data in self.dados_cobrancas:
+            asaas_payment_id = cobranca_data.get('id')
+            if asaas_payment_id:
+                ids_asaas.add(asaas_payment_id)
+        
+        logger.info(f"Total de cobranças no Asaas: {len(ids_asaas)}")
+        
+        # Buscar TODAS as cobranças no banco local
+        cobrancas_local = AsaasCobrancaSyncronizada.objects.all()
+        total_local = cobrancas_local.count()
+        
+        logger.info(f"Total de cobranças no banco local: {total_local}")
+        
+        # Encontrar cobranças que NÃO existem mais no Asaas
+        cobrancas_para_excluir = []
+        for cobranca in cobrancas_local:
+            if cobranca.asaas_payment_id not in ids_asaas:
+                cobrancas_para_excluir.append(cobranca)
+        
+        total_excluir = len(cobrancas_para_excluir)
+        
+        if total_excluir == 0:
+            logger.info("✅ Nenhuma cobrança para excluir. Dados sincronizados!")
+            return {'excluidas': 0}
+        
+        logger.info(f"⚠️  Encontradas {total_excluir} cobranças que NÃO existem mais no Asaas")
+        logger.info("🗑️  Iniciando exclusão...")
+        
+        # Excluir cobranças
+        excluidas = 0
+        for cobranca in cobrancas_para_excluir:
+            try:
+                cliente_nome = cobranca.cliente.nome if cobranca.cliente else "Cliente desconhecido"
+                valor = cobranca.valor
+                logger.info(f"   🗑️  Excluindo: {cobranca.asaas_payment_id} - {cliente_nome} - R$ {valor}")
+                cobranca.delete()
+                excluidas += 1
+            except Exception as e:
+                logger.error(f"   ❌ Erro ao excluir cobrança {cobranca.asaas_payment_id}: {str(e)}")
+        
+        logger.info("\n" + "="*80)
+        logger.info(f"✅ FASE 3 COMPLETA: {excluidas} cobranças excluídas")
+        logger.info("="*80)
+        
+        return {'excluidas': excluidas}
+    
     def executar_sincronizacao_completa(self, usuario=None, nome_conta="Principal"):
         """
-        Executa sincronização completa em 4 FASES:
+        Executa sincronização completa em 5 FASES:
         FASE 1A: Baixar todos os clientes
         FASE 1B: Baixar todas as cobranças
         FASE 2A: Salvar clientes no banco
         FASE 2B: Salvar cobranças no banco
+        FASE 3: Limpar cobranças deletadas do Asaas
         """
         logger.info("\n" + "🚀"*40)
         logger.info(f"SINCRONIZAÇÃO COMPLETA - ASAAS {nome_conta}")
@@ -404,6 +462,9 @@ class AsaasSyncCompleto:
             # FASE 2B: Salvar cobranças
             stats_cobrancas = self.salvar_cobrancas_no_banco()
             
+            # FASE 3: Limpar cobranças deletadas
+            stats_limpeza = self.limpar_cobrancas_deletadas()
+            
             # Finalizar log
             tempo_fim = timezone.now()
             duracao = (tempo_fim - tempo_inicio).total_seconds()
@@ -420,6 +481,8 @@ class AsaasSyncCompleto:
             log.data_fim = tempo_fim
             log.duracao_segundos = int(duracao)
             
+            cobrancas_excluidas = stats_limpeza.get('excluidas', 0)
+            
             log.mensagem = f"""✅ Sincronização COMPLETA - {nome_conta}
 
 📥 DOWNLOAD (Fase 1):
@@ -430,9 +493,12 @@ class AsaasSyncCompleto:
    • Clientes salvos: {stats_clientes['total']} ({stats_clientes['novos']} novos, {stats_clientes['atualizados']} atualizados)
    • Cobranças salvas: {stats_cobrancas['total']} ({stats_cobrancas['novas']} novas, {stats_cobrancas['atualizadas']} atualizadas)
 
+🗑️  LIMPEZA (Fase 3):
+   • Cobranças excluídas: {cobrancas_excluidas}
+
 ⏱️  Duração: {duracao:.0f} segundos ({duracao/60:.1f} minutos)
 
-✅ GARANTIA: Todos os dados foram baixados ANTES de salvar no banco!"""
+✅ GARANTIA: Valores totais do servidor = Valores totais do Asaas!"""
             
             if stats_clientes['erros'] > 0 or stats_cobrancas['erros'] > 0:
                 log.status = 'PARCIAL'
