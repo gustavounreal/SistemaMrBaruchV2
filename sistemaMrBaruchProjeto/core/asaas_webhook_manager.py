@@ -25,9 +25,8 @@ class AsaasWebhookManager:
         """
         self.api_token = api_token or getattr(settings, 'ASAAS_API_TOKEN', '')
         
-        # Determinar ambiente (sandbox ou production)
-        is_sandbox = getattr(settings, 'ASAAS_SANDBOX', True)
-        self.base_url = 'https://sandbox.asaas.com/api/v3' if is_sandbox else 'https://api.asaas.com/v3'
+        # FORÇAR SEMPRE PRODUÇÃO
+        self.base_url = 'https://api.asaas.com/v3'  # SEMPRE PRODUÇÃO
         
         self.headers = {
             'access_token': self.api_token,

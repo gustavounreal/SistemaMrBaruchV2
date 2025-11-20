@@ -74,17 +74,17 @@
                 <p class="text-muted small mb-0">Separe as configurações por etapa da jornada</p>
               </div>
               <div class="col-auto d-flex gap-2">
-                <button type="button" class="btn btn-outline-success btn-sm rounded-pill" id="btnResendWebhooks">
+                <button type="button" class="btn btn-outline-success btn-sm rounded-pill" id="btnResendWebhooks" title="Reenviar webhooks pendentes do ASAAS (PRODUÇÃO)">
                   <i class="bi bi-arrow-clockwise"></i> Reenviar Webhooks Pendentes
                 </button>
-                <button type="button" class="btn btn-outline-info btn-sm rounded-pill" id="btnWebhookStats">
+                <button type="button" class="btn btn-outline-info btn-sm rounded-pill" id="btnWebhookStats" title="Ver estatísticas de webhooks recebidos">
                   <i class="bi bi-graph-up"></i> Estatísticas
                 </button>
                 <form method="post" class="d-inline">
                   {% csrf_token %}
                   <input type="hidden" name="acao" value="testar_asaas">
-                  <button type="submit" class="btn btn-outline-dark btn-sm rounded-pill">
-                    <i class="bi bi-plug"></i> Testar integração ASAAS
+                  <button type="submit" class="btn btn-outline-dark btn-sm rounded-pill" title="Testar conexão com API ASAAS (PRODUÇÃO)">
+                    <i class="bi bi-plug"></i> Testar Integração ASAAS (PRODUÇÃO)
                   </button>
                 </form>
               </div>
@@ -966,6 +966,11 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
               </div>
               <div class="modal-body">
+                <div class="alert alert-warning mb-3">
+                  <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                  <strong>⚠️ ATENÇÃO: Ambiente de PRODUÇÃO</strong><br>
+                  Esta ação irá se conectar ao ASAAS de PRODUÇÃO e processar dados reais.
+                </div>
                 <p class="mb-3">
                   Esta ação irá buscar e reenviar todos os webhooks que estão pendentes no Asaas.
                 </p>

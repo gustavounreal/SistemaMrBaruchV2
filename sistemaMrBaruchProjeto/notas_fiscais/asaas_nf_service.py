@@ -19,23 +19,19 @@ class AsaasNFService:
     
     # URLs da API
     BASE_URL_PRODUCTION = "https://api.asaas.com/v3"
-    BASE_URL_SANDBOX = "https://sandbox.asaas.com/api/v3"
     
-    def __init__(self, use_sandbox=True):
+    def __init__(self, use_sandbox=False):
         """
         Inicializa o serviço
         
         Args:
-            use_sandbox: Se True, usa ambiente de testes (padrão)
+            use_sandbox: OBSOLETO - Sempre usa PRODUÇÃO
         """
         # Pegar token do settings (ASAAS_API_TOKEN)
         self.api_key = getattr(settings, 'ASAAS_API_TOKEN', '')
         
-        # Pegar URL base do settings ou usar padrão
-        if hasattr(settings, 'ASAAS_API_URL'):
-            self.base_url = settings.ASAAS_API_URL
-        else:
-            self.base_url = self.BASE_URL_SANDBOX if use_sandbox else self.BASE_URL_PRODUCTION
+        # FORÇAR SEMPRE PRODUÇÃO
+        self.base_url = getattr(settings, 'ASAAS_API_URL', self.BASE_URL_PRODUCTION)
         
         self.headers = {
             'access_token': self.api_key,

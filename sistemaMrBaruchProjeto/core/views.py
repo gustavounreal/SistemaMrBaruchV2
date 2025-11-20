@@ -194,11 +194,11 @@ def painel_configuracoes(request):
                     'executado_em': str(diag.get('executado_em')),
                 }))
                 if diag.get('ok'):
-                    messages.success(request, 'Integração ASAAS validada com sucesso!')
+                    messages.success(request, '✅ Integração ASAAS (PRODUÇÃO) validada com sucesso!')
                 else:
-                    messages.error(request, 'Falha ao validar a integração ASAAS. Veja detalhes no relatório.')
+                    messages.error(request, '❌ Falha ao validar a integração ASAAS (PRODUÇÃO). Veja detalhes no relatório.')
             except Exception as e:
-                messages.error(request, f'Erro ao validar ASAAS: {str(e)}')
+                messages.error(request, f'❌ Erro ao validar ASAAS: {str(e)}')
             return redirect('core:painel_configuracoes')
 
         config_chave = request.POST.get('config_chave')
@@ -1467,9 +1467,8 @@ def webhook_statistics(request):
 @permission_required('core.change_configuracaosistema')
 def list_pending_webhooks(request):
     """
-    Lista webhooks recebidos e seu status de processamento
-    Nota: A API do Asaas não fornece lista de eventos pendentes no sandbox,
-    então mostramos os webhooks recebidos pelo sistema.
+    Lista webhooks recebidos e seu status de processamento.
+    Usa SEMPRE o ambiente de PRODUÇÃO do Asaas.
     """
     from .models import WebhookLog
     from django.db.models import Count, Q

@@ -133,9 +133,9 @@ class ConfiguracaoService:
             },
             {
                 'chave': 'ASAAS_API_URL', 
-                'valor': 'https://sandbox.asaas.com/api/v3', 
+                'valor': 'https://api.asaas.com/v3',  # PRODUÇÃO
                 'tipo': 'TEXTO',
-                'descricao': 'URL da API do ASAAS'
+                'descricao': 'URL da API do ASAAS (PRODUÇÃO)'
             },
             
             # Comissões - Atendente (PIX Levantamento)

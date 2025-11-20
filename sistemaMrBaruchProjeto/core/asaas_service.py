@@ -14,7 +14,8 @@ class AsaasService:
     """
     
     def __init__(self):
-        self.base_url = getattr(settings, 'ASAAS_API_URL', 'https://sandbox.asaas.com/api/v3')
+        # FORÇAR SEMPRE PRODUÇÃO
+        self.base_url = getattr(settings, 'ASAAS_API_URL', 'https://api.asaas.com/v3')
         self.api_token = getattr(settings, 'ASAAS_API_TOKEN', '')
         # Preferir valores do banco (painel), com fallback para settings
         self.max_retries = int(
