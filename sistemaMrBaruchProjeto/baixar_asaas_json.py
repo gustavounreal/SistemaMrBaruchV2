@@ -52,7 +52,7 @@ class BaixadorAsaas:
         
         for tentativa in range(1, 4):
             try:
-                print(f"  📡 Requisição {tentativa}/3: {endpoint}")
+                print(f"  [REQ] Requisição {tentativa}/3: {endpoint}")
                 
                 response = requests.get(
                     url,
@@ -66,16 +66,16 @@ class BaixadorAsaas:
                     
                 elif response.status_code in [429, 403]:
                     tempo = 60 if response.status_code == 403 else 10
-                    print(f"  ⚠️  Rate limit. Aguardando {tempo}s...")
+                    print(f"  [AVISO]  Rate limit. Aguardando {tempo}s...")
                     time.sleep(tempo)
                     continue
                     
                 else:
-                    print(f"  ❌ Erro {response.status_code}: {response.text[:200]}")
+                    print(f"  [ERRO] Erro {response.status_code}: {response.text[:200]}")
                     time.sleep(2)
                     
             except Exception as e:
-                print(f"  ❌ Erro: {str(e)}")
+                print(f"  [ERRO] Erro: {str(e)}")
                 time.sleep(3)
         
         return None
@@ -83,7 +83,7 @@ class BaixadorAsaas:
     def baixar_clientes(self):
         """Baixa TODOS os clientes"""
         print("\n" + "="*80)
-        print("🔽 BAIXANDO TODOS OS CLIENTES")
+        print("[DOWNLOAD] BAIXANDO TODOS OS CLIENTES")
         print("="*80)
         
         offset = 0
@@ -92,13 +92,13 @@ class BaixadorAsaas:
         total_esperado = None
         
         while True:
-            print(f"\n📄 Página {pagina} (offset={offset})")
+            print(f"\n[PAGINA] Página {pagina} (offset={offset})")
             
             params = {'offset': offset, 'limit': limit}
             response = self.fazer_requisicao('customers', params)
             
             if not response:
-                print("❌ Falha ao baixar. Parando.")
+                print("[ERRO] Falha ao baixar. Parando.")
                 break
             
             clientes_pagina = response.get('data', [])
@@ -108,17 +108,17 @@ class BaixadorAsaas:
             # Guardar total esperado na primeira requisição
             if total_esperado is None:
                 total_esperado = total_count
-                print(f"📊 Total de clientes no Asaas: {total_esperado}")
+                print(f"[STATS] Total de clientes no Asaas: {total_esperado}")
             
             if not clientes_pagina:
-                print("✅ Sem mais clientes.")
+                print("[OK] Sem mais clientes.")
                 break
             
             self.clientes.extend(clientes_pagina)
-            print(f"✅ Baixados {len(clientes_pagina)} clientes. Total: {len(self.clientes)}/{total_esperado}")
+            print(f"[OK] Baixados {len(clientes_pagina)} clientes. Total: {len(self.clientes)}/{total_esperado}")
             
             if not has_more:
-                print("✅ API informou que não há mais páginas (hasMore=false)")
+                print("[OK] API informou que não há mais páginas (hasMore=false)")
                 break
             
             time.sleep(1)  # Evitar rate limit
@@ -127,27 +127,27 @@ class BaixadorAsaas:
         
         # VALIDAÇÃO: Verificar se baixou tudo
         print(f"\n" + "="*80)
-        print("🔍 VALIDAÇÃO DE CLIENTES")
+        print("[VALIDACAO] VALIDAÇÃO DE CLIENTES")
         print("="*80)
-        print(f"📊 Total esperado: {total_esperado}")
-        print(f"📊 Total baixado: {len(self.clientes)}")
+        print(f"[STATS] Total esperado: {total_esperado}")
+        print(f"[STATS] Total baixado: {len(self.clientes)}")
         
         if total_esperado and len(self.clientes) == total_esperado:
-            print(f"✅ CONFIRMADO: Baixados {len(self.clientes)} clientes - 100% completo!")
+            print(f"[OK] CONFIRMADO: Baixados {len(self.clientes)} clientes - 100% completo!")
         elif total_esperado and len(self.clientes) < total_esperado:
             faltam = total_esperado - len(self.clientes)
-            print(f"⚠️  ATENÇÃO: Faltam {faltam} clientes! ({len(self.clientes)}/{total_esperado})")
-            if not input("\n⚠️  Continuar mesmo assim? (s/n): ").lower().startswith('s'):
+            print(f"[AVISO]  ATENÇÃO: Faltam {faltam} clientes! ({len(self.clientes)}/{total_esperado})")
+            if not input("\n[AVISO]  Continuar mesmo assim? (s/n): ").lower().startswith('s'):
                 raise Exception(f"Download incompleto! Faltam {faltam} clientes.")
         else:
-            print(f"✅ Total baixado: {len(self.clientes)} clientes")
+            print(f"[OK] Total baixado: {len(self.clientes)} clientes")
         
         return len(self.clientes)
     
     def baixar_cobrancas(self):
         """Baixa TODAS as cobranças de TODOS os clientes"""
         print("\n" + "="*80)
-        print("🔽 BAIXANDO TODAS AS COBRANÇAS")
+        print("[DOWNLOAD] BAIXANDO TODAS AS COBRANÇAS")
         print("="*80)
         
         total_clientes = len(self.clientes)
@@ -156,7 +156,7 @@ class BaixadorAsaas:
             customer_id = cliente.get('id')
             customer_name = cliente.get('name', 'Sem nome')[:50]
             
-            print(f"\n👤 Cliente {i}/{total_clientes}: {customer_name}")
+            print(f"\n[CLIENTE] Cliente {i}/{total_clientes}: {customer_name}")
             
             offset = 0
             limit = 100
@@ -193,10 +193,10 @@ class BaixadorAsaas:
                 time.sleep(0.5)
                 offset += limit
             
-            print(f"   ✅ {cobrancas_cliente} cobranças")
+            print(f"   [OK] {cobrancas_cliente} cobranças")
             time.sleep(0.3)  # Pausa entre clientes
         
-        print(f"\n✅ Total: {len(self.cobrancas)} cobranças baixadas")
+        print(f"\n[OK] Total: {len(self.cobrancas)} cobranças baixadas")
         return len(self.cobrancas)
     
     def salvar_json(self):
@@ -229,7 +229,7 @@ class BaixadorAsaas:
         }
         
         print("\n" + "="*80)
-        print("💾 SALVANDO ARQUIVO JSON")
+        print("[SALVANDO] SALVANDO ARQUIVO JSON")
         print("="*80)
         
         with open(nome_arquivo, 'w', encoding='utf-8') as f:
@@ -237,12 +237,12 @@ class BaixadorAsaas:
         
         tamanho_mb = os.path.getsize(nome_arquivo) / (1024 * 1024)
         
-        print(f"\n✅ Arquivo salvo: {nome_arquivo}")
-        print(f"📊 Tamanho: {tamanho_mb:.2f} MB")
-        print(f"📊 Clientes: {len(self.clientes)} (únicos: {dados['validacao']['clientes_unicos']})")
-        print(f"📊 Cobranças: {len(self.cobrancas)} (únicas: {dados['validacao']['cobrancas_unicas']})")
-        print(f"💰 Valor total: R$ {valor_total:,.2f}")
-        print(f"\n📊 Cobranças por status:")
+        print(f"\n[OK] Arquivo salvo: {nome_arquivo}")
+        print(f"[STATS] Tamanho: {tamanho_mb:.2f} MB")
+        print(f"[STATS] Clientes: {len(self.clientes)} (únicos: {dados['validacao']['clientes_unicos']})")
+        print(f"[STATS] Cobranças: {len(self.cobrancas)} (únicas: {dados['validacao']['cobrancas_unicas']})")
+        print(f"[VALOR] Valor total: R$ {valor_total:,.2f}")
+        print(f"\n[STATS] Cobranças por status:")
         for status, qtd in sorted(cobrancas_por_status.items()):
             print(f"   • {status}: {qtd}")
         
@@ -251,7 +251,7 @@ class BaixadorAsaas:
     def validar_integridade(self):
         """Validação final de integridade dos dados"""
         print("\n" + "="*80)
-        print("🔍 VALIDAÇÃO FINAL DE INTEGRIDADE")
+        print("[VALIDACAO] VALIDAÇÃO FINAL DE INTEGRIDADE")
         print("="*80)
         
         erros = []
@@ -261,24 +261,24 @@ class BaixadorAsaas:
         ids_clientes = [c.get('id') for c in self.clientes if c.get('id')]
         duplicados_clientes = len(ids_clientes) - len(set(ids_clientes))
         if duplicados_clientes > 0:
-            avisos.append(f"⚠️  {duplicados_clientes} clientes duplicados no download")
+            avisos.append(f"[AVISO]  {duplicados_clientes} clientes duplicados no download")
         else:
-            print(f"✅ Nenhum cliente duplicado")
+            print(f"[OK] Nenhum cliente duplicado")
         
         # 2. Verificar cobranças duplicadas
         ids_cobrancas = [c.get('id') for c in self.cobrancas if c.get('id')]
         duplicados_cobrancas = len(ids_cobrancas) - len(set(ids_cobrancas))
         if duplicados_cobrancas > 0:
-            avisos.append(f"⚠️  {duplicados_cobrancas} cobranças duplicadas no download")
+            avisos.append(f"[AVISO]  {duplicados_cobrancas} cobranças duplicadas no download")
         else:
-            print(f"✅ Nenhuma cobrança duplicada")
+            print(f"[OK] Nenhuma cobrança duplicada")
         
         # 3. Verificar clientes sem ID
         clientes_sem_id = sum(1 for c in self.clientes if not c.get('id'))
         if clientes_sem_id > 0:
-            erros.append(f"❌ {clientes_sem_id} clientes sem ID!")
+            erros.append(f"[ERRO] {clientes_sem_id} clientes sem ID!")
         else:
-            print(f"✅ Todos os clientes têm ID")
+            print(f"[OK] Todos os clientes têm ID")
         
         # 4. Verificar cobranças orfãs (sem cliente)
         customer_ids = set(c.get('id') for c in self.clientes)
@@ -289,40 +289,40 @@ class BaixadorAsaas:
                 cobrancas_orfas += 1
         
         if cobrancas_orfas > 0:
-            avisos.append(f"⚠️  {cobrancas_orfas} cobranças sem cliente correspondente")
+            avisos.append(f"[AVISO]  {cobrancas_orfas} cobranças sem cliente correspondente")
         else:
-            print(f"✅ Todas as cobranças têm cliente correspondente")
+            print(f"[OK] Todas as cobranças têm cliente correspondente")
         
         # 5. Verificar clientes sem nome
         clientes_sem_nome = sum(1 for c in self.clientes if not c.get('name'))
         if clientes_sem_nome > 0:
-            avisos.append(f"⚠️  {clientes_sem_nome} clientes sem nome")
+            avisos.append(f"[AVISO]  {clientes_sem_nome} clientes sem nome")
         else:
-            print(f"✅ Todos os clientes têm nome")
+            print(f"[OK] Todos os clientes têm nome")
         
         # Mostrar resultado
         print("\n" + "="*80)
         if erros:
-            print("❌ ERROS ENCONTRADOS:")
+            print("[ERRO] ERROS ENCONTRADOS:")
             for erro in erros:
                 print(f"   {erro}")
             raise Exception("Validação falhou! Corrija os erros antes de continuar.")
         
         if avisos:
-            print("⚠️  AVISOS:")
+            print("[AVISO]  AVISOS:")
             for aviso in avisos:
                 print(f"   {aviso}")
-            print("\n⚠️  Os avisos não impedem a continuação, mas devem ser verificados.")
+            print("\n[AVISO]  Os avisos não impedem a continuação, mas devem ser verificados.")
         else:
-            print("✅ VALIDAÇÃO 100% APROVADA!")
+            print("[OK] VALIDAÇÃO 100% APROVADA!")
         
         print("="*80)
     
     def executar(self):
         """Executa download completo"""
-        print("\n" + "🚀"*40)
+        print("\n" + "[INICIO]"*40)
         print(f"BAIXAR DADOS DO ASAAS - CONTA: {self.nome_conta.upper()}")
-        print("🚀"*40)
+        print("[INICIO]"*40)
         
         inicio = time.time()
         
@@ -338,15 +338,15 @@ class BaixadorAsaas:
         
         duracao = time.time() - inicio
         
-        print("\n" + "🎉"*40)
+        print("\n" + "[SUCESSO]"*40)
         print("DOWNLOAD CONCLUÍDO COM SUCESSO!")
-        print(f"⏱️  Tempo: {duracao:.0f} segundos ({duracao/60:.1f} minutos)")
-        print("🎉"*40)
+        print(f"[TEMPO]  Tempo: {duracao:.0f} segundos ({duracao/60:.1f} minutos)")
+        print("[SUCESSO]"*40)
         
-        print(f"\n📝 PRÓXIMO PASSO:")
+        print(f"\n[PROXIMO] PRÓXIMO PASSO:")
         print(f"   Execute: python importar_json_banco.py {arquivo}")
         
-        print(f"\n✅ GARANTIAS:")
+        print(f"\n[OK] GARANTIAS:")
         print(f"   • Download 100% completo (totalCount validado)")
         print(f"   • Sem duplicações")
         print(f"   • Todas as cobranças têm cliente")
@@ -360,15 +360,15 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         conta = sys.argv[1].lower()
         if conta not in ['principal', 'alternativo']:
-            print("❌ Conta inválida! Use: principal ou alternativo")
+            print("[ERRO] Conta inválida! Use: principal ou alternativo")
             sys.exit(1)
     else:
         conta = 'principal'
     
-    print(f"\n🎯 Conta selecionada: {conta.upper()}")
+    print(f"\n[CONTA] Conta selecionada: {conta.upper()}")
     
-    if not input("\n⚠️  Este processo vai baixar TODOS os dados. Continuar? (s/n): ").lower().startswith('s'):
-        print("❌ Cancelado pelo usuário")
+    if not input("\n[AVISO]  Este processo vai baixar TODOS os dados. Continuar? (s/n): ").lower().startswith('s'):
+        print("[ERRO] Cancelado pelo usuário")
         sys.exit(0)
     
     # Executar
@@ -376,12 +376,12 @@ if __name__ == '__main__':
     
     try:
         arquivo = baixador.executar()
-        print(f"\n✅ Sucesso! Arquivo: {arquivo}")
+        print(f"\n[OK] Sucesso! Arquivo: {arquivo}")
     except KeyboardInterrupt:
-        print("\n\n❌ Interrompido pelo usuário")
+        print("\n\n[ERRO] Interrompido pelo usuário")
         sys.exit(1)
     except Exception as e:
-        print(f"\n\n❌ ERRO: {str(e)}")
+        print(f"\n\n[ERRO] ERRO: {str(e)}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

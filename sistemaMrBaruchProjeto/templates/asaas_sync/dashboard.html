@@ -8,14 +8,14 @@
 {% block content %}
 <div class="container-fluid py-4">
     <!-- Alerta sobre Token Alternativo (Colapsável) -->
-    <div class="mb-3">
+    <!--<div class="mb-3">
         <button class="btn btn-outline-warning btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#infoSincronizacao" aria-expanded="false" aria-controls="infoSincronizacao">
             <i class="fas fa-info-circle me-2"></i>Informações sobre Sincronização Alternativa
             <i class="fas fa-chevron-down ms-2"></i>
         </button>
     </div>
     
-    <div class="collapse" id="infoSincronizacao">
+   <div class="collapse" id="infoSincronizacao">
         <div class="alert alert-warning alert-dismissible" role="alert">
             <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Informação sobre Sincronização</h5>
             <p class="mb-2">
@@ -52,14 +52,22 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center flex-wrap">
                 <h2 class="mb-3 mb-md-0"><i class="fas fa-chart-line me-2"></i>Dashboard Asaas - Dados Sincronizados</h2>
-                <div class="d-flex gap-2 flex-wrap justify-content-end">
+                <div class="d-flex gap-2 flex-wrap justify-content-end">-->
                     <!-- Novos botões simplificados -->
+                    <!-- Legenda dos botões principais -->
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <strong>Legenda:</strong> <br>
+                            <span class="text-primary">Baixar Asaas 1/2</span>: Baixa todos os dados da respectiva conta Asaas.<br>
+                            <span class="text-success">Importar/Excluir</span>: Importa os dados baixados e remove do sistema tudo que não existe mais no Asaas.
+                        </small>
+                    </div>
                     <div class="btn-group" role="group">
                         <button class="btn btn-primary" onclick="baixarDadosAsaas('principal')" title="Baixa todos os dados do Asaas Principal">
                             <i class="fas fa-download me-2"></i>Baixar Asaas 1
                         </button>
                         <button class="btn btn-success" onclick="importarLimpo('principal')" title="Importa/atualiza e remove dados inexistentes" id="btnImportarPrincipal" disabled>
-                            <i class="fas fa-database me-2"></i>Importar Limpo
+                            <i class="fas fa-database me-2"></i>Importar/Excluir
                         </button>
                     </div>
                     
@@ -68,7 +76,7 @@
                             <i class="fas fa-download me-2"></i>Baixar Asaas 2
                         </button>
                         <button class="btn btn-success" onclick="importarLimpo('alternativo')" title="Importa/atualiza e remove dados inexistentes" id="btnImportarAlternativo" disabled>
-                            <i class="fas fa-database me-2"></i>Importar Limpo
+                            <i class="fas fa-database me-2"></i>Importar/Excluir
                         </button>
                     </div>
                 </div>

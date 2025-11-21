@@ -34,46 +34,46 @@ class ImportadorJSON:
     def carregar_json(self):
         """Carrega arquivo JSON"""
         print("\n" + "="*80)
-        print("📂 CARREGANDO ARQUIVO JSON")
+        print("[ARQUIVO] CARREGANDO ARQUIVO JSON")
         print("="*80)
         
         if not os.path.exists(self.arquivo_json):
             raise FileNotFoundError(f"Arquivo não encontrado: {self.arquivo_json}")
         
         tamanho_mb = os.path.getsize(self.arquivo_json) / (1024 * 1024)
-        print(f"📄 Arquivo: {self.arquivo_json}")
-        print(f"📊 Tamanho: {tamanho_mb:.2f} MB")
+        print(f"[PAGINA] Arquivo: {self.arquivo_json}")
+        print(f"[STATS] Tamanho: {tamanho_mb:.2f} MB")
         
         with open(self.arquivo_json, 'r', encoding='utf-8') as f:
             self.dados = json.load(f)
         
-        print(f"✅ JSON carregado!")
-        print(f"📊 Conta: {self.dados.get('conta', 'N/A')}")
-        print(f"📊 Data download: {self.dados.get('data_download', 'N/A')}")
-        print(f"📊 Clientes: {self.dados.get('total_clientes', 0)}")
-        print(f"📊 Cobranças: {self.dados.get('total_cobrancas', 0)}")
+        print(f"[OK] JSON carregado!")
+        print(f"[STATS] Conta: {self.dados.get('conta', 'N/A')}")
+        print(f"[STATS] Data download: {self.dados.get('data_download', 'N/A')}")
+        print(f"[STATS] Clientes: {self.dados.get('total_clientes', 0)}")
+        print(f"[STATS] Cobranças: {self.dados.get('total_cobrancas', 0)}")
         
         # Validar estrutura do JSON
-        print("\n🔍 Validando estrutura do JSON...")
+        print("\n[VALIDACAO] Validando estrutura do JSON...")
         validacao = self.dados.get('validacao', {})
         
         if validacao:
-            print(f"✅ Download completo: {validacao.get('download_completo', False)}")
-            print(f"✅ Clientes únicos: {validacao.get('clientes_unicos', 0)}")
-            print(f"✅ Cobranças únicas: {validacao.get('cobrancas_unicas', 0)}")
+            print(f"[OK] Download completo: {validacao.get('download_completo', False)}")
+            print(f"[OK] Clientes únicos: {validacao.get('clientes_unicos', 0)}")
+            print(f"[OK] Cobranças únicas: {validacao.get('cobrancas_unicas', 0)}")
         
         if self.dados.get('cobrancas_por_status'):
-            print(f"\n📊 Cobranças por status:")
+            print(f"\n[STATS] Cobranças por status:")
             for status, qtd in self.dados['cobrancas_por_status'].items():
                 print(f"   • {status}: {qtd}")
         
         if self.dados.get('valor_total_cobrancas'):
-            print(f"\n💰 Valor total: R$ {self.dados['valor_total_cobrancas']:,.2f}")
+            print(f"\n[VALOR] Valor total: R$ {self.dados['valor_total_cobrancas']:,.2f}")
         
     def importar_clientes(self):
         """Importa clientes para o banco"""
         print("\n" + "="*80)
-        print("💾 IMPORTANDO CLIENTES")
+        print("[SALVANDO] IMPORTANDO CLIENTES")
         print("="*80)
         
         clientes_data = self.dados.get('clientes', [])
@@ -125,45 +125,45 @@ class ImportadorJSON:
                     stats['atualizados'] += 1
                 
                 if i % 100 == 0:
-                    print(f"  📊 Progresso: {i}/{len(clientes_data)} ({(i/len(clientes_data)*100):.1f}%)")
+                    print(f"  [STATS] Progresso: {i}/{len(clientes_data)} ({(i/len(clientes_data)*100):.1f}%)")
                     
             except Exception as e:
                 stats['erros'] += 1
-                print(f"  ❌ Erro no cliente {cliente_data.get('id', 'N/A')}: {str(e)}")
+                print(f"  [ERRO] Erro no cliente {cliente_data.get('id', 'N/A')}: {str(e)}")
         
         # 🔥 MODO LIMPEZA: Excluir clientes locais que não estão no Asaas
         if self.modo_limpeza:
-            print(f"\n🧹 MODO LIMPEZA ATIVADO - Removendo clientes que não existem mais no Asaas...")
+            print(f"\n[LIMPEZA] MODO LIMPEZA ATIVADO - Removendo clientes que não existem mais no Asaas...")
             
             clientes_locais = AsaasClienteSyncronizado.objects.all()
             total_locais = clientes_locais.count()
             
-            print(f"  📊 Total de clientes locais: {total_locais}")
-            print(f"  📊 Total de clientes no Asaas: {len(asaas_customer_ids)}")
+            print(f"  [STATS] Total de clientes locais: {total_locais}")
+            print(f"  [STATS] Total de clientes no Asaas: {len(asaas_customer_ids)}")
             
             # Encontrar clientes que existem localmente mas não no Asaas
             clientes_para_excluir = clientes_locais.exclude(asaas_customer_id__in=asaas_customer_ids)
             qtd_excluir = clientes_para_excluir.count()
             
             if qtd_excluir > 0:
-                print(f"  🗑️  Excluindo {qtd_excluir} clientes que não existem mais no Asaas...")
+                print(f"  [DELETAR]  Excluindo {qtd_excluir} clientes que não existem mais no Asaas...")
                 
                 # Excluir cobranças relacionadas primeiro
                 cobrancas_relacionadas = AsaasCobrancaSyncronizada.objects.filter(cliente__in=clientes_para_excluir)
                 qtd_cobrancas = cobrancas_relacionadas.count()
                 
                 if qtd_cobrancas > 0:
-                    print(f"  🗑️  Excluindo {qtd_cobrancas} cobranças relacionadas...")
+                    print(f"  [DELETAR]  Excluindo {qtd_cobrancas} cobranças relacionadas...")
                     cobrancas_relacionadas.delete()
                 
                 # Excluir clientes
                 clientes_para_excluir.delete()
                 stats['excluidos'] = qtd_excluir
-                print(f"  ✅ {qtd_excluir} clientes excluídos com sucesso!")
+                print(f"   {qtd_excluir} clientes excluídos com sucesso!")
             else:
-                print(f"  ✅ Nenhum cliente para excluir - banco local está sincronizado!")
+                print(f"   Nenhum cliente para excluir - banco local está sincronizado!")
         
-        print(f"\n✅ CLIENTES IMPORTADOS:")
+        print(f"\n[OK] CLIENTES IMPORTADOS:")
         print(f"   Total: {stats['total']}")
         print(f"   Novos: {stats['novos']}")
         print(f"   Atualizados: {stats['atualizados']}")
@@ -176,7 +176,7 @@ class ImportadorJSON:
     def importar_cobrancas(self):
         """Importa cobranças para o banco"""
         print("\n" + "="*80)
-        print("💾 IMPORTANDO COBRANÇAS")
+        print("[SALVANDO] IMPORTANDO COBRANÇAS")
         print("="*80)
         
         cobrancas_data = self.dados.get('cobrancas', [])
@@ -234,35 +234,35 @@ class ImportadorJSON:
                     stats['atualizadas'] += 1
                 
                 if i % 500 == 0:
-                    print(f"  📊 Progresso: {i}/{len(cobrancas_data)} ({(i/len(cobrancas_data)*100):.1f}%)")
+                    print(f"  [STATS] Progresso: {i}/{len(cobrancas_data)} ({(i/len(cobrancas_data)*100):.1f}%)")
                     
             except Exception as e:
                 stats['erros'] += 1
-                print(f"  ❌ Erro na cobrança {cobranca_data.get('id', 'N/A')}: {str(e)}")
+                print(f"  [ERRO] Erro na cobrança {cobranca_data.get('id', 'N/A')}: {str(e)}")
         
         # 🔥 MODO LIMPEZA: Excluir cobranças locais que não estão no Asaas
         if self.modo_limpeza:
-            print(f"\n🧹 MODO LIMPEZA ATIVADO - Removendo cobranças que não existem mais no Asaas...")
+            print(f"\n[LIMPEZA] MODO LIMPEZA ATIVADO - Removendo cobranças que não existem mais no Asaas...")
             
             cobrancas_locais = AsaasCobrancaSyncronizada.objects.all()
             total_locais = cobrancas_locais.count()
             
-            print(f"  📊 Total de cobranças locais: {total_locais}")
-            print(f"  📊 Total de cobranças no Asaas: {len(asaas_payment_ids)}")
+            print(f"  [STATS] Total de cobranças locais: {total_locais}")
+            print(f"  [STATS] Total de cobranças no Asaas: {len(asaas_payment_ids)}")
             
             # Encontrar cobranças que existem localmente mas não no Asaas
             cobrancas_para_excluir = cobrancas_locais.exclude(asaas_payment_id__in=asaas_payment_ids)
             qtd_excluir = cobrancas_para_excluir.count()
             
             if qtd_excluir > 0:
-                print(f"  🗑️  Excluindo {qtd_excluir} cobranças que não existem mais no Asaas...")
+                print(f"  [DELETAR]  Excluindo {qtd_excluir} cobranças que não existem mais no Asaas...")
                 cobrancas_para_excluir.delete()
                 stats['excluidas'] = qtd_excluir
-                print(f"  ✅ {qtd_excluir} cobranças excluídas com sucesso!")
+                print(f"  [OK] {qtd_excluir} cobranças excluídas com sucesso!")
             else:
-                print(f"  ✅ Nenhuma cobrança para excluir - banco local está sincronizado!")
+                print(f"  [OK] Nenhuma cobrança para excluir - banco local está sincronizado!")
         
-        print(f"\n✅ COBRANÇAS IMPORTADAS:")
+        print(f"\n[OK] COBRANÇAS IMPORTADAS:")
         print(f"   Total: {stats['total']}")
         print(f"   Novas: {stats['novas']}")
         print(f"   Atualizadas: {stats['atualizadas']}")
@@ -275,13 +275,13 @@ class ImportadorJSON:
     
     def criar_log(self, stats_clientes, stats_cobrancas, duracao):
         """Cria log da importação"""
-        mensagem_base = f"""✅ Importação JSON concluída - {self.dados.get('conta', 'N/A')}
+        mensagem_base = f"""[OK] Importação JSON concluída - {self.dados.get('conta', 'N/A')}
 
-📂 Arquivo: {os.path.basename(self.arquivo_json)}
+[ARQUIVO] Arquivo: {os.path.basename(self.arquivo_json)}
 📅 Download em: {self.dados.get('data_download', 'N/A')}
-🧹 Modo limpeza: {'ATIVADO' if self.modo_limpeza else 'DESATIVADO'}
+[LIMPEZA] Modo limpeza: {'ATIVADO' if self.modo_limpeza else 'DESATIVADO'}
 
-💾 CLIENTES:
+[SALVANDO] CLIENTES:
    • Total: {stats_clientes['total']} ({stats_clientes['novos']} novos, {stats_clientes['atualizados']} atualizados)
    • Erros: {stats_clientes['erros']}"""
 
@@ -290,7 +290,7 @@ class ImportadorJSON:
 
         mensagem_base += f"""
 
-💾 COBRANÇAS:
+[SALVANDO] COBRANÇAS:
    • Total: {stats_cobrancas['total']} ({stats_cobrancas['novas']} novas, {stats_cobrancas['atualizadas']} atualizadas)
    • Sem cliente: {stats_cobrancas['sem_cliente']}
    • Erros: {stats_cobrancas['erros']}"""
@@ -298,7 +298,7 @@ class ImportadorJSON:
         if self.modo_limpeza:
             mensagem_base += f"\n   • Excluídas: {stats_cobrancas.get('excluidas', 0)}"
 
-        mensagem_base += f"\n\n⏱️  Duração: {duracao:.0f} segundos"
+        mensagem_base += f"\n\n[TEMPO]  Duração: {duracao:.0f} segundos"
         
         log = AsaasSyncronizacaoLog.objects.create(
             tipo_sincronizacao='IMPORTACAO_JSON_LIMPA' if self.modo_limpeza else 'IMPORTACAO_JSON',
@@ -320,9 +320,9 @@ class ImportadorJSON:
         """Executa importação completa"""
         import time
         
-        print("\n" + "🚀"*40)
+        print("\n" + "[INICIO]"*40)
         print("IMPORTAR JSON PARA BANCO DE DADOS")
-        print("🚀"*40)
+        print("[INICIO]"*40)
         
         inicio = time.time()
         
@@ -337,11 +337,11 @@ class ImportadorJSON:
         duracao = time.time() - inicio
         log = self.criar_log(stats_clientes, stats_cobrancas, duracao)
         
-        print("\n" + "🎉"*40)
+        print("\n" + "[SUCESSO]"*40)
         print("IMPORTAÇÃO CONCLUÍDA!")
-        print(f"⏱️  Tempo: {duracao:.0f} segundos ({duracao/60:.1f} minutos)")
-        print(f"📝 Log ID: {log.id}")
-        print("🎉"*40)
+        print(f"[TEMPO]  Tempo: {duracao:.0f} segundos ({duracao/60:.1f} minutos)")
+        print(f"[PROXIMO] Log ID: {log.id}")
+        print("[SUCESSO]"*40)
     
     def _parse_date(self, date_string):
         """Converte string para date"""
@@ -370,7 +370,7 @@ class ImportadorJSON:
 if __name__ == '__main__':
     # Verificar argumentos
     if len(sys.argv) < 2:
-        print("❌ Uso: python importar_json_banco.py <arquivo.json> [--limpar]")
+        print("[ERRO] Uso: python importar_json_banco.py <arquivo.json> [--limpar]")
         print("\nOpções:")
         print("  --limpar    Exclui do banco local clientes e cobranças que não existem mais no Asaas")
         sys.exit(1)
@@ -379,21 +379,21 @@ if __name__ == '__main__':
     modo_limpeza = '--limpar' in sys.argv
     
     if not os.path.exists(arquivo):
-        print(f"❌ Arquivo não encontrado: {arquivo}")
+        print(f"[ERRO] Arquivo não encontrado: {arquivo}")
         sys.exit(1)
     
-    print(f"\n🎯 Arquivo: {arquivo}")
+    print(f"\n[CONTA] Arquivo: {arquivo}")
     
     if modo_limpeza:
-        print(f"🧹 MODO LIMPEZA ATIVADO")
-        print(f"   ⚠️  Clientes e cobranças que não existirem no Asaas serão EXCLUÍDOS automaticamente")
+        print(f"[LIMPEZA] MODO LIMPEZA ATIVADO")
+        print(f"   [AVISO]  Clientes e cobranças que não existirem no Asaas serão EXCLUÍDOS automaticamente")
     else:
         print(f"📦 Modo normal (sem limpeza)")
         print(f"   ℹ️  Dados locais serão mantidos mesmo se não existirem mais no Asaas")
         print(f"   ℹ️  Use --limpar para ativar sincronização limpa")
     
-    if not input("\n⚠️  Isso vai IMPORTAR os dados para o banco. Continuar? (s/n): ").lower().startswith('s'):
-        print("❌ Cancelado pelo usuário")
+    if not input("\n[AVISO]  Isso vai IMPORTAR os dados para o banco. Continuar? (s/n): ").lower().startswith('s'):
+        print("[ERRO] Cancelado pelo usuário")
         sys.exit(0)
     
     # Executar
@@ -401,12 +401,12 @@ if __name__ == '__main__':
     
     try:
         importador.executar()
-        print("\n✅ Sucesso!")
+        print("\n[OK] Sucesso!")
     except KeyboardInterrupt:
-        print("\n\n❌ Interrompido pelo usuário")
+        print("\n\n[ERRO] Interrompido pelo usuário")
         sys.exit(1)
     except Exception as e:
-        print(f"\n\n❌ ERRO: {str(e)}")
+        print(f"\n\n[ERRO] ERRO: {str(e)}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
