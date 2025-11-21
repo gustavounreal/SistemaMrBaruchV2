@@ -53,18 +53,24 @@
             <div class="d-flex justify-content-between align-items-center flex-wrap">
                 <h2 class="mb-3 mb-md-0"><i class="fas fa-chart-line me-2"></i>Dashboard Asaas - Dados Sincronizados</h2>
                 <div class="d-flex gap-2 flex-wrap justify-content-end">
-                    <!-- Botões de sincronização comentados temporariamente -->
-                   
-                    <button class="btn btn-primary" onclick="sincronizarAgora()" title="Sincroniza TODOS os clientes e cobranças do ASAAS Principal + Remove boletos deletados">
-                        <i class="fas fa-sync me-2"></i>Sincronizar Completo (Asaas 1)
-                    </button>
-                    <button class="btn btn-secondary" onclick="sincronizarAsaasAlternativo()" title="Sincroniza TODOS os clientes e cobranças do ASAAS Alternativo + Remove boletos deletados">
-                        <i class="fas fa-download me-2"></i>Sincronizar Completo (Asaas 2)
-                    </button>
-                    <button class="btn btn-info" onclick="sincronizarBoletosFaltantes()" title="Sincroniza APENAS boletos faltantes dos clientes já cadastrados">
-                        <i class="fas fa-file-invoice me-2"></i>Sincronizar Boletos Faltantes
-                    </button>
+                    <!-- Novos botões simplificados -->
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-primary" onclick="baixarDadosAsaas('principal')" title="Baixa todos os dados do Asaas Principal">
+                            <i class="fas fa-download me-2"></i>Baixar Asaas 1
+                        </button>
+                        <button class="btn btn-success" onclick="importarLimpo('principal')" title="Importa/atualiza e remove dados inexistentes" id="btnImportarPrincipal" disabled>
+                            <i class="fas fa-database me-2"></i>Importar Limpo
+                        </button>
+                    </div>
                     
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-secondary" onclick="baixarDadosAsaas('alternativo')" title="Baixa todos os dados do Asaas Alternativo">
+                            <i class="fas fa-download me-2"></i>Baixar Asaas 2
+                        </button>
+                        <button class="btn btn-success" onclick="importarLimpo('alternativo')" title="Importa/atualiza e remove dados inexistentes" id="btnImportarAlternativo" disabled>
+                            <i class="fas fa-database me-2"></i>Importar Limpo
+                        </button>
+                    </div>
                 </div>
             </div>
             {% if ultima_sync %}
@@ -83,7 +89,69 @@
         </div>
     </div>
 
-    <!-- Card de Progresso da Sincronização (Oculto por padrão) -->
+    <!-- Área de Feedback em Tempo Real -->
+    <div class="row mb-4" id="feedbackArea" style="display: none;">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-tasks me-2"></i><span id="tituloFeedback">Operação em Andamento</span></h5>
+                </div>
+                <div class="card-body">
+                    <!-- Barra de progresso -->
+                    <div class="mb-3">
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" id="barraFeedback" role="progressbar" style="width: 0%">
+                                <span id="textoProgresso">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Status atual -->
+                    <div class="alert alert-info" id="statusFeedback">
+                        <i class="fas fa-spinner fa-spin me-2"></i><span id="mensagemFeedback">Iniciando...</span>
+                    </div>
+                    
+                    <!-- Estatísticas -->
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 text-center">
+                                <h3 class="mb-0" id="statClientes">0</h3>
+                                <small class="text-muted">Clientes</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 text-center">
+                                <h3 class="mb-0" id="statCobrancas">0</h3>
+                                <small class="text-muted">Cobranças</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 text-center">
+                                <h3 class="mb-0" id="statTempo">0s</h3>
+                                <small class="text-muted">Duração</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 text-center">
+                                <h3 class="mb-0"><span class="badge bg-secondary" id="statStatus">Em andamento</span></h3>
+                                <small class="text-muted">Status</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Log detalhado -->
+                    <div class="mt-3">
+                        <h6>Log Detalhado:</h6>
+                        <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto; background: #f8f9fa; font-family: monospace; font-size: 12px;">
+                            <div id="logDetalhado"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card de Progresso da Sincronização (MANTER para compatibilidade) -->
     <div class="row mb-4" id="cardProgressoSync" style="display: none;">
         <div class="col-12">
             <div class="card border-info">
@@ -768,6 +836,205 @@ function fecharProgresso() {
     }
     // Recarregar para mostrar novos dados
     location.reload();
+}
+
+// ========== NOVAS FUNÇÕES PARA DOWNLOAD E IMPORTAÇÃO ==========
+
+let intervalFeedback = null;
+let arquivoAtual = {
+    principal: null,
+    alternativo: null
+};
+
+function baixarDadosAsaas(conta) {
+    if (!confirm(`Deseja baixar TODOS os dados do Asaas ${conta === 'principal' ? '1' : '2'}?\n\nEste processo pode levar vários minutos.\n\nContinuar?`)) {
+        return;
+    }
+    
+    mostrarFeedback(`Baixando dados do Asaas ${conta === 'principal' ? '1 (Principal)' : '2 (Alternativo)'}...`);
+    
+    fetch('{% url "asaas_sync:baixar_dados_asaas" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `conta=${conta}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            adicionarLog(`✅ Download iniciado! Log ID: ${data.log_id}`);
+            monitorarOperacao(data.log_id, conta, 'download');
+        } else {
+            mostrarErro(data.message);
+        }
+    })
+    .catch(error => {
+        mostrarErro(`Erro: ${error}`);
+    });
+}
+
+function importarLimpo(conta) {
+    if (!arquivoAtual[conta]) {
+        alert(`❌ Nenhum arquivo disponível para importar.\n\nFaça o download primeiro.`);
+        return;
+    }
+    
+    if (!confirm(`⚠️ ATENÇÃO: MODO LIMPEZA ATIVADO\n\nEsta operação irá:\n✅ Importar/atualizar dados do Asaas ${conta === 'principal' ? '1' : '2'}\n🗑️ Excluir clientes que não existem mais no Asaas\n🗑️ Excluir cobranças que não existem mais no Asaas\n\nEsta ação é IRREVERSÍVEL!\n\nContinuar?`)) {
+        return;
+    }
+    
+    mostrarFeedback(`Importando com limpeza - Asaas ${conta === 'principal' ? '1' : '2'}...`);
+    
+    fetch('{% url "asaas_sync:importar_json_limpo" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `arquivo=${arquivoAtual[conta]}&conta=${conta}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            adicionarLog(`✅ Importação limpa iniciada! Log ID: ${data.log_id}`);
+            monitorarOperacao(data.log_id, conta, 'importacao');
+        } else {
+            mostrarErro(data.message);
+        }
+    })
+    .catch(error => {
+        mostrarErro(`Erro: ${error}`);
+    });
+}
+
+function monitorarOperacao(logId, conta, tipo) {
+    if (intervalFeedback) {
+        clearInterval(intervalFeedback);
+    }
+    
+    const tempoInicio = Date.now();
+    let progresso = 10;
+    
+    intervalFeedback = setInterval(() => {
+        // Atualizar tempo
+        const segundos = Math.floor((Date.now() - tempoInicio) / 1000);
+        document.getElementById('statTempo').textContent = `${segundos}s`;
+        
+        // Incrementar progresso gradualmente
+        if (progresso < 95) {
+            progresso += 1;
+            atualizarProgresso(progresso);
+        }
+        
+        // Consultar status
+        fetch(`/asaas-sync/status-operacao/${logId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Atualizar estatísticas
+                    if (data.total_clientes > 0) {
+                        document.getElementById('statClientes').textContent = data.total_clientes;
+                    }
+                    if (data.total_cobrancas > 0) {
+                        document.getElementById('statCobrancas').textContent = data.total_cobrancas;
+                    }
+                    
+                    // Atualizar mensagem
+                    if (data.mensagem) {
+                        const linhas = data.mensagem.split('\n').slice(0, 10); // Primeiras 10 linhas
+                        document.getElementById('mensagemFeedback').textContent = linhas[0];
+                    }
+                    
+                    // Verificar se finalizou
+                    if (data.status === 'SUCESSO') {
+                        clearInterval(intervalFeedback);
+                        mostrarSucesso(data.mensagem, data);
+                        
+                        // Se foi download, extrair nome do arquivo
+                        if (tipo === 'download') {
+                            const match = data.mensagem.match(/asaas_\w+_\d+_\d+\.json/);
+                            if (match) {
+                                arquivoAtual[conta] = match[0];
+                                // Habilitar botão de importação
+                                document.getElementById(`btnImportar${conta === 'principal' ? 'Principal' : 'Alternativo'}`).disabled = false;
+                                adicionarLog(`📁 Arquivo disponível: ${match[0]}`);
+                            }
+                        }
+                        
+                        // Se foi importação, recarregar após 5s
+                        if (tipo === 'importacao') {
+                            setTimeout(() => location.reload(), 5000);
+                        }
+                        
+                    } else if (data.status === 'ERRO') {
+                        clearInterval(intervalFeedback);
+                        mostrarErro(data.mensagem);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao verificar status:', error);
+            });
+            
+    }, 2000); // Verificar a cada 2 segundos
+}
+
+function mostrarFeedback(titulo) {
+    document.getElementById('feedbackArea').style.display = 'block';
+    document.getElementById('feedbackArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('tituloFeedback').textContent = titulo;
+    document.getElementById('statusFeedback').className = 'alert alert-info';
+    document.getElementById('mensagemFeedback').innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Iniciando...';
+    document.getElementById('logDetalhado').innerHTML = '';
+    document.getElementById('statClientes').textContent = '0';
+    document.getElementById('statCobrancas').textContent = '0';
+    document.getElementById('statTempo').textContent = '0s';
+    document.getElementById('statStatus').textContent = 'Em andamento';
+    document.getElementById('statStatus').className = 'badge bg-secondary';
+    atualizarProgresso(0);
+}
+
+function atualizarProgresso(percent) {
+    document.getElementById('barraFeedback').style.width = `${percent}%`;
+    document.getElementById('textoProgresso').textContent = `${Math.round(percent)}%`;
+}
+
+function adicionarLog(mensagem) {
+    const log = document.getElementById('logDetalhado');
+    const timestamp = new Date().toLocaleTimeString();
+    log.innerHTML += `<div>[${timestamp}] ${mensagem}</div>`;
+    log.scrollTop = log.scrollHeight;
+}
+
+function mostrarSucesso(mensagem, data) {
+    document.getElementById('statusFeedback').className = 'alert alert-success';
+    document.getElementById('mensagemFeedback').innerHTML = '<i class="fas fa-check-circle me-2"></i>Concluído com sucesso!';
+    document.getElementById('statStatus').textContent = 'Sucesso';
+    document.getElementById('statStatus').className = 'badge bg-success';
+    document.getElementById('barraFeedback').classList.remove('progress-bar-animated');
+    document.getElementById('barraFeedback').classList.add('bg-success');
+    atualizarProgresso(100);
+    adicionarLog('✅ Operação concluída com sucesso!');
+    
+    // Adicionar detalhes ao log
+    if (data.total_clientes) {
+        adicionarLog(`📊 Total de clientes: ${data.total_clientes}`);
+    }
+    if (data.total_cobrancas) {
+        adicionarLog(`📊 Total de cobranças: ${data.total_cobrancas}`);
+    }
+}
+
+function mostrarErro(mensagem) {
+    document.getElementById('statusFeedback').className = 'alert alert-danger';
+    document.getElementById('mensagemFeedback').innerHTML = `<i class="fas fa-times-circle me-2"></i>Erro: ${mensagem}`;
+    document.getElementById('statStatus').textContent = 'Erro';
+    document.getElementById('statStatus').className = 'badge bg-danger';
+    document.getElementById('barraFeedback').classList.remove('progress-bar-animated');
+    document.getElementById('barraFeedback').classList.add('bg-danger');
+    adicionarLog(`❌ Erro: ${mensagem}`);
 }
 </script>
 {% endblock %}

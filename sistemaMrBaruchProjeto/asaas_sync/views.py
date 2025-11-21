@@ -1614,3 +1614,207 @@ def exportar_clientes_com_boletos_excel(request):
     except Exception as e:
         logger.error(f"Erro ao exportar cobranças: {str(e)}", exc_info=True)
         return HttpResponse(f"Erro ao exportar: {str(e)}", status=500)
+
+
+@login_required
+def baixar_dados_asaas(request):
+    """
+    Executa script para baixar TODOS os dados do Asaas e salvar em JSON
+    Retorna JSON com progresso em tempo real
+    """
+    if request.method == 'POST':
+        try:
+            import json
+            conta = request.POST.get('conta', 'principal')
+            
+            if conta not in ['principal', 'alternativo']:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Conta inválida. Use: principal ou alternativo'
+                }, status=400)
+            
+            logger.info(f"🔽 Iniciando download de dados do Asaas ({conta}) por {request.user.username}")
+            
+            # Caminho do script
+            script_path = settings.BASE_DIR / 'baixar_asaas_json.py'
+            python_executable = sys.executable
+            
+            # Executar script em background e retornar task_id
+            import uuid
+            task_id = str(uuid.uuid4())
+            
+            # Criar log inicial
+            log = AsaasSyncronizacaoLog.objects.create(
+                tipo_sincronizacao=f'DOWNLOAD_JSON_{conta.upper()}',
+                status='EM_ANDAMENTO',
+                usuario=request.user.username,
+                mensagem=f'Iniciando download de dados do Asaas ({conta})...'
+            )
+            
+            # Executar script em thread separada
+            def executar_download():
+                try:
+                    result = subprocess.run(
+                        [python_executable, str(script_path), conta],
+                        capture_output=True,
+                        text=True,
+                        timeout=3600  # 1 hora
+                    )
+                    
+                    if result.returncode == 0:
+                        # Extrair nome do arquivo do output
+                        import re
+                        match = re.search(r'asaas_\w+_\d+_\d+\.json', result.stdout)
+                        arquivo = match.group(0) if match else 'arquivo.json'
+                        
+                        log.status = 'SUCESSO'
+                        log.mensagem = f'✅ Download concluído!\n\nArquivo: {arquivo}\n\n{result.stdout[-500:]}'
+                        log.save()
+                    else:
+                        log.status = 'ERRO'
+                        log.mensagem = f'❌ Erro no download:\n\n{result.stderr[:1000]}'
+                        log.save()
+                        
+                except Exception as e:
+                    log.status = 'ERRO'
+                    log.mensagem = f'❌ Erro: {str(e)}'
+                    log.save()
+            
+            thread = threading.Thread(target=executar_download)
+            thread.daemon = True
+            thread.start()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Download iniciado para conta {conta}',
+                'log_id': log.id,
+                'task_id': task_id
+            })
+            
+        except Exception as e:
+            logger.error(f"Erro ao iniciar download: {str(e)}", exc_info=True)
+            return JsonResponse({
+                'success': False,
+                'message': f'Erro: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'success': False, 'message': 'Método não permitido'}, status=405)
+
+
+@login_required
+def importar_json_limpo(request):
+    """
+    Importa JSON e executa limpeza automática (--limpar)
+    Remove do banco local tudo que não está no Asaas
+    """
+    if request.method == 'POST':
+        try:
+            import json
+            arquivo_json = request.POST.get('arquivo')
+            conta = request.POST.get('conta', 'principal')
+            
+            if not arquivo_json:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Arquivo JSON não especificado'
+                }, status=400)
+            
+            logger.info(f"📥 Iniciando importação LIMPA do arquivo {arquivo_json} por {request.user.username}")
+            
+            # Caminho do script
+            script_path = settings.BASE_DIR / 'importar_json_banco.py'
+            json_path = settings.BASE_DIR / arquivo_json
+            python_executable = sys.executable
+            
+            if not json_path.exists():
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Arquivo não encontrado: {arquivo_json}'
+                }, status=404)
+            
+            # Criar log inicial
+            log = AsaasSyncronizacaoLog.objects.create(
+                tipo_sincronizacao=f'IMPORTACAO_JSON_LIMPA_{conta.upper()}',
+                status='EM_ANDAMENTO',
+                usuario=request.user.username,
+                mensagem=f'Iniciando importação limpa de {arquivo_json}...'
+            )
+            
+            # Executar script em thread separada
+            def executar_importacao():
+                try:
+                    result = subprocess.run(
+                        [python_executable, str(script_path), str(json_path), '--limpar'],
+                        capture_output=True,
+                        text=True,
+                        input='s\n',  # Confirmar automaticamente
+                        timeout=3600  # 1 hora
+                    )
+                    
+                    if result.returncode == 0:
+                        log.status = 'SUCESSO'
+                        log.mensagem = f'✅ Importação limpa concluída!\n\n{result.stdout[-1000:]}'
+                        
+                        # Extrair estatísticas do output
+                        import re
+                        match_clientes = re.search(r'Total: (\d+)', result.stdout)
+                        match_cobrancas = re.search(r'Cobranças.*?Total: (\d+)', result.stdout, re.DOTALL)
+                        
+                        if match_clientes:
+                            log.total_clientes = int(match_clientes.group(1))
+                        if match_cobrancas:
+                            log.total_cobrancas = int(match_cobrancas.group(1))
+                        
+                        log.save()
+                    else:
+                        log.status = 'ERRO'
+                        log.mensagem = f'❌ Erro na importação:\n\n{result.stderr[:1000]}'
+                        log.save()
+                        
+                except Exception as e:
+                    log.status = 'ERRO'
+                    log.mensagem = f'❌ Erro: {str(e)}'
+                    log.save()
+            
+            thread = threading.Thread(target=executar_importacao)
+            thread.daemon = True
+            thread.start()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Importação limpa iniciada',
+                'log_id': log.id
+            })
+            
+        except Exception as e:
+            logger.error(f"Erro ao iniciar importação: {str(e)}", exc_info=True)
+            return JsonResponse({
+                'success': False,
+                'message': f'Erro: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'success': False, 'message': 'Método não permitido'}, status=405)
+
+
+@login_required
+def status_operacao(request, log_id):
+    """
+    Retorna status de uma operação assíncrona (download ou importação)
+    """
+    try:
+        log = AsaasSyncronizacaoLog.objects.get(id=log_id)
+        
+        return JsonResponse({
+            'success': True,
+            'status': log.status,
+            'mensagem': log.mensagem,
+            'total_clientes': log.total_clientes or 0,
+            'total_cobrancas': log.total_cobrancas or 0,
+            'duracao': log.duracao_segundos or 0
+        })
+        
+    except AsaasSyncronizacaoLog.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Log não encontrado'
+        }, status=404)
