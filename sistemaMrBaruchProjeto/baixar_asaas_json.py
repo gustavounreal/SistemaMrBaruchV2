@@ -357,19 +357,29 @@ class BaixadorAsaas:
 
 if __name__ == '__main__':
     # Verificar argumentos
+    auto_confirm = '--auto-confirm' in sys.argv or '--sim' in sys.argv
+    
     if len(sys.argv) > 1:
-        conta = sys.argv[1].lower()
-        if conta not in ['principal', 'alternativo']:
-            print("[ERRO] Conta inválida! Use: principal ou alternativo")
-            sys.exit(1)
+        # Filtrar argumentos que não sejam flags
+        args = [arg for arg in sys.argv[1:] if not arg.startswith('--')]
+        if args:
+            conta = args[0].lower()
+            if conta not in ['principal', 'alternativo']:
+                print("[ERRO] Conta inválida! Use: principal ou alternativo")
+                sys.exit(1)
+        else:
+            conta = 'principal'
     else:
         conta = 'principal'
     
     print(f"\n[CONTA] Conta selecionada: {conta.upper()}")
     
-    if not input("\n[AVISO]  Este processo vai baixar TODOS os dados. Continuar? (s/n): ").lower().startswith('s'):
-        print("[ERRO] Cancelado pelo usuário")
-        sys.exit(0)
+    if not auto_confirm:
+        if not input("\n[AVISO]  Este processo vai baixar TODOS os dados. Continuar? (s/n): ").lower().startswith('s'):
+            print("[ERRO] Cancelado pelo usuário")
+            sys.exit(0)
+    else:
+        print("[AVISO]  Modo automático ativado - executando sem confirmação")
     
     # Executar
     baixador = BaixadorAsaas(nome_conta=conta)

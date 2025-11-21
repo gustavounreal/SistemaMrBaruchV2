@@ -370,13 +370,15 @@ class ImportadorJSON:
 if __name__ == '__main__':
     # Verificar argumentos
     if len(sys.argv) < 2:
-        print("[ERRO] Uso: python importar_json_banco.py <arquivo.json> [--limpar]")
+        print("[ERRO] Uso: python importar_json_banco.py <arquivo.json> [--limpar] [--auto-confirm]")
         print("\nOpções:")
-        print("  --limpar    Exclui do banco local clientes e cobranças que não existem mais no Asaas")
+        print("  --limpar         Exclui do banco local clientes e cobranças que não existem mais no Asaas")
+        print("  --auto-confirm   Executa sem pedir confirmação (para uso via Django)")
         sys.exit(1)
     
     arquivo = sys.argv[1]
     modo_limpeza = '--limpar' in sys.argv
+    auto_confirm = '--auto-confirm' in sys.argv or '--sim' in sys.argv
     
     if not os.path.exists(arquivo):
         print(f"[ERRO] Arquivo não encontrado: {arquivo}")
@@ -388,13 +390,16 @@ if __name__ == '__main__':
         print(f"[LIMPEZA] MODO LIMPEZA ATIVADO")
         print(f"   [AVISO]  Clientes e cobranças que não existirem no Asaas serão EXCLUÍDOS automaticamente")
     else:
-        print(f"📦 Modo normal (sem limpeza)")
-        print(f"   ℹ️  Dados locais serão mantidos mesmo se não existirem mais no Asaas")
-        print(f"   ℹ️  Use --limpar para ativar sincronização limpa")
+        print(f"[INFO] Modo normal (sem limpeza)")
+        print(f"   [INFO]  Dados locais serão mantidos mesmo se não existirem mais no Asaas")
+        print(f"   [INFO]  Use --limpar para ativar sincronização limpa")
     
-    if not input("\n[AVISO]  Isso vai IMPORTAR os dados para o banco. Continuar? (s/n): ").lower().startswith('s'):
-        print("[ERRO] Cancelado pelo usuário")
-        sys.exit(0)
+    if not auto_confirm:
+        if not input("\n[AVISO]  Isso vai IMPORTAR os dados para o banco. Continuar? (s/n): ").lower().startswith('s'):
+            print("[ERRO] Cancelado pelo usuário")
+            sys.exit(0)
+    else:
+        print("[AVISO]  Modo automático ativado - executando sem confirmação")
     
     # Executar
     importador = ImportadorJSON(arquivo, modo_limpeza=modo_limpeza)

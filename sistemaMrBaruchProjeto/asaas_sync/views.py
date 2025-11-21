@@ -1655,7 +1655,7 @@ def baixar_dados_asaas(request):
             def executar_download():
                 try:
                     result = subprocess.run(
-                        [python_executable, str(script_path), conta],
+                        [python_executable, str(script_path), conta, '--auto-confirm'],
                         capture_output=True,
                         text=True,
                         timeout=3600  # 1 hora
@@ -1744,10 +1744,9 @@ def importar_json_limpo(request):
             def executar_importacao():
                 try:
                     result = subprocess.run(
-                        [python_executable, str(script_path), str(json_path), '--limpar'],
+                        [python_executable, str(script_path), str(json_path), '--limpar', '--auto-confirm'],
                         capture_output=True,
                         text=True,
-                        input='s\n',  # Confirmar automaticamente
                         timeout=3600  # 1 hora
                     )
                     
