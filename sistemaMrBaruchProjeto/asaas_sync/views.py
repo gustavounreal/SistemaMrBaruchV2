@@ -7,7 +7,10 @@ from django.http import JsonResponse, HttpResponse
 from django.db.models import Q, Sum, Count, Case, When, DecimalField
 from django.utils import timezone
 from django.conf import settings
-from .models import AsaasClienteSyncronizado, AsaasCobrancaSyncronizada, AsaasSyncronizacaoLog
+from .models import (
+    AsaasClienteSyncronizado, AsaasCobrancaSyncronizada, AsaasSyncronizacaoLog,
+    AsaasClienteSyncronizado2, AsaasCobrancaSyncronizada2
+)
 from .services import AsaasSyncService
 from .sync_completo import AsaasSyncCompleto  # NOVO: Sincronização robusta
 from openpyxl import Workbook
@@ -23,48 +26,84 @@ logger = logging.getLogger(__name__)
 
 @login_required
 def dashboard_asaas_sync(request):
-    """Dashboard principal com dados do Asaas"""
+    """Dashboard principal com dados do Asaas (ambas as contas)"""
     
-    # Estatísticas gerais
-    total_clientes = AsaasClienteSyncronizado.objects.count()
-    total_cobrancas = AsaasCobrancaSyncronizada.objects.count()
+    # Estatísticas ASAAS 1 (Principal)
+    total_clientes1 = AsaasClienteSyncronizado.objects.count()
+    total_cobrancas1 = AsaasCobrancaSyncronizada.objects.count()
     
-    # Valores
-    total_recebido = AsaasCobrancaSyncronizada.objects.filter(
+    total_recebido1 = AsaasCobrancaSyncronizada.objects.filter(
         status__in=['RECEIVED', 'CONFIRMED']
     ).aggregate(total=Sum('valor'))['total'] or 0
     
-    total_pendente = AsaasCobrancaSyncronizada.objects.filter(
+    total_pendente1 = AsaasCobrancaSyncronizada.objects.filter(
         status='PENDING'
     ).aggregate(total=Sum('valor'))['total'] or 0
     
-    total_vencido = AsaasCobrancaSyncronizada.objects.filter(
+    total_vencido1 = AsaasCobrancaSyncronizada.objects.filter(
         status='OVERDUE'
     ).aggregate(total=Sum('valor'))['total'] or 0
+    
+    # Cobranças por status - Asaas 1
+    cobrancas_por_status1 = AsaasCobrancaSyncronizada.objects.values('status').annotate(
+        total=Count('id'),
+        valor_total=Sum('valor')
+    ).order_by('-total')
+    
+    # Estatísticas ASAAS 2 (Alternativo)
+    total_clientes2 = AsaasClienteSyncronizado2.objects.count()
+    total_cobrancas2 = AsaasCobrancaSyncronizada2.objects.count()
+    
+    total_recebido2 = AsaasCobrancaSyncronizada2.objects.filter(
+        status__in=['RECEIVED', 'CONFIRMED']
+    ).aggregate(total=Sum('valor'))['total'] or 0
+    
+    total_pendente2 = AsaasCobrancaSyncronizada2.objects.filter(
+        status='PENDING'
+    ).aggregate(total=Sum('valor'))['total'] or 0
+    
+    total_vencido2 = AsaasCobrancaSyncronizada2.objects.filter(
+        status='OVERDUE'
+    ).aggregate(total=Sum('valor'))['total'] or 0
+    
+    # Cobranças por status - Asaas 2
+    cobrancas_por_status2 = AsaasCobrancaSyncronizada2.objects.values('status').annotate(
+        total=Count('id'),
+        valor_total=Sum('valor')
+    ).order_by('-total')
     
     # Últimas sincronizações
     ultimas_syncs = AsaasSyncronizacaoLog.objects.all()[:5]
     ultima_sync = ultimas_syncs.first()
     
-    # Cobranças recentes
-    cobrancas_recentes = AsaasCobrancaSyncronizada.objects.select_related('cliente').order_by('-sincronizado_em')[:10]
+    # Cobranças recentes - Asaas 1
+    cobrancas_recentes1 = AsaasCobrancaSyncronizada.objects.select_related('cliente').order_by('-sincronizado_em')[:10]
     
-    # Cobranças por status
-    cobrancas_por_status = AsaasCobrancaSyncronizada.objects.values('status').annotate(
-        total=Count('id'),
-        valor_total=Sum('valor')
-    ).order_by('-total')
+    # Cobranças recentes - Asaas 2
+    cobrancas_recentes2 = AsaasCobrancaSyncronizada2.objects.select_related('cliente').order_by('-sincronizado_em')[:10]
     
     context = {
-        'total_clientes': total_clientes,
-        'total_cobrancas': total_cobrancas,
-        'total_recebido': total_recebido,
-        'total_pendente': total_pendente,
-        'total_vencido': total_vencido,
+        # Asaas 1
+        'total_clientes': total_clientes1,
+        'total_cobrancas': total_cobrancas1,
+        'total_recebido': total_recebido1,
+        'total_pendente': total_pendente1,
+        'total_vencido': total_vencido1,
+        'cobrancas_por_status': cobrancas_por_status1,
+        'cobrancas_recentes': cobrancas_recentes1,
+        
+        # Asaas 2
+        'total_clientes2': total_clientes2,
+        'total_cobrancas2': total_cobrancas2,
+        'total_recebido2': total_recebido2,
+        'total_pendente2': total_pendente2,
+        'total_vencido2': total_vencido2,
+        'cobrancas_por_status2': cobrancas_por_status2,
+        'cobrancas_recentes2': cobrancas_recentes2,
+        
+        # Geral
         'ultimas_syncs': ultimas_syncs,
         'ultima_sync': ultima_sync,
-        'cobrancas_recentes': cobrancas_recentes,
-        'cobrancas_por_status': cobrancas_por_status,
     }
     
     return render(request, 'asaas_sync/dashboard.html', context)
@@ -80,9 +119,16 @@ def lista_clientes(request):
     inadimplente = request.GET.get('inadimplente', '')
     servico_concluido = request.GET.get('servico_concluido', '')
     consultor = request.GET.get('consultor', '').strip()
+    conta = request.GET.get('conta', 'principal')  # principal ou alternativo
     page = request.GET.get('page', 1)
     
-    clientes = AsaasClienteSyncronizado.objects.prefetch_related('cobrancas').all()
+    # Selecionar model baseado na conta
+    if conta == 'alternativo':
+        ModelCliente = AsaasClienteSyncronizado2
+    else:
+        ModelCliente = AsaasClienteSyncronizado
+    
+    clientes = ModelCliente.objects.prefetch_related('cobrancas').all()
     
     # Filtro por nome, CPF ou CNPJ
     if busca:
@@ -149,7 +195,7 @@ def lista_clientes(request):
         })
     
     # Lista distinta de consultores para o filtro
-    consultores = AsaasClienteSyncronizado.objects.exclude(consultor_responsavel__isnull=True)\
+    consultores = ModelCliente.objects.exclude(consultor_responsavel__isnull=True)\
         .exclude(consultor_responsavel__exact='').values_list('consultor_responsavel', flat=True).distinct().order_by('consultor_responsavel')
 
     context = {
@@ -161,6 +207,8 @@ def lista_clientes(request):
         'servico_concluido': servico_concluido,
         'consultor': consultor,
         'consultores': consultores,
+        'conta': conta,
+        'nome_conta': 'Asaas 1 (Principal)' if conta == 'principal' else 'Asaas 2 (Alternativo)',
     }
     
     return render(request, 'asaas_sync/lista_clientes.html', context)
@@ -171,7 +219,15 @@ def detalhes_cliente(request, cliente_id):
     """Detalhes de um cliente e suas cobranças"""
     from .models import DocumentoClienteAsaas
     
-    cliente = get_object_or_404(AsaasClienteSyncronizado, id=cliente_id)
+    conta = request.GET.get('conta', 'principal')
+    
+    # Selecionar model baseado na conta
+    if conta == 'alternativo':
+        ModelCliente = AsaasClienteSyncronizado2
+    else:
+        ModelCliente = AsaasClienteSyncronizado
+    
+    cliente = get_object_or_404(ModelCliente, id=cliente_id)
     
     # Cobranças do cliente
     cobrancas = cliente.cobrancas.all().order_by('-data_vencimento')
@@ -202,6 +258,8 @@ def detalhes_cliente(request, cliente_id):
         'documentos': documentos,
         'tipos_documento': tipos_documento,
         'stats': stats,
+        'conta': conta,
+        'nome_conta': 'Asaas 1 (Principal)' if conta == 'principal' else 'Asaas 2 (Alternativo)',
         'cobrancas_pagas': cobrancas_pagas,
         'cobrancas_pendentes': cobrancas_pendentes,
         'cobrancas_vencidas': cobrancas_vencidas,
@@ -222,9 +280,16 @@ def lista_cobrancas(request):
     cliente_busca = request.GET.get('cliente', '')
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
+    conta = request.GET.get('conta', 'principal')  # principal ou alternativo
     page = request.GET.get('page', 1)
     
-    cobrancas = AsaasCobrancaSyncronizada.objects.select_related('cliente').all()
+    # Selecionar model baseado na conta
+    if conta == 'alternativo':
+        ModelCobranca = AsaasCobrancaSyncronizada2
+    else:
+        ModelCobranca = AsaasCobrancaSyncronizada
+    
+    cobrancas = ModelCobranca.objects.select_related('cliente').all()
     
     if status:
         cobrancas = cobrancas.filter(status=status)
@@ -286,7 +351,9 @@ def lista_cobrancas(request):
         'data_fim': data_fim,
         'totais': totais,
         'status_choices': status_filtrados,
-        'tipo_choices': AsaasCobrancaSyncronizada.TIPO_COBRANCA_CHOICES,
+        'tipo_choices': ModelCobranca.TIPO_COBRANCA_CHOICES,
+        'conta': conta,
+        'nome_conta': 'Asaas 1 (Principal)' if conta == 'principal' else 'Asaas 2 (Alternativo)',
     }
     
     return render(request, 'asaas_sync/lista_cobrancas.html', context)
@@ -515,7 +582,16 @@ def atualizar_cliente(request, cliente_id):
     
     if request.method == 'POST':
         try:
-            cliente = get_object_or_404(AsaasClienteSyncronizado, id=cliente_id)
+            # Verificar qual conta está sendo usada
+            conta = request.POST.get('conta', 'principal')
+            
+            # Selecionar model baseado na conta
+            if conta == 'alternativo':
+                ModelCliente = AsaasClienteSyncronizado2
+            else:
+                ModelCliente = AsaasClienteSyncronizado
+            
+            cliente = get_object_or_404(ModelCliente, id=cliente_id)
             
             # Atualizar consultor
             if 'consultor_responsavel' in request.POST:
@@ -1619,8 +1695,8 @@ def exportar_clientes_com_boletos_excel(request):
 @login_required
 def baixar_dados_asaas(request):
     """
-    Executa script para baixar TODOS os dados do Asaas e salvar em JSON
-    Retorna JSON com progresso em tempo real
+    Executa sincronização automática do Asaas
+    Baixa, atualiza, adiciona e exclui dados automaticamente
     """
     if request.method == 'POST':
         try:
@@ -1633,10 +1709,10 @@ def baixar_dados_asaas(request):
                     'message': 'Conta inválida. Use: principal ou alternativo'
                 }, status=400)
             
-            logger.info(f"🔽 Iniciando download de dados do Asaas ({conta}) por {request.user.username}")
+            logger.info(f"[SYNC AUTO] Iniciando sincronização automática do Asaas ({conta}) por {request.user.username}")
             
             # Caminho do script
-            script_path = settings.BASE_DIR / 'baixar_asaas_json.py'
+            script_path = settings.BASE_DIR / 'sincronizar_asaas_auto.py'
             python_executable = sys.executable
             
             # Executar script em background e retornar task_id
@@ -1645,54 +1721,62 @@ def baixar_dados_asaas(request):
             
             # Criar log inicial
             log = AsaasSyncronizacaoLog.objects.create(
-                tipo_sincronizacao=f'DOWNLOAD_JSON_{conta.upper()}',
+                tipo_sincronizacao=f'AUTO_SYNC_{conta.upper()}',
                 status='EM_ANDAMENTO',
                 usuario=request.user.username,
-                mensagem=f'Iniciando download de dados do Asaas ({conta})...'
+                mensagem=f'Iniciando sincronização automática do Asaas ({conta})...'
             )
             
             # Executar script em thread separada
-            def executar_download():
+            def executar_sincronizacao():
                 try:
                     result = subprocess.run(
-                        [python_executable, str(script_path), conta, '--auto-confirm'],
+                        [python_executable, str(script_path), conta],
                         capture_output=True,
                         text=True,
+                        encoding='utf-8',
+                        errors='replace',  # Substituir caracteres problemáticos
                         timeout=3600  # 1 hora
                     )
                     
                     if result.returncode == 0:
-                        # Extrair nome do arquivo do output
-                        import re
-                        match = re.search(r'asaas_\w+_\d+_\d+\.json', result.stdout)
-                        arquivo = match.group(0) if match else 'arquivo.json'
-                        
                         log.status = 'SUCESSO'
-                        log.mensagem = f'✅ Download concluído!\n\nArquivo: {arquivo}\n\n{result.stdout[-500:]}'
+                        log.mensagem = f'[OK] Sincronização automática concluída!\n\n{result.stdout[-1000:]}'
+                        
+                        # Extrair estatísticas do output
+                        import re
+                        match_clientes = re.search(r'Total: (\d+)', result.stdout)
+                        match_cobrancas = re.search(r'COBRANÇAS:.*?Total: (\d+)', result.stdout, re.DOTALL)
+                        
+                        if match_clientes:
+                            log.total_clientes = int(match_clientes.group(1))
+                        if match_cobrancas:
+                            log.total_cobrancas = int(match_cobrancas.group(1))
+                        
                         log.save()
                     else:
                         log.status = 'ERRO'
-                        log.mensagem = f'❌ Erro no download:\n\n{result.stderr[:1000]}'
+                        log.mensagem = f'[ERRO] Erro na sincronização:\n\n{result.stderr[:1000]}'
                         log.save()
                         
                 except Exception as e:
                     log.status = 'ERRO'
-                    log.mensagem = f'❌ Erro: {str(e)}'
+                    log.mensagem = f'[ERRO] Erro: {str(e)}'
                     log.save()
             
-            thread = threading.Thread(target=executar_download)
+            thread = threading.Thread(target=executar_sincronizacao)
             thread.daemon = True
             thread.start()
             
             return JsonResponse({
                 'success': True,
-                'message': f'Download iniciado para conta {conta}',
+                'message': f'Sincronização automática iniciada para conta {conta}',
                 'log_id': log.id,
                 'task_id': task_id
             })
             
         except Exception as e:
-            logger.error(f"Erro ao iniciar download: {str(e)}", exc_info=True)
+            logger.error(f"Erro ao iniciar sincronização: {str(e)}", exc_info=True)
             return JsonResponse({
                 'success': False,
                 'message': f'Erro: {str(e)}'
