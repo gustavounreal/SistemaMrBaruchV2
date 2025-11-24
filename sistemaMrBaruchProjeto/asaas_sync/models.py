@@ -399,6 +399,59 @@ class AsaasClienteSyncronizado2(models.Model):
     
     def __str__(self):
         return f"{self.nome} ({self.asaas_customer_id})"
+    
+    def get_valor_total_servico(self):
+        """Calcula o valor total de todas as cobranças do cliente"""
+        from django.db.models import Sum
+        total = self.cobrancas.aggregate(total=Sum('valor'))['total']
+        return total or 0
+    
+    def get_cobrancas_vencidas(self):
+        """Retorna cobranças vencidas (OVERDUE) do cliente"""
+        return self.cobrancas.filter(status='OVERDUE')
+    
+    def esta_inadimplente(self):
+        """Verifica se o cliente tem cobranças vencidas"""
+        return self.get_cobrancas_vencidas().exists()
+    
+    def get_periodo_inadimplencia(self):
+        """Retorna o período de inadimplência (data mais antiga até mais recente)"""
+        cobrancas_vencidas = self.get_cobrancas_vencidas().order_by('data_vencimento')
+        if not cobrancas_vencidas.exists():
+            return None
+        
+        primeira = cobrancas_vencidas.first().data_vencimento
+        ultima = cobrancas_vencidas.last().data_vencimento
+        
+        if primeira == ultima:
+            return primeira.strftime('%d/%m/%Y')
+        return f"{primeira.strftime('%d/%m/%Y')} a {ultima.strftime('%d/%m/%Y')}"
+    
+    def get_valor_inadimplente(self):
+        """Retorna o valor total das cobranças vencidas"""
+        from django.db.models import Sum
+        total = self.get_cobrancas_vencidas().aggregate(total=Sum('valor'))['total']
+        return total or 0
+    
+    def get_quantidade_boletos_pendentes(self):
+        """Retorna quantidade de boletos com status PENDING"""
+        return self.cobrancas.filter(status='PENDING').count()
+    
+    def get_servicos_contratados(self):
+        """Retorna lista de serviços contratados"""
+        servicos = []
+        if self.servico_limpa_nome:
+            servicos.append('Limpa Nome')
+        if self.servico_retirada_travas:
+            servicos.append('Retirada de Travas')
+        if self.servico_restauracao_score:
+            servicos.append('Restauração de Score')
+        return servicos
+    
+    def get_servicos_contratados_display(self):
+        """Retorna string com serviços contratados separados por vírgula"""
+        servicos = self.get_servicos_contratados()
+        return ', '.join(servicos) if servicos else 'Nenhum'
 
 
 class AsaasCobrancaSyncronizada2(models.Model):
@@ -479,3 +532,28 @@ class AsaasCobrancaSyncronizada2(models.Model):
     
     def __str__(self):
         return f"{self.cliente.nome} - {self.valor} - {self.get_status_display()}"
+    
+    @property
+    def esta_vencida(self):
+        """Verifica se a cobrança está vencida"""
+        if self.status in ['RECEIVED', 'CONFIRMED']:
+            return False
+        return self.data_vencimento < timezone.now().date()
+    
+    @property
+    def dias_vencimento(self):
+        """Dias até o vencimento (negativo se vencido)"""
+        delta = self.data_vencimento - timezone.now().date()
+        return delta.days
+    
+    @property
+    def status_cor(self):
+        """Cor do badge de status"""
+        cores = {
+            'RECEIVED': 'success',
+            'CONFIRMED': 'success',
+            'PENDING': 'warning',
+            'OVERDUE': 'danger',
+            'REFUNDED': 'info',
+        }
+        return cores.get(self.status, 'secondary')
