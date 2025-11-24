@@ -20,6 +20,7 @@ import logging
 import subprocess
 import threading
 import sys
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -1741,6 +1742,8 @@ def baixar_dados_asaas(request):
             # Executar script em thread separada
             def executar_sincronizacao():
                 try:
+                    logger.info(f"[SYNC] Executando: {python_executable} {script_path} {conta}")
+                    
                     result = subprocess.run(
                         [python_executable, str(script_path), conta],
                         capture_output=True,
@@ -1749,6 +1752,11 @@ def baixar_dados_asaas(request):
                         errors='replace',  # Substituir caracteres problemáticos
                         timeout=3600  # 1 hora
                     )
+                    
+                    logger.info(f"[SYNC] Return code: {result.returncode}")
+                    logger.info(f"[SYNC] STDOUT (primeiros 500 chars): {result.stdout[:500]}")
+                    if result.stderr:
+                        logger.error(f"[SYNC] STDERR: {result.stderr[:500]}")
                     
                     if result.returncode == 0:
                         log.status = 'SUCESSO'
@@ -1765,15 +1773,23 @@ def baixar_dados_asaas(request):
                             log.total_cobrancas = int(match_cobrancas.group(1))
                         
                         log.save()
+                        logger.info(f"[SYNC] Sucesso! Clientes: {log.total_clientes}, Cobranças: {log.total_cobrancas}")
                     else:
                         log.status = 'ERRO'
-                        log.mensagem = f'[ERRO] Erro na sincronização:\n\n{result.stderr[:1000]}'
+                        log.mensagem = f'[ERRO] Erro na sincronização (code {result.returncode}):\n\nSTDOUT:\n{result.stdout[:500]}\n\nSTDERR:\n{result.stderr[:500]}'
                         log.save()
+                        logger.error(f"[SYNC] Erro! Return code: {result.returncode}")
                         
+                except subprocess.TimeoutExpired:
+                    log.status = 'ERRO'
+                    log.mensagem = f'[ERRO] Timeout: Sincronização demorou mais de 1 hora'
+                    log.save()
+                    logger.error(f"[SYNC] Timeout na sincronização")
                 except Exception as e:
                     log.status = 'ERRO'
-                    log.mensagem = f'[ERRO] Erro: {str(e)}'
+                    log.mensagem = f'[ERRO] Exception: {str(e)}\n\nTraceback:\n{traceback.format_exc()}'
                     log.save()
+                    logger.error(f"[SYNC] Exception: {str(e)}", exc_info=True)
             
             thread = threading.Thread(target=executar_sincronizacao)
             thread.daemon = True
