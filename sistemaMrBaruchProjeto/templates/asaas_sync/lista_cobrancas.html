@@ -102,7 +102,7 @@
                                 {% for cobranca in cobrancas %}
                                 <tr>
                                     <td>
-                                        <a href="{% url 'asaas_sync:detalhes_cliente' cobranca.cliente.id %}">
+                                        <a href="{% url 'asaas_sync:detalhes_cliente' cobranca.cliente.id %}?conta={{ conta }}">
                                             {{ cobranca.cliente.nome|truncatewords:3 }}
                                         </a>
                                     </td>

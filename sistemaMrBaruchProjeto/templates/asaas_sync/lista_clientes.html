@@ -135,7 +135,7 @@
                                 {% for item in clientes_dados %}
                                 <tr>
                                     <td>
-                                        <a href="{% url 'asaas_sync:detalhes_cliente' item.cliente.id %}" class="text-decoration-none fw-bold">
+                                        <a href="{% url 'asaas_sync:detalhes_cliente' item.cliente.id %}?conta={{ conta }}" class="text-decoration-none fw-bold">
                                             {{ item.cliente.nome }}
                                         </a>
                                         <br>
@@ -237,7 +237,7 @@
                                         </button>
                                     </td>
                                     <td class="text-center">
-                                        <a href="{% url 'asaas_sync:detalhes_cliente' item.cliente.id %}" 
+                                        <a href="{% url 'asaas_sync:detalhes_cliente' item.cliente.id %}?conta={{ conta }}" 
                                            class="btn btn-sm btn-outline-primary" title="Ver Detalhes">
                                             <i class="fas fa-eye"></i>
                                         </a>
