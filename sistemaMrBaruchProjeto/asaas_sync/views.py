@@ -232,8 +232,11 @@ def detalhes_cliente(request, cliente_id):
     # Cobranças do cliente
     cobrancas = cliente.cobrancas.all().order_by('-data_vencimento')
     
-    # Documentos do cliente
-    documentos = DocumentoClienteAsaas.objects.filter(cliente=cliente).order_by('-data_upload')
+    # Documentos do cliente (apenas para Asaas 1)
+    if conta == 'principal':
+        documentos = DocumentoClienteAsaas.objects.filter(cliente=cliente).order_by('-data_upload')
+    else:
+        documentos = []  # Asaas 2 não tem documentos vinculados
     
     # Estatísticas do cliente
     stats = {
@@ -820,7 +823,15 @@ def atualizar_telefone_cliente(request, cliente_id):
         return JsonResponse({'success': False, 'message': 'Método não permitido'}, status=405)
     
     try:
-        cliente = get_object_or_404(AsaasClienteSyncronizado, id=cliente_id)
+        conta = request.POST.get('conta', 'principal')
+        
+        # Selecionar model baseado na conta
+        if conta == 'alternativo':
+            ModelCliente = AsaasClienteSyncronizado2
+        else:
+            ModelCliente = AsaasClienteSyncronizado
+        
+        cliente = get_object_or_404(ModelCliente, id=cliente_id)
         
         telefone = request.POST.get('telefone', '').strip()
         celular = request.POST.get('celular', '').strip()

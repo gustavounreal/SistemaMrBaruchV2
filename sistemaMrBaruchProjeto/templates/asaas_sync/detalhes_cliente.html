@@ -79,6 +79,7 @@
                 <div class="card-body">
                     <form id="formTelefone" onsubmit="return atualizarTelefone(event)">
                         {% csrf_token %}
+                        <input type="hidden" name="conta" value="{{ conta }}">
                         <div class="mb-3">
                             <label class="form-label">Telefone Fixo</label>
                             <input type="text" class="form-control" name="telefone" value="{{ cliente.telefone }}" placeholder="(00) 0000-0000">
@@ -94,6 +95,7 @@
                 </div>
             </div>
             
+            {% if conta == 'principal' %}
             <!-- Upload de Documentos -->
             <div class="card mt-3">
                 <div class="card-header bg-primary text-white">
@@ -172,6 +174,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
             {% endif %}
         </div>
 
