@@ -14,11 +14,13 @@ from datetime import datetime
 from decimal import Decimal
 
 # Configurar logging detalhado
+# Usar /tmp/ para evitar problema de permissões com Gunicorn
+log_file = '/tmp/sincronizador_asaas.log' if sys.platform != 'win32' else 'sincronizador_asaas.log'
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('sincronizador_asaas.log', encoding='utf-8'),
+        logging.FileHandler(log_file, encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
