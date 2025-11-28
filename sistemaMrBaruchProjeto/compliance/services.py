@@ -104,7 +104,7 @@ class ComplianceAnaliseService:
         Args:
             status (str, optional): Status da análise
             classificacao (str, optional): Classificação do lead
-            busca (str, optional): Termo de busca (nome/CPF do lead)
+            busca (str, optional): Termo de busca (nome/CPF do lead, ID ou nome do consultor)
             
         Returns:
             QuerySet: Análises filtradas
@@ -122,7 +122,11 @@ class ComplianceAnaliseService:
         if busca:
             analises = analises.filter(
                 Q(lead__nome_completo__icontains=busca) |
-                Q(lead__cpf_cnpj__icontains=busca)
+                Q(lead__cpf_cnpj__icontains=busca) |
+                Q(consultor_atribuido__id__icontains=busca) |
+                Q(consultor_atribuido__username__icontains=busca) |
+                Q(consultor_atribuido__first_name__icontains=busca) |
+                Q(consultor_atribuido__last_name__icontains=busca)
             )
         
         return analises.order_by('-data_criacao')

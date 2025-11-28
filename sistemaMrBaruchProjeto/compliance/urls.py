@@ -17,6 +17,7 @@ urlpatterns = [
     # APIs
     path('api/analisar/<int:analise_id>/', views.analisar_lead, name='analisar_lead'),
     path('api/atribuir/<int:analise_id>/', views.atribuir_consultor, name='atribuir_consultor'),
+    path('api/reatribuir/<int:analise_id>/', views.reatribuir_consultor, name='reatribuir_consultor'),
     path('api/desatribuir/<int:analise_id>/', views.desatribuir_consultor, name='desatribuir_consultor'),
     path('api/desreprovar/<int:analise_id>/', views.desreprovar_lead, name='desreprovar_lead'),
     path('api/historico-recente/', views.api_historico_recente, name='api_historico_recente'),

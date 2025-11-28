@@ -392,6 +392,63 @@ def desatribuir_consultor(request, analise_id):
 
 
 @login_required
+@user_passes_test(is_compliance)
+def reatribuir_consultor(request, analise_id):
+    """API para reatribuir lead a outro consultor (trocar consultor)"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método não permitido'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        analise = get_object_or_404(AnaliseCompliance, id=analise_id)
+        novo_consultor_id = data.get('consultor_id')
+        
+        if not novo_consultor_id:
+            return JsonResponse({'success': False, 'message': 'Consultor não informado'}, status=400)
+        
+        # Verifica se já está atribuído
+        if not analise.consultor_atribuido:
+            return JsonResponse({'success': False, 'message': 'Lead não está atribuído. Use a função de atribuir.'}, status=400)
+        
+        # Salvar consultor anterior
+        consultor_anterior = analise.consultor_atribuido
+        consultor_anterior_nome = consultor_anterior.get_full_name() or consultor_anterior.username
+        
+        # Buscar novo consultor
+        novo_consultor = get_object_or_404(User, id=novo_consultor_id)
+        
+        # Verifica se é realmente um consultor
+        if not novo_consultor.groups.filter(name='comercial1').exists():
+            return JsonResponse({'success': False, 'message': 'Usuário não é consultor'}, status=400)
+        
+        # Verifica se não é o mesmo consultor
+        if consultor_anterior.id == novo_consultor.id:
+            return JsonResponse({'success': False, 'message': 'O lead já está atribuído a este consultor'}, status=400)
+        
+        # Atualizar consultor
+        analise.consultor_atribuido = novo_consultor
+        analise.data_atribuicao = timezone.now()
+        analise.save()
+        
+        # Registrar no histórico
+        novo_consultor_nome = novo_consultor.get_full_name() or novo_consultor.username
+        HistoricoAnaliseCompliance.objects.create(
+            analise=analise,
+            usuario=request.user,
+            acao='REATRIBUICAO',
+            descricao=f'Lead reatribuído de {consultor_anterior_nome} para {novo_consultor_nome}'
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Lead reatribuído de {consultor_anterior_nome} para {novo_consultor_nome} com sucesso'
+        })
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+@login_required
 @user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='admin').exists())
 def desreprovar_lead(request, analise_id):
     """API para reverter reprovação de lead (voltar para AGUARDANDO) - Apenas admin"""

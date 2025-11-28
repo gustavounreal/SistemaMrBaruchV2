@@ -349,6 +349,52 @@
             </div>
             {% endif %}
 
+            <!-- Reatribuição de Consultor (Trocar Consultor) -->
+            {% if analise.consultor_atribuido %}
+            <div class="info-card bg-light border-warning">
+                <h5 class="mb-3"><i class="bi bi-arrow-left-right"></i> Trocar Consultor</h5>
+                <div class="alert alert-info mb-3">
+                    <strong><i class="bi bi-person-fill"></i> Consultor Atual:</strong> 
+                    {{ analise.consultor_atribuido.get_full_name|default:analise.consultor_atribuido.username }}
+                    <br>
+                    <small class="text-muted">Atribuído em: {{ analise.data_atribuicao|date:"d/m/Y H:i" }}</small>
+                </div>
+                <form id="formReatribuir">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Selecione o Novo Consultor</label>
+                        <select class="form-select" id="novo_consultor_id" required>
+                            <option value="">Selecione...</option>
+                            {% for consultor in consultores %}
+                            <option value="{{ consultor.id }}" 
+                                    data-leads="{{ consultor.leads_ativos }}"
+                                    {% if consultor.id == analise.consultor_atribuido.id %}
+                                    style="background-color: #e3f2fd; font-weight: bold;"
+                                    {% elif consultor.leads_ativos >= 15 %}
+                                    style="background-color: #ffcccc; font-weight: bold;"
+                                    {% elif consultor.leads_ativos >= 10 %}
+                                    style="background-color: #fff3cd; font-weight: bold;"
+                                    {% else %}
+                                    style="background-color: #d4edda;"
+                                    {% endif %}>
+                                {{ consultor.username }}{% if consultor.id == analise.consultor_atribuido.id %} (ATUAL){% endif %} - {{ consultor.leads_ativos }} lead(s) ativo(s)
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted mt-2 d-block">
+                            <strong>Legenda de Leads Ativos:</strong><br>
+                            <span class="badge bg-success me-1">Menos de 10</span>
+                            <span class="badge bg-warning me-1">10 a 14</span>
+                            <span class="badge bg-danger">15 ou mais</span>
+                        </small>
+                    </div>
+                    <button type="button" class="btn btn-warning" onclick="reatribuirConsultor()">
+                        <i class="bi bi-arrow-repeat"></i> Trocar Consultor
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+
             <!-- Histórico -->
             <div class="info-card">
                 <h5 class="mb-3"><i class="bi bi-clock-history"></i> Histórico de Ações</h5>
@@ -731,6 +777,43 @@
         .catch(error => {
             console.error('Erro:', error);
             alert('Erro ao excluir documento');
+        });
+    }
+
+    function reatribuirConsultor() {
+        const novo_consultor_id = document.getElementById('novo_consultor_id').value;
+
+        if (!novo_consultor_id) {
+            alert('Por favor, selecione um novo consultor');
+            return;
+        }
+
+        if (!confirm('Deseja realmente trocar o consultor deste lead?')) {
+            return;
+        }
+
+        fetch(`/compliance/api/reatribuir/{{ analise.id }}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                consultor_id: novo_consultor_id
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao reatribuir consultor');
         });
     }
 </script>
